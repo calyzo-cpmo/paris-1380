@@ -96,3 +96,14 @@ npm test          # 38 vérifications automatisées dans Chromium (Playwright re
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),
 esbuild (outil de build). Toute la géométrie et toutes les textures sont générées par le code au chargement de la page.
+
+## Licences
+
+- **Code** (`src/`, `tools/`, `deploy/`, `Dockerfile`) : licence [MIT](LICENSE). Vous pouvez l'utiliser, le modifier et le
+  redistribuer librement, y compris à des fins commerciales, en conservant la mention de copyright.
+- **Plan de 1380** (`data/source/Paris_1380.svg`, `data/paris1380.json`) : [CC BY-SA 2.0 FR](https://creativecommons.org/licenses/by-sa/2.0/fr/),
+  d'après J. Leuridan et J.-A. Mallet (CNRS Éditions), infographie C. Roms (LAMOP), projet ALPAGE. Toute réutilisation doit
+  citer ces auteurs et partager les versions modifiées du plan sous la même licence.
+- **Page construite** (`dist/index.html`) : elle réunit le code et le plan. Elle se redistribue librement à condition de
+  laisser visible l'attribution du plan, qui figure dans son panneau « Sources ».
+- **Vignettes des sources** (`data/thumbs.json`) : reproductions d'œuvres du domaine public.
