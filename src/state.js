@@ -9,7 +9,7 @@ export const store = {
 const num = (s) => { const v = Number(s); return Number.isFinite(v) ? v : null; };
 const list = (s, n) => { const a = String(s).split(',').map(num); return a.length === n && a.every((v) => v != null) ? a : null; };
 
-// #c=x,z,dist,az,el&h=10.5&p=notre-dame   |   #w=x,z,cap&h=…   |   #in=notre-dame
+// #c=x,z,dist,az,el&h=10.5&p=notre-dame&e=1652   |   #w=x,z,cap&h=…   |   #in=notre-dame      (e : époque du calque temporel)
 export function parseHash(hash) {
   const out = {};
   const h = String(hash || '').replace(/^#/, '');
@@ -21,7 +21,7 @@ export function parseHash(hash) {
     if (k === 'c') { const a = list(v, 5); if (a) out.c = a; }
     else if (k === 'w') { const a = list(v, 3); if (a) out.w = a; }
     else if (k === 'h') { const a = num(v); if (a != null && a >= 4.5 && a <= 22.5) out.h = a; }
-    else if (k === 'p' || k === 'in' || k === 't') { if (/^[a-z0-9-]{1,40}$/.test(v)) out[k] = v; }
+    else if (k === 'p' || k === 'in' || k === 't' || k === 'e') { if (/^[a-z0-9-]{1,40}$/.test(v)) out[k] = v; }
   }
   return out;
 }
@@ -34,5 +34,6 @@ export function makeHash(s) {
   else if (s.c) parts.push('c=' + [f(s.c[0]), f(s.c[1]), f(s.c[2]), f(s.c[3], 2), f(s.c[4], 2)].join(','));
   if (s.h != null) parts.push('h=' + f(s.h, 2));
   if (s.p && !s.in) parts.push('p=' + s.p);
+  if (s.e && !s.in) parts.push('e=' + s.e);
   return '#' + parts.join('&');
 }

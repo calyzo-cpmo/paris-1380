@@ -52,6 +52,15 @@
   </div>
 </section>
 
+<aside id="frise-info" hidden aria-live="polite" aria-label="L’époque choisie">
+  <div class="panel-head"><h2 id="frise-title"></h2><button type="button" id="frise-less" class="x" aria-label="Masquer les détails de l’époque">×</button></div>
+  <p id="frise-text"></p>
+  <ul id="frise-legend"></ul>
+  <p id="frise-stats"></p>
+  <div class="row"><button type="button" id="frise-wide">Vue large</button><button type="button" id="frise-src" class="link">Sources du calque</button></div>
+  <p id="frise-credit"></p>
+</aside>
+
 <section id="inhud" hidden aria-live="polite">
   <p id="in-cat">Visite intérieure</p>
   <h2 id="in-name"></h2>
@@ -111,6 +120,12 @@
     <button type="button" id="tour-stop" class="ghost">Terminer</button>
   </div>
 </div>
+<section id="frise" hidden aria-label="Paris à d’autres époques">
+  <button type="button" id="frise-play" aria-pressed="false" aria-label="Faire défiler les époques" title="Faire défiler les époques"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M2 1v10l9-5z" fill="currentColor"/><path class="ico-pause" d="M2 1h3v10H2zM7 1h3v10H7z" fill="currentColor"/></svg></button>
+  <div id="frise-jalons" class="seg" role="group" aria-label="Choisir une époque"></div>
+  <button type="button" id="frise-more" class="ghost" aria-controls="frise-info" aria-expanded="true">Détails</button>
+  <button type="button" class="x" data-close="frise" aria-label="Revenir à 1380 et fermer la frise">×</button>
+</section>
 <aside id="legend" hidden aria-label="Légende du degré de certitude">
   <div class="panel-head"><h2>Ce que l’on sait</h2><button type="button" class="x" data-close="legend" aria-label="Masquer le calque">×</button></div>
   <ul id="legend-list"></ul>
@@ -138,8 +153,9 @@
       </div>
     </div>
   </div>
+  <button type="button" id="btn-epoch" aria-controls="frise" aria-expanded="false" title="Voir Paris à d’autres époques (touche T)"><span class="long">Époques · </span><b id="epoch-label">1380</b></button>
   <div id="view-wrap">
-    <button type="button" id="btn-view" aria-controls="view-menu" aria-expanded="false">Affichage</button>
+    <button type="button" id="btn-view" aria-controls="view-menu" aria-expanded="false"><span class="long">Affichage</span><span class="short">Vue</span></button>
     <div id="view-menu" hidden>
       <label class="check"><input id="toggle-names" type="checkbox" checked> Noms des lieux</label>
       <label class="check"><input id="toggle-people" type="checkbox" checked> Habitants</label>
@@ -162,6 +178,9 @@
     <div class="panel-head"><h2 id="sources-title">Les représentations de Paris médiéval</h2><button type="button" class="x" data-close="sources" aria-label="Fermer">×</button></div>
     <p class="lede">Aucune vue d’ensemble de Paris n’a été dessinée au Moyen Âge. La maquette croise donc trois familles de documents : les plans restitués par les historiens pour le tracé, les enluminures du XVe siècle pour les élévations, et les premiers plans gravés du XVIe siècle pour le détail.</p>
     <div id="sources-body"></div>
+    <h3 id="sources-alpage-title">Le calque des époques : les couches du SIG ALPAGE</h3>
+    <p class="group-note">La frise « Époques » pose sur la maquette de 1380 les enceintes, les îlots et les établissements religieux d’autres dates. Ces couches sont produites par les chercheurs du projet ALPAGE et diffusées sous licence <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a> ; elles ont été recalées sur la maquette (écart médian de 2 à 3 m). Les volumes clairs des îlots bâtis après 1380 et ceux des édifices sont indicatifs : seule leur emprise au sol vient des données.</p>
+    <ul id="sources-alpage" class="method"></ul>
     <h3 id="method">Ce qui est attesté, ce qui est restitué</h3>
     <ul class="method">
       <li><b>Attesté par le plan de 1380 :</b> le réseau des rues, les îlots bâtis, les cultures, le cours de la Seine et ses îles, le tracé des deux enceintes avec leurs tours et leurs portes, l’emprise au sol des églises, couvents, hôtels, collèges, halles et ponts.</li>
@@ -186,6 +205,7 @@
       <dt>Double-clic</dt><dd>descendre à pied à cet endroit de la maquette</dd>
       <dt>Monuments</dt><dd>cliquer sur un monument, sur son nom ou sur son point ouvre sa fiche et son histoire ; « Entrer à l’intérieur » lance la visite. Dedans : glisser pour regarder autour de soi, cliquer sur le sol pour avancer, Échap pour sortir.</dd>
       <dt>À pied</dt><dd>glisser pour regarder, cliquer sur le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir. Près d’un monument, E permet d’y entrer et F d’ouvrir sa fiche ; V donne le regard à la souris, Échap fait reprendre de la hauteur. Sur écran tactile : pouce gauche pour marcher, pouce droit pour regarder, toucher le sol pour avancer.</dd>
+      <dt>Époques</dt><dd>le bouton « Époques » (touche T) ouvre une frise, de Lutèce à 1836 : chaque date pose sur la maquette les îlots, les enceintes et les établissements religieux de l’époque, d’après les couches du SIG ALPAGE. Les îlots bâtis après 1380 apparaissent en volumes clairs ; pour les dates antérieures, ce qui n’existe pas encore est rendu en pointillé.</dd>
       <dt>Se repérer</dt><dd>le mini-plan montre où l’on est et où l’on regarde : cliquer dessus pour s’y rendre. La boussole (touche N) remet le nord en haut ; « Vue d’ensemble » (touche O) ramène au-dessus de la ville ; la touche / ouvre la recherche d’un lieu.</dd>
     </dl>
     <p class="lede">Le curseur du bas change l’heure : au crépuscule, les fenêtres s’allument et les rues se vident. Les habitants apparaissent dès que l’on s’approche des rues ; le menu « Affichage » les masque, et colore la maquette selon son degré de certitude.</p>

@@ -225,19 +225,27 @@ export function makeStreetMask(lu) {
   return t;
 }
 
-export function makeGroundMaterial(map, detail, street, near) {
+export function makeGroundMaterial(map, detail, street, near, epoch) {
   const m = new THREE.MeshStandardMaterial({ map, roughness: 1, metalness: 0 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uDetail = { value: detail };
     if (street) { sh.uniforms.uMask = { value: street.mask }; sh.uniforms.uCobble = { value: street.cobble }; }
     if (near) { sh.uniforms.uNear = { value: near }; sh.uniforms.uNearHalf = { value: NEAR }; }
+    if (epoch) Object.assign(sh.uniforms, epoch);            // calque temporel : dessin d'une autre époque posé sur le sol
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWxz = (modelMatrix * vec4(position, 1.0)).xz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail;' + (street ? '\nuniform sampler2D uMask;\nuniform sampler2D uCobble;' : '') + (near ? '\nuniform sampler2D uNear;\nuniform float uNearHalf;' : ''))
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail;' + (street ? '\nuniform sampler2D uMask;\nuniform sampler2D uCobble;' : '') + (near ? '\nuniform sampler2D uNear;\nuniform float uNearHalf;' : '')
+      + (epoch ? '\nuniform float uEpochOn; uniform sampler2D uEpochCityMap; uniform sampler2D uEpochWideMap; uniform vec4 uEpochCity; uniform vec4 uEpochWide;' : ''))
       .replace('#include <map_fragment>', '#include <map_fragment>\n'
         + (near ? 'vec3 nearCol = texture2D(uNear, vec2(vWxz.x / (2.0 * uNearHalf) + 0.5, 0.5 - vWxz.y / (2.0 * uNearHalf))).rgb;\ndiffuseColor.rgb = mix(nearCol, diffuseColor.rgb, smoothstep(uNearHalf * 0.84, uNearHalf * 0.98, max(abs(vWxz.x), abs(vWxz.y))));\n' : '')
         + 'float dA = texture2D(uDetail, vWxz * 0.21).r; float dB = texture2D(uDetail, vWxz * 0.023).r;\ndiffuseColor.rgb *= (0.62 + 0.5 * dA) * (0.8 + 0.34 * dB);'
-        + (street ? '\nfloat stM = texture2D(uMask, vMapUv).r; vec3 cob = texture2D(uCobble, vWxz * 0.4).rgb;\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.5 + cob * 1.15), smoothstep(0.1, 0.9, stM) * 0.85);' : ''));
+        + (street ? '\nfloat stM = texture2D(uMask, vMapUv).r; vec3 cob = texture2D(uCobble, vWxz * 0.4).rgb;\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.5 + cob * 1.15), smoothstep(0.1, 0.9, stM) * 0.85);' : '')
+        + (epoch ? `
+        vec2 epC = (vWxz - uEpochCity.xy) / uEpochCity.zw, epW = (vWxz - uEpochWide.xy) / uEpochWide.zw;
+        vec4 epCc = texture2D(uEpochCityMap, vec2(epC.x, 1.0 - epC.y)), epWc = texture2D(uEpochWideMap, vec2(epW.x, 1.0 - epW.y));
+        float epInC = step(0.0, epC.x) * step(epC.x, 1.0) * step(0.0, epC.y) * step(epC.y, 1.0), epInW = step(0.0, epW.x) * step(epW.x, 1.0) * step(0.0, epW.y) * step(epW.y, 1.0);
+        vec4 epCol = mix(epWc * epInW, epCc, epInC);
+        diffuseColor.rgb = mix(diffuseColor.rgb, epCol.rgb, epCol.a * uEpochOn);` : ''));
   };
-  m.customProgramCacheKey = () => (street ? 'ground-street' : near ? 'ground-near' : 'ground');
+  m.customProgramCacheKey = () => (street ? 'ground-street' : near ? 'ground-near' : 'ground') + (epoch ? '-epoch' : '');
   return m;
 }

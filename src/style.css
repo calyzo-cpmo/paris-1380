@@ -99,7 +99,7 @@ button.primary:hover { filter: brightness(1.08); }
 .check input { accent-color: var(--gold); }
 
 /* ---------- panneaux */
-#card, #places, #tour, #prompt, #legend, #hint, #inhud { background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
+#card, #places, #tour, #prompt, #legend, #frise, #hint, #inhud { background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
 #card { position: fixed; left: var(--gutter-l); top: calc(84px + env(safe-area-inset-top, 0px)); width: min(360px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 16px); overflow: auto; padding: 14px 16px 16px; z-index: 5; }
 #card .x { position: absolute; right: 4px; top: 4px; }
 #card-grip { display: none; }
@@ -177,6 +177,33 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #prompt button { padding: 4px 11px; }
 #prompt kbd, #hint kbd { font: inherit; font-size: 0.86em; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; opacity: 0.85; }
 #hint { align-self: center; max-width: 100%; padding: 7px 14px; font-size: 14px; color: var(--ink); border-top-width: 1px; border-radius: 999px; text-align: center; }
+#btn-epoch b { font-family: var(--serif); font-variant-numeric: tabular-nums; color: var(--gold); }
+#btn-epoch[aria-expanded="true"] b { color: #1b1606; }
+#frise { display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 10px; }
+#frise-play { flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 50%; }
+#frise-play .ico-pause, #frise-play[aria-pressed="true"] .ico-play { display: none; }
+#frise-play[aria-pressed="true"] .ico-pause { display: inline; }
+#frise-jalons { flex: 1; min-width: 0; }
+#frise-jalons button { flex: 1 1 0; min-width: 0; padding: 5px 2px; font-family: var(--serif); font-size: 14.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#frise-jalons button.base:not([aria-pressed="true"]) { color: var(--gold); }
+#frise-more { flex: none; padding: 5px 10px; }
+#frise-info { position: fixed; left: var(--gutter-l); top: calc(84px + env(safe-area-inset-top, 0px)); width: min(330px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 76px); overflow: auto; padding: 12px 14px 12px; z-index: 4; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
+#card:not([hidden]) ~ #frise-info { display: none; }
+#frise-info .panel-head h2 { font-family: var(--serif); font-size: 21px; }
+#frise-text { font-family: var(--serif); font-size: 15.5px; line-height: 1.45; margin: 6px 0 9px; }
+#frise-legend { list-style: none; padding: 0; display: grid; gap: 3px; margin: 0 0 9px; }
+#frise-legend li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+#frise-legend i { flex: none; width: 14px; height: 11px; border-radius: 2px; background: var(--c); }
+#frise-legend i.o { background: none; border: 1.5px dashed var(--c); }
+#frise-legend i.l { height: 3px; border-radius: 0; }
+#frise-legend i.d { height: 0; border-top: 2px dashed var(--c); background: none; border-radius: 0; }
+#frise-legend i.p { width: 10px; height: 10px; margin: 0 2px; border-radius: 50%; }
+#frise-legend i.s { background: repeating-conic-gradient(var(--c) 0 25%, transparent 0 50%) 0 0 / 4px 4px; }
+#frise-stats { font-size: 13.5px; line-height: 1.5; margin-bottom: 9px; }
+#frise-stats b { color: var(--gold); font-weight: 500; }
+#frise-info .row button:not(.link) { padding: 5px 11px; }
+#frise-credit { margin-top: 9px; font-size: 11.5px; line-height: 1.4; color: var(--ink-2); }
+body.walking #frise-info { max-height: calc(100% - 84px - var(--dock-h) - 130px); }
 #legend { padding: 9px 14px 10px; }
 #legend .panel-head h2 { font-size: 12px; font-family: var(--sans); font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); }
 #legend-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0 6px; }
@@ -245,7 +272,7 @@ body:not(.ready) :is(#top, #dock, #nav, #stack, #labels, #card, #places, #walkhu
 #in-spots { margin: 12px 0 10px; }
 #in-spots button { padding: 4px 10px; font-size: 13.5px; }
 #inhud.less #in-body { display: none; }
-body.inside :is(#top, #labels, #card, #places, #nav, #stack, #walkhud, #dock .seg, #view-wrap) { display: none; }
+body.inside :is(#top, #labels, #card, #places, #nav, #stack, #walkhud, #dock .seg, #view-wrap, #btn-epoch) { display: none; }
 body.inside #scene canvas { cursor: grab; }
 body.inside #scene canvas:active { cursor: grabbing; }
 
@@ -302,6 +329,12 @@ body.walking #scene canvas:active { cursor: grabbing; }
   #nav { top: calc(52px + env(safe-area-inset-top, 0px)); }
   #btn-home { padding: 6px 9px; font-size: 13px; }
   #compass { width: 36px; height: 36px; }
+  #frise { gap: 5px; padding: 6px; }
+  #frise-jalons { overflow-x: auto; scrollbar-width: none; }
+  #frise-jalons button { flex: 0 0 auto; font-size: 13px; padding: 6px 9px; }
+  #frise-more { padding: 5px 7px; font-size: 13px; }
+  #frise-info { left: 0; right: 0; top: auto; bottom: calc(var(--dock-h) + 62px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 44%; border-left: 0; border-right: 0; padding: 10px 14px; }
+  #frise-text { font-size: 14.5px; }
   #tour { padding: 8px 12px 10px; }
   #tour-text { font-size: 15px; margin-bottom: 8px; }
   #tour-place { font-size: 17px; }

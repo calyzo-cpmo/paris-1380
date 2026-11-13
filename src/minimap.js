@@ -11,9 +11,12 @@ const MONUMENT = [240, 200, 96], NOTABLE = [232, 220, 190];
 
 export class MiniMap {
   constructor(app, canvas) {
-    this.app = app; this.cv = canvas; this.ctx = canvas.getContext('2d');
+    // Mini-plan dessiné en mémoire vive, comme ses sources (fond de 1380, toiles du calque d'époque) : recopier de
+    // grandes toiles vers une toile accélérée oblige à les renvoyer à la carte graphique à chaque changement d'époque.
+    this.app = app; this.cv = canvas; this.ctx = canvas.getContext('2d', { willReadFrequently: true });
     this.base = this.paintBase();
-    this.zoom = { orbit: 'city', walk: 'local' };       // échelle retenue pour chaque mode
+    this.zoom = { orbit: 'city', walk: 'local' };       // échelle retenue pour chaque mode : 'city', 'local' ou 'wide' (agglomération, avec le calque d'époque)
+    this.epoch = null;                                  // calque d'époque : { id, city, wide, rectCity, rectWide }
     this.route = null; this.routeIdx = -1; this.selected = null; this.sig = '';
     this.onGo = null;                                   // (x, z, drag) : demande de déplacement
     this.view = { x0: FRAME.x0, z0: FRAME.z0, k: 1 };
@@ -29,7 +32,7 @@ export class MiniMap {
   paintBase() {
     const app = this.app, lu = app.lu, S = 2, w = Math.ceil(lu.w / S), h = Math.ceil(lu.h / S);
     const c = document.createElement('canvas'); c.width = w; c.height = h;
-    const ctx = c.getContext('2d'), im = ctx.createImageData(w, h), d = im.data, cert = app.cert && app.cert.map, cw = cert ? app.cert.W : 0;
+    const ctx = c.getContext('2d', { willReadFrequently: true }), im = ctx.createImageData(w, h), d = im.data, cert = app.cert && app.cert.map, cw = cert ? app.cert.W : 0;
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
       const v = lu.get(lu.x0 + (i + 0.5) * S, lu.z0 + (j + 0.5) * S), cl = cert && i < cw ? cert[j * cw + i] : 0;
       let col = PAL[v] || PAL[LU.OPEN];
@@ -41,29 +44,44 @@ export class MiniMap {
   }
 
   mode() { const rig = this.app.rig; return rig.mode === 'walk' ? 'walk' : 'orbit'; }
-  toggleZoom() { const m = this.mode(); this.zoom[m] = this.zoom[m] === 'city' ? 'local' : 'city'; this.sig = ''; return this.zoom[m]; }
+  toggleZoom() { const m = this.mode(), order = this.epoch ? ['city', 'wide', 'local'] : ['city', 'local']; this.zoom[m] = order[(order.indexOf(this.zoom[m]) + 1) % order.length]; this.sig = ''; return this.zoom[m]; }
+  setEpoch(e, wide) { this.epoch = e; const m = this.mode(); if (!e && this.zoom[m] === 'wide') this.zoom[m] = 'city'; else if (e && wide && m === 'orbit') this.zoom.orbit = 'wide'; else if (e && !wide && this.zoom.orbit === 'wide') this.zoom.orbit = 'city'; this.sig = ''; }
 
   draw() {
     const app = this.app, rig = app.rig, cv = this.cv, ctx = this.ctx, cw = cv.clientWidth, ch = cv.clientHeight;
     if (!cw || !ch) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(cw * dpr), H = Math.round(ch * dpr);
-    const walking = this.mode() === 'walk', local = this.zoom[walking ? 'walk' : 'orbit'] === 'local';
+    const walking = this.mode() === 'walk', zoom = this.zoom[walking ? 'walk' : 'orbit'], local = zoom === 'local', wideView = zoom === 'wide' && !!this.epoch;
     const px = walking ? rig.walk.x : rig.cur.x, pz = walking ? rig.walk.z : rig.cur.z, head = walking ? rig.walk.yaw : rig.cur.az;
     const cam = app.camera.position, sel = this.selected;
-    const sig = [W, H, local, walking, px.toFixed(0), pz.toFixed(0), head.toFixed(2), cam.x.toFixed(0), cam.z.toFixed(0), sel ? sel.id : '', this.routeIdx, this.route ? this.route.length : 0, this.seenCount || 0].join('|');
+    const sig = [W, H, local, walking, px.toFixed(0), pz.toFixed(0), head.toFixed(2), cam.x.toFixed(0), cam.z.toFixed(0), sel ? sel.id : '', this.routeIdx, this.route ? this.route.length : 0, this.seenCount || 0, wideView, this.epoch ? this.epoch.id : ''].join('|');
     if (sig === this.sig) return;
     this.sig = sig;
     if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
     const FW = FRAME.x1 - FRAME.x0, FH = FRAME.z1 - FRAME.z0;
     let k, x0, z0;
     if (local) { const vw = walking ? 460 : clamp(rig.cur.dist * 2.2, 460, 1500); k = cw / vw; x0 = px - vw / 2; z0 = pz - ch / k / 2; }
+    else if (wideView) { const R = this.epoch.rectWide; k = Math.min(cw / R.w, ch / R.h) * 1.12; x0 = R.x + R.w / 2 - cw / k / 2; z0 = R.z + R.h / 2 - ch / k / 2; }
     else { k = Math.min(cw / FW, ch / FH); x0 = FRAME.x0 - (cw / k - FW) / 2; z0 = FRAME.z0 - (ch / k - FH) / 2; }
     this.view = { x0, z0, k };
     const X = (x) => (x - x0) * k, Y = (z) => (z - z0) * k;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = 'rgb(24,36,76)'; ctx.fillRect(0, 0, cw, ch);
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    if (this.epoch) ctx.globalAlpha = 0.5;                  // sous un calque d'époque, le plan de 1380 passe au second plan
     ctx.drawImage(this.base, X(FRAME.x0), Y(FRAME.z0), FW * k, FH * k);
+    ctx.globalAlpha = 1;
+    if (this.epoch) {
+      const e = this.epoch, img = (c, R) => ctx.drawImage(c, X(R.x), Y(R.z), R.w * k, R.h * k);
+      img(e.wide, e.rectWide);                                // l'agglomération ; au centre, la toile fine la remplace
+      if (wideView) { ctx.strokeStyle = 'rgba(244,236,216,0.8)'; ctx.lineWidth = 1; ctx.strokeRect(X(FRAME.x0), Y(FRAME.z0), FW * k, FH * k); }
+      else {
+        ctx.save(); ctx.beginPath(); ctx.rect(X(e.rectCity.x), Y(e.rectCity.z), e.rectCity.w * k, e.rectCity.h * k); ctx.clip();
+        ctx.fillStyle = 'rgb(24,36,76)'; ctx.fillRect(0, 0, cw, ch);
+        ctx.globalAlpha = 0.5; ctx.drawImage(this.base, X(FRAME.x0), Y(FRAME.z0), FW * k, FH * k); ctx.globalAlpha = 1;
+        img(e.city, e.rectCity); ctx.restore();
+      }
+    }
     // parcours en cours
     if (this.route && this.route.length > 1) {
       ctx.strokeStyle = 'rgba(244,236,216,0.75)'; ctx.lineWidth = 1.2; ctx.setLineDash([3, 3]); ctx.beginPath();

@@ -20,7 +20,9 @@ export class Certainty {
     this.cls = new Uint8Array(s.w * s.h); this.prev = new Uint8Array(s.w * s.h);
     this.on = false;
     const col = (k) => ({ value: new THREE.Color(CERT[k].css) });
-    this.uniforms = { uCert: { value: 0 }, uCertMap: { value: null }, uCertFrame: { value: new THREE.Vector4(s.x0, s.z0, s.w, s.h) }, uCertC2: col(2), uCertC3: col(3), uCertC4: col(4), uCertC5: col(5) };
+    const blank = new THREE.DataTexture(new Uint8Array(4), 1, 1); blank.needsUpdate = true;
+    // uEpochMode, uEpochMask : calque temporel (src/epochs.js). 1 : le bâti hors des îlots de l'époque est rendu en pointillé ; 2 : tout le bâti.
+    this.uniforms = { uEpochMode: { value: 0 }, uEpochMask: { value: blank }, uCert: { value: 0 }, uCertMap: { value: null }, uCertFrame: { value: new THREE.Vector4(s.x0, s.z0, s.w, s.h) }, uCertC2: col(2), uCertC3: col(3), uCertC4: col(4), uCertC5: col(5) };
   }
 
   // À appeler après chaque étape de construction : les cellules devenues pleines depuis l'appel précédent reçoivent la classe c (0 : aucune).
@@ -66,10 +68,20 @@ export class Certainty {
       if (!fixed) sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vCertXZ;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvCertXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
       sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
         uniform float uCert; uniform sampler2D uCertMap; uniform vec4 uCertFrame; uniform vec3 uCertC2; uniform vec3 uCertC3; uniform vec3 uCertC4; uniform vec3 uCertC5;
+        uniform float uEpochMode; uniform sampler2D uEpochMask;
         ${fixed ? '' : 'varying vec2 vCertXZ;'}`).replace('#include <opaque_fragment>', `#include <opaque_fragment>
+        ${fixed ? '' : `vec2 cuv = (vCertXZ - uCertFrame.xy) / uCertFrame.zw;
+        bool cin = cuv.x >= 0.0 && cuv.x <= 1.0 && cuv.y >= 0.0 && cuv.y <= 1.0;
+        if (uEpochMode > 0.5) {
+          float keep = (uEpochMode < 1.5 && cin) ? texture2D(uEpochMask, vec2(cuv.x, 1.0 - cuv.y)).r : 0.0;
+          if (keep < 0.5) {
+            vec2 fc = floor(gl_FragCoord.xy);
+            if (uEpochMode > 1.5 ? (mod(fc.x, 2.0) + mod(fc.y, 2.0) > 0.5) : (mod(fc.x + fc.y, 2.0) > 0.5)) discard;
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(dot(gl_FragColor.rgb, vec3(0.3, 0.59, 0.11))) * vec3(0.82, 0.92, 1.12), 0.75);
+          }
+        }`}
         if (uCert > 0.001) {
-          ${fixed ? `float cc = ${fixed.toFixed(1)};` : `vec2 cuv = (vCertXZ - uCertFrame.xy) / uCertFrame.zw;
-          float cc = (cuv.x < 0.0 || cuv.x > 1.0 || cuv.y < 0.0 || cuv.y > 1.0) ? 5.0 : floor(texture2D(uCertMap, cuv).r * 6.375 + 0.5);`}
+          ${fixed ? `float cc = ${fixed.toFixed(1)};` : `float cc = cin ? floor(texture2D(uCertMap, cuv).r * 6.375 + 0.5) : 5.0;`}
           if (cc > 1.5) {
             vec3 ct = cc < 2.5 ? uCertC2 : cc < 3.5 ? uCertC3 : cc < 4.5 ? uCertC4 : uCertC5;
             float cl = dot(gl_FragColor.rgb, vec3(0.3, 0.59, 0.11));
