@@ -2,13 +2,26 @@
 import * as THREE from 'three';
 import { FRAME, layer, polys, EXTRA_ROAD } from './data.js';
 import { LU } from './raster.js';
-import { WORLD } from './terrain.js';
-import { hash2, offsetEx, mulberry32 } from './geom.js';
+import { WORLD, RIVERS } from './terrain.js';
+import { offsetEx, mulberry32 } from './geom.js';
+import { VILLAGES, ROADS, BIEVRE, BLOCK, block, hedged, pathed, landKind, woodBlobs, orchardTrees, villageLanes } from './country.js';
+
+export const NEAR = 3600;   // demi-côté de la campagne proche, peinte finement (m)
 
 const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const STREET = [124, 112, 94];
-const FIELDS = [[176, 160, 104], [112, 134, 74], [94, 120, 66], [134, 116, 84], [190, 176, 120], [102, 122, 70], [150, 142, 92], [120, 128, 80]];
-const GARDENS = [[92, 118, 62], [110, 126, 72], [128, 114, 82], [84, 108, 58], [140, 132, 90], [100, 124, 70]];
+const rgb3 = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+// Teintes d'un mois de mai : blés d'hiver verts, mars plus clairs ou encore en terre, jachères pâturées, prés, vignes, maraîchers, clos.
+const KIND = {
+  ble: [[100, 128, 64], [110, 136, 68], [120, 138, 72]],
+  mars: [[134, 146, 86], [144, 150, 94], [126, 140, 80]],
+  jachere: [[136, 128, 92], [124, 126, 86], [144, 134, 98]],
+  pre: [[92, 132, 66], [102, 140, 70], [86, 124, 62]],
+  vigne: [[126, 128, 84], [118, 124, 80]],
+  marais: [[84, 112, 62], [98, 94, 68], [76, 106, 58], [112, 104, 76]],
+  clos: [[106, 128, 70], [130, 124, 88], [94, 120, 64], [140, 134, 96]],
+  verger: [[102, 130, 68], [96, 126, 64]],
+};
 
 function path(ctx, pts, T) {
   ctx.moveTo(T.x(pts[0][0]), T.y(pts[0][1]));
@@ -20,41 +33,51 @@ function fillPolys(ctx, list, T, style) {
   for (const p of list) path(ctx, p.pts || p, T);
   ctx.fill();
 }
+function strokeLine(ctx, pts, T, style, width) {
+  ctx.strokeStyle = style; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(T.x(pts[0][0]), T.y(pts[0][1])); for (const p of pts) ctx.lineTo(T.x(p[0]), T.y(p[1])); ctx.stroke();
+}
 
-// Parcellaire agricole : grille de pas S dont les nœuds sont décalés aléatoirement.
-function drawParcels(ctx, T, x0, z0, x1, z1, S, palette, furrows) {
-  const node = (i, j) => [i * S + (hash2(i * 3 + 1, j * 7 + 2) - 0.5) * S * 0.7, j * S + (hash2(i * 5 + 9, j * 3 + 4) - 0.5) * S * 0.7];
-  const i0 = Math.floor(x0 / S) - 1, i1 = Math.ceil(x1 / S) + 1, j0 = Math.floor(z0 / S) - 1, j1 = Math.ceil(z1 / S) + 1;
+// Parcellaire : chaque quartier de culture reçoit sa nature (blé, mars, jachère, pré, vigne, marais, clos, verger) puis ses lanières.
+// Le dessin ne dépend que des coordonnées du monde : les textures du plan, de la campagne proche et du lointain se raccordent.
+export function paintFields(ctx, T, x0, z0, x1, z1, terrain) {
+  const k = T.s, R = BLOCK * 1.25, fine = k > 0.35, furrows = k >= 1;
+  const i0 = Math.floor(x0 / BLOCK) - 1, i1 = Math.ceil(x1 / BLOCK) + 1, j0 = Math.floor(z0 / BLOCK) - 1, j1 = Math.ceil(z1 / BLOCK) + 1;
   for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
-    const a = node(i, j), b = node(i + 1, j), c = node(i + 1, j + 1), d = node(i, j + 1);
-    const col = palette[Math.floor(hash2(i * 11 + 5, j * 13 + 7) * palette.length)];
-    const k = 0.94 + hash2(i + 77, j + 31) * 0.12, m = 0.58;   // on rapproche chaque parcelle d'un vert moyen
-    ctx.fillStyle = rgb([(col[0] * (1 - m) + 124 * m) * k | 0, (col[1] * (1 - m) + 128 * m) * k | 0, (col[2] * (1 - m) + 86 * m) * k | 0]);
-    ctx.beginPath(); path(ctx, [a, b, c, d], T); ctx.fill();
-    if (furrows) {
-      // sillons : hachures parallèles à un côté, découpées sur la parcelle (quadrilatère convexe)
-      const ang = Math.atan2(b[1] - a[1], b[0] - a[0]) + (hash2(i, j) > 0.5 ? Math.PI / 2 : 0);
-      const cx = (a[0] + b[0] + c[0] + d[0]) / 4, cz = (a[1] + b[1] + c[1] + d[1]) / 4, dx = Math.cos(ang), dz = Math.sin(ang);
-      const q = [a, b, c, d];
-      ctx.strokeStyle = 'rgba(40,34,20,0.16)'; ctx.lineWidth = Math.max(1, T.s * 0.9);
-      ctx.beginPath();
-      for (let t = -S; t <= S; t += 3.2) {
-        const ox = cx - dz * t, oz = cz + dx * t;
-        let t0 = -S * 1.5, t1 = S * 1.5, ok = true;
-        for (let e = 0; e < 4 && ok; e++) {
-          const p = q[e], r = q[(e + 1) % 4];
-          const nx = -(r[1] - p[1]), nz = r[0] - p[0];             // normale intérieure (sens horaire écran)
-          const den = dx * nx + dz * nz, num = (p[0] - ox) * nx + (p[1] - oz) * nz;
-          if (Math.abs(den) < 1e-9) { if (num > 0) ok = false; continue; }
-          const tt = num / den;
-          if (den > 0) { if (tt > t0) t0 = tt; } else if (tt < t1) t1 = tt;
-        }
-        if (ok && t1 > t0) { ctx.moveTo(T.x(ox + dx * t0), T.y(oz + dz * t0)); ctx.lineTo(T.x(ox + dx * t1), T.y(oz + dz * t1)); }
+    const q = block(i, j), kind = landKind(terrain, q.cx, q.cz, q.h), pal = KIND[kind], r = mulberry32(q.seed), r2 = mulberry32(q.seed ^ 0x9e3779b9);
+    ctx.save(); ctx.beginPath(); path(ctx, q.pts, T); ctx.clip();
+    ctx.fillStyle = rgb3(pal[0]); ctx.fill();
+    ctx.translate(T.x(q.cx), T.y(q.cz)); ctx.rotate(q.ang);
+    if (kind === 'pre') {
+      for (let n = 0; n < 5; n++) { ctx.fillStyle = rgb3(pal[(r() * pal.length) | 0], 0.55); ctx.beginPath(); ctx.ellipse((r() - 0.5) * R * k, (r() - 0.5) * R * k, (30 + r() * 55) * k, (20 + r() * 40) * k, r() * 3, 0, 6.3); ctx.fill(); }
+    } else {
+      const [w0, w1] = kind === 'marais' ? [7, 13] : kind === 'clos' ? [9, 19] : kind === 'vigne' ? [18, 34] : kind === 'verger' ? [45, 90] : [11, 30];
+      for (let t = -R; t < R;) {
+        const w = w0 + r() * (w1 - w0), c = pal[(r() * pal.length) | 0], v = 0.9 + r() * 0.2, q2 = r();
+        let col = [c[0] * v, c[1] * v, c[2] * v];
+        if (kind === 'mars' && q2 < 0.24) col = [150 * v, 134 * v, 102 * v];          // lanière encore en terre
+        else if (kind === 'ble' && q2 < 0.1) col = [142 * v, 150 * v, 90 * v];
+        ctx.fillStyle = rgb3(col); ctx.fillRect(-R * k, t * k, 2 * R * k, w * k + 0.6);
+        if (fine) { ctx.fillStyle = 'rgba(36,40,22,0.17)'; ctx.fillRect(-R * k, t * k, 2 * R * k, Math.max(0.8, 0.9 * k)); }
+        t += w;
       }
-      ctx.stroke();
+      if (fine && kind === 'vigne') { ctx.fillStyle = 'rgba(54,78,42,0.5)'; for (let t = -R; t < R; t += 4.6) ctx.fillRect(-R * k, t * k, 2 * R * k, Math.max(0.9, 1.7 * k)); }       // rangs de ceps
+      if (fine && kind === 'marais') { ctx.fillStyle = 'rgba(150,138,108,0.42)'; for (let t = -R + r2() * 30; t < R; t += 26 + r2() * 22) ctx.fillRect(t * k, -R * k, Math.max(0.9, 1.6 * k), 2 * R * k); }   // sentes entre les planches
+      if (furrows && (kind === 'ble' || kind === 'mars' || kind === 'jachere')) { ctx.fillStyle = 'rgba(40,34,20,0.09)'; for (let t = -R; t < R; t += 3.2) ctx.fillRect(-R * k, t * k, 2 * R * k, 1); }
     }
-    ctx.strokeStyle = 'rgba(52,62,34,0.2)'; ctx.lineWidth = Math.max(0.8, T.s * 1.2);
-    ctx.beginPath(); path(ctx, [a, b, c, d], T); ctx.stroke();
+    ctx.restore();
+    if (kind === 'verger' && fine) { ctx.fillStyle = 'rgba(52,84,40,0.7)'; ctx.beginPath(); for (const [x, z] of orchardTrees(q)) { ctx.moveTo(T.x(x) + 3.4 * k, T.y(z)); ctx.arc(T.x(x), T.y(z), Math.max(1, 3.4 * k), 0, 6.3); } ctx.fill(); }
+  }
+  // limites des quartiers : haies vives, sentiers d'exploitation, ou simple trait
+  const edge = (a, b, style, wd) => { ctx.strokeStyle = style; ctx.lineWidth = wd; ctx.beginPath(); ctx.moveTo(T.x(a[0]), T.y(a[1])); ctx.lineTo(T.x(b[0]), T.y(b[1])); ctx.stroke(); };
+  ctx.lineCap = 'round';
+  for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
+    const q = block(i, j).pts;
+    for (const [side, a, b] of [[0, q[0], q[1]], [1, q[0], q[3]]]) {
+      if (hedged(i, j, side)) edge(a, b, 'rgba(58,88,44,0.8)', Math.max(1, 4.6 * k));
+      else if (pathed(i, j, side)) edge(a, b, 'rgba(160,146,114,0.7)', Math.max(0.8, 2.6 * k));
+      else edge(a, b, 'rgba(52,62,34,0.2)', Math.max(0.7, 1.1 * k));
+    }
   }
 }
 
@@ -66,7 +89,7 @@ function noiseOverlay(ctx, w, h, alpha, seed) {
   ctx.save(); ctx.globalAlpha = alpha; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = ctx.createPattern(n, 'repeat'); ctx.fillRect(0, 0, w, h); ctx.restore();
 }
 
-export function paintCoreGround(maxSize) {
+export function paintCoreGround(maxSize, terrain) {
   const fw = FRAME.x1 - FRAME.x0, fh = FRAME.z1 - FRAME.z0;
   const H = Math.min(4096, maxSize), W = Math.round(H * fw / fh);
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -82,7 +105,7 @@ export function paintCoreGround(maxSize) {
   // Cultures et prés (non bâti, îles, zones hors plan) : parcellaire dessiné à part puis reporté dans les emprises
   const pc = document.createElement('canvas'); pc.width = W; pc.height = H;
   const pctx = pc.getContext('2d', { willReadFrequently: true });
-  drawParcels(pctx, T, FRAME.x0, FRAME.z0, FRAME.x1, FRAME.z1, 46, [...FIELDS, ...GARDENS], true);
+  paintFields(pctx, T, FRAME.x0, FRAME.z0, FRAME.x1, FRAME.z1, terrain);
   const pat = ctx.createPattern(pc, 'no-repeat');
   for (const group of [polys('NonBati', '#E6E6E6'), polys('Cadre', '#E6E6E6'), polys('Berges', '#E6E6E6')]) for (const p of group) { ctx.fillStyle = pat; ctx.beginPath(); path(ctx, p.pts, T); ctx.fill(); }
   pc.width = pc.height = 1;
@@ -120,49 +143,38 @@ export function paintCoreGround(maxSize) {
   return tex;
 }
 
-// Campagne : parcellaire, bois et chemins rayonnant depuis les portes.
-export function paintOuterGround(terrain) {
-  const N = 2048, cv = document.createElement('canvas'); cv.width = cv.height = N;
+// Campagne : parcellaire, bois, chemins rayonnant depuis les portes, ruisseau, abords des villages.
+function paintCountry(N, half, terrain, near) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = N;
   const ctx = cv.getContext('2d', { willReadFrequently: true });
-  const s = N / (2 * WORLD);
-  const T = { s, x: (x) => (x + WORLD) * s, y: (z) => (z + WORLD) * s };
+  const s = N / (2 * half);
+  const T = { s, x: (x) => (x + half) * s, y: (z) => (z + half) * s };
   ctx.fillStyle = rgb([118, 132, 80]); ctx.fillRect(0, 0, N, N);
-  drawParcels(ctx, T, -WORLD, -WORLD, WORLD, WORLD, 120, FIELDS, false);
-  // bois
-  const woods = [[6200, 1700, 1700, 60], [-7400, -1300, 1500, 50], [-5200, 5200, 1700, 50], [3800, -6200, 1300, 36], [-2500, -7200, 1100, 30], [7600, -3500, 1500, 40], [600, 7200, 1500, 40], [-7800, 3200, 1200, 30], [2600, -2600, 500, 16], [-500, -3850, 260, 14]];
-  const r = mulberry32(99);
-  for (const [cx, cz, rad, n] of woods) {
-    for (let c = 0; c < n; c++) {
-      // chaque bois est un chapelet de bosquets
-      let x = cx + (r() - 0.5) * rad * 1.6, z = cz + (r() - 0.5) * rad * 1.6;
-      const m = 6 + (r() * 14 | 0);
-      for (let i = 0; i < m; i++) {
-        x += (r() - 0.5) * 260; z += (r() - 0.5) * 260;
-        ctx.fillStyle = rgb([58 + r() * 18 | 0, 84 + r() * 20 | 0, 48 + r() * 12 | 0], 0.8);
-        ctx.beginPath(); ctx.ellipse(T.x(x), T.y(z), (50 + r() * 120) * s, (40 + r() * 90) * s, r() * 3.1, 0, 6.3); ctx.fill();
-      }
-    }
+  paintFields(ctx, T, -half, -half, half, half, terrain);
+  // prés humides le long de la Bièvre, puis son filet d'eau
+  strokeLine(ctx, BIEVRE, T, 'rgba(92,134,66,0.45)', Math.max(2, 70 * s));
+  strokeLine(ctx, BIEVRE, T, rgb([86, 110, 112], 0.95), Math.max(1, 6 * s));
+  // sous-bois
+  for (const b of woodBlobs()) {
+    if (Math.abs(b.x) > half + 200 || Math.abs(b.z) > half + 200) continue;
+    ctx.fillStyle = rgb([58 + b.tone * 14 | 0, 84 + b.tone * 16 | 0, 48 + b.tone * 10 | 0], 0.86);
+    ctx.beginPath(); ctx.ellipse(T.x(b.x), T.y(b.z), (b.rx + 14) * s, (b.rz + 14) * s, b.rot, 0, 6.3); ctx.fill();
   }
-  // chemins
-  const roads = [[[-30, -2030], [-150, -3400], [100, -5200], [250, -9000]], [[390, -2030], [900, -3600], [2100, -5600], [3600, -9000]], [[1000, -1560], [2100, -2300], [4200, -3200], [9000, -4600]],
-    [[1347, -60], [2600, 150], [5200, 500], [9000, 900]], [[-1408, -1250], [-2700, -1700], [-5200, -2600], [-9000, -3600]], [[-480, -2030], [-520, -3300], [-700, -5200], [-1500, -9000]],
-    [[-700, 1463], [-900, 2800], [-1300, 5200], [-1700, 9000]], [[-80, 1463], [150, 2600], [700, 5200], [1300, 9000]], [[-1408, 200], [-2600, 900], [-5200, 2600], [-9000, 4300]], [[600, 1463], [1300, 2700], [2700, 5300], [4300, 9000]],
-    [[-1408, -300], [-3000, -350], [-5600, -1100], [-9000, -1500]]];
-  ctx.strokeStyle = rgb([150, 134, 104], 0.9); ctx.lineWidth = 1.6; ctx.lineJoin = 'round';
-  for (const rd of roads) { ctx.beginPath(); ctx.moveTo(T.x(rd[0][0]), T.y(rd[0][1])); for (const p of rd) ctx.lineTo(T.x(p[0]), T.y(p[1])); ctx.stroke(); }
-  // lit des rivières
-  const im = ctx.getImageData(0, 0, N, N), d = im.data;
-  for (let j = 0; j < N; j += 1) for (let i = 0; i < N; i += 1) {
-    const x = (i + 0.5) / s - WORLD, z = (j + 0.5) / s - WORLD;
-    if (x > FRAME.x0 && x < FRAME.x1 && z > FRAME.z0 && z < FRAME.z1) continue;
-    const sd = terrain.sdWater(x, z);
-    if (sd > -30) { const k = (j * N + i) * 4, t = Math.min(1, (sd + 30) / 30); d[k] = d[k] * (1 - t) + 150 * t; d[k + 1] = d[k + 1] * (1 - t) + 140 * t; d[k + 2] = d[k + 2] * (1 - t) + 104 * t; }
-  }
-  ctx.putImageData(im, 0, 0);
-  noiseOverlay(ctx, N, N, 0.3, 21);
+  // terre battue des villages
+  for (const v of VILLAGES) { const g = ctx.createRadialGradient(T.x(v[1]), T.y(v[2]), 0, T.x(v[1]), T.y(v[2]), (v[4] * 5.5 + 40) * s); g.addColorStop(0, 'rgba(146,134,106,0.75)'); g.addColorStop(0.6, 'rgba(140,130,102,0.4)'); g.addColorStop(1, 'rgba(140,130,102,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(T.x(v[1]), T.y(v[2]), (v[4] * 5.5 + 40) * s, 0, 6.3); ctx.fill(); }
+  // chemins : traverses des villages, puis grands chemins
+  for (const l of villageLanes()) strokeLine(ctx, l, T, rgb([152, 138, 108], 0.85), Math.max(1, 4 * s));
+  for (const rd of ROADS) { if (near) strokeLine(ctx, rd, T, 'rgba(96,88,66,0.35)', 11 * s); strokeLine(ctx, rd, T, rgb([158, 144, 112], 0.95), Math.max(1.6, 7 * s)); }
+  // grèves de la Seine et de la Marne (la campagne proche seulement : le lointain se répète en miroir)
+  if (near) for (const [pts, hw] of RIVERS) { strokeLine(ctx, pts, T, rgb([166, 154, 120], 0.9), (2 * hw + 46) * s); strokeLine(ctx, pts, T, rgb([84, 92, 70]), 2 * hw * s); }
+  noiseOverlay(ctx, N, N, near ? 0.34 : 0.3, near ? 23 : 21);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+  if (!near) tex.wrapS = tex.wrapT = THREE.MirroredRepeatWrapping;
   return tex;
+}
+export function paintOuterGround(terrain, maxSize = 4096) {
+  return { far: paintCountry(2048, WORLD, terrain, false), near: paintCountry(Math.min(4096, maxSize), NEAR, terrain, true) };
 }
 
 // Texture de détail carrelable (grain du sol), mêlée dans le shader.
@@ -213,16 +225,19 @@ export function makeStreetMask(lu) {
   return t;
 }
 
-export function makeGroundMaterial(map, detail, street) {
+export function makeGroundMaterial(map, detail, street, near) {
   const m = new THREE.MeshStandardMaterial({ map, roughness: 1, metalness: 0 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uDetail = { value: detail };
     if (street) { sh.uniforms.uMask = { value: street.mask }; sh.uniforms.uCobble = { value: street.cobble }; }
+    if (near) { sh.uniforms.uNear = { value: near }; sh.uniforms.uNearHalf = { value: NEAR }; }
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWxz = (modelMatrix * vec4(position, 1.0)).xz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail;' + (street ? '\nuniform sampler2D uMask;\nuniform sampler2D uCobble;' : ''))
-      .replace('#include <map_fragment>', '#include <map_fragment>\nfloat dA = texture2D(uDetail, vWxz * 0.21).r; float dB = texture2D(uDetail, vWxz * 0.023).r;\ndiffuseColor.rgb *= (0.62 + 0.5 * dA) * (0.8 + 0.34 * dB);'
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail;' + (street ? '\nuniform sampler2D uMask;\nuniform sampler2D uCobble;' : '') + (near ? '\nuniform sampler2D uNear;\nuniform float uNearHalf;' : ''))
+      .replace('#include <map_fragment>', '#include <map_fragment>\n'
+        + (near ? 'vec3 nearCol = texture2D(uNear, vec2(vWxz.x / (2.0 * uNearHalf) + 0.5, 0.5 - vWxz.y / (2.0 * uNearHalf))).rgb;\ndiffuseColor.rgb = mix(nearCol, diffuseColor.rgb, smoothstep(uNearHalf * 0.84, uNearHalf * 0.98, max(abs(vWxz.x), abs(vWxz.y))));\n' : '')
+        + 'float dA = texture2D(uDetail, vWxz * 0.21).r; float dB = texture2D(uDetail, vWxz * 0.023).r;\ndiffuseColor.rgb *= (0.62 + 0.5 * dA) * (0.8 + 0.34 * dB);'
         + (street ? '\nfloat stM = texture2D(uMask, vMapUv).r; vec3 cob = texture2D(uCobble, vWxz * 0.4).rgb;\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.5 + cob * 1.15), smoothstep(0.1, 0.9, stM) * 0.85);' : ''));
   };
-  m.customProgramCacheKey = () => (street ? 'ground-street' : 'ground');
+  m.customProgramCacheKey = () => (street ? 'ground-street' : near ? 'ground-near' : 'ground');
   return m;
 }

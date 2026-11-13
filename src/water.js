@@ -1,6 +1,6 @@
 // Surface de la Seine et des fossés : reflets du ciel, clapot et éclat du soleil.
 import * as THREE from 'three';
-import { WORLD } from './terrain.js';
+import { FAR } from './terrain.js';
 
 const VERT = /* glsl */`
 varying vec3 vW;
@@ -54,7 +54,7 @@ export function makeWater(sky) {
     uDeep: { value: new THREE.Color(0.075, 0.115, 0.085) }, uTime: { value: 0 }, uDay: { value: 1 },
   }]);
   const mat = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms, fog: true, transparent: true, depthWrite: false });
-  const geo = new THREE.PlaneGeometry(WORLD * 2, WORLD * 2, 1, 1);
+  const geo = new THREE.PlaneGeometry(FAR * 2, FAR * 2, 1, 1);
   geo.rotateX(-Math.PI / 2);
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = 2;

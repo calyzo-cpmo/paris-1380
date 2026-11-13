@@ -4,7 +4,7 @@ Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dépôt.
 
 ## Ce qui est à déployer
 
-Un seul fichier : `dist/index.html` (environ 1,4 Mo, 450 Ko une fois compressé). Il contient le code, le plan de 1380 et
+Un seul fichier : `dist/index.html` (environ 1,5 Mo, 560 Ko une fois compressé). Il contient le code, le plan de 1380 et
 les vignettes ; toutes les textures et la géométrie sont calculées dans le navigateur. Pas de base de données, pas de
 variables d'environnement, pas de secret, pas de volume.
 
@@ -43,6 +43,10 @@ ou deux à l'adresse <https://calyzo-cpmo.github.io/paris-1380/> ; chaque envoi 
 - **Appel extérieur** : un seul, vers Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`) pour les polices Alegreya et
   Grenze Gotisch. Sans lui la page s'affiche avec les polices du système. Si une politique CSP est posée devant le site, elle
   doit autoriser les scripts et styles en ligne (`'unsafe-inline'`), `blob:` et `data:` pour les images, et ces deux hôtes.
+- **Données du visiteur** : aucun cookie, aucun envoi vers un serveur. Le carnet de visite (lieux vus, intérieurs visités) et
+  deux réglages sont gardés dans le stockage local du navigateur ; s'il est indisponible, la page fonctionne sans.
+- **Liens partagés** : la vue, l'heure et la fiche ouverte sont portées par le fragment de l'adresse (`#c=…&h=…&p=…`).
+  La porte d'entrée `index.html` le transmet à `dist/index.html`.
 - **Licence** : le plan ALPAGE est sous CC BY-SA 2.0 FR. L'attribution figure dans le panneau « Sources » de la page et dans
   le `README.md` ; elle doit rester visible, et toute version modifiée du plan doit être partagée sous la même licence.
 - **Intégration dans une autre page** : `<iframe src="https://…/" style="width:100%;height:80vh;border:0" allow="fullscreen" loading="lazy"></iframe>`.
@@ -53,5 +57,6 @@ ou deux à l'adresse <https://calyzo-cpmo.github.io/paris-1380/> ; chaque envoi 
 
 1. `curl -sI https://<domaine>/healthz` répond `200`.
 2. `curl -sI -H 'Accept-Encoding: gzip' https://<domaine>/` montre `Content-Encoding: gzip`.
-3. Ouvrir la page : la barre de chargement va au bout, la ville apparaît, un clic sur Notre-Dame ouvre sa fiche et
-   « Entrer à l'intérieur » lance la visite.
+3. Ouvrir la page : la barre de chargement va au bout, l'accueil propose trois portes ; « Explorer la maquette » montre
+   la ville, un clic sur Notre-Dame ouvre sa fiche et « Entrer à l'intérieur » lance la visite.
+4. Ouvrir `https://<domaine>/#in=sainte-chapelle` : la page s'ouvre directement dans la chapelle haute.

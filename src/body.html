@@ -4,22 +4,34 @@
 <header id="top">
   <div id="brand">
     <h1>Paris <span>1380</span></h1>
-    <p>Maquette restituée d’après le plan ALPAGE-CNRS</p>
+    <p id="brand-sub">Maquette restituée d’après le plan ALPAGE-CNRS</p>
+    <p id="where" hidden></p>
   </div>
   <nav id="menu" aria-label="Panneaux">
-    <button type="button" id="btn-places" aria-controls="places" aria-expanded="false">Lieux</button>
-    <button type="button" id="btn-sources">Sources</button>
-    <button type="button" id="btn-help">Aide</button>
+    <button type="button" id="btn-places" aria-controls="places" aria-expanded="false">Lieux<span id="places-count"></span></button>
+    <button type="button" id="btn-more" aria-controls="menu-more" aria-expanded="false" aria-label="Autres panneaux">Menu</button>
+    <div id="menu-more">
+      <button type="button" id="btn-sources">Sources</button>
+      <button type="button" id="btn-share">Partager</button>
+      <button type="button" id="btn-help">Aide</button>
+    </div>
   </nav>
 </header>
 
 <aside id="places" hidden aria-label="Liste des lieux">
   <div class="panel-head"><h2>Lieux</h2><button type="button" class="x" data-close="places" aria-label="Fermer">×</button></div>
+  <div id="carnet" aria-live="polite"><p id="carnet-text"></p><div id="carnet-track"><div id="carnet-bar"></div></div></div>
   <input id="place-search" type="search" placeholder="Chercher un lieu…" autocomplete="off" aria-label="Chercher un lieu">
+  <div id="place-filters" class="chips" role="group" aria-label="Filtrer la liste">
+    <button type="button" data-filter="all" aria-pressed="true">Tous</button>
+    <button type="button" data-filter="inside" aria-pressed="false">Intérieur à visiter</button>
+    <button type="button" data-filter="new" aria-pressed="false">Pas encore vus</button>
+  </div>
   <div id="place-list"></div>
 </aside>
 
 <section id="card" hidden aria-live="polite">
+  <button type="button" id="card-grip" aria-label="Agrandir ou réduire la fiche"></button>
   <button type="button" class="x" data-close="card" aria-label="Fermer la fiche">×</button>
   <p id="card-cat"></p>
   <h2 id="card-name"></h2>
@@ -30,11 +42,14 @@
     <button type="button" id="card-walk">S’y promener à pied</button>
     <button type="button" id="card-view" class="ghost">Recadrer</button>
   </div>
-  <details id="card-hist" open hidden>
-    <summary>Son histoire</summary>
-    <ol id="card-chrono"></ol>
-  </details>
-  <div id="card-src"></div>
+  <div id="card-more">
+    <p id="card-cert"></p>
+    <details id="card-hist" open hidden>
+      <summary>Son histoire</summary>
+      <ol id="card-chrono"></ol>
+    </details>
+    <div id="card-src"></div>
+  </div>
 </section>
 
 <section id="inhud" hidden aria-live="polite">
@@ -52,45 +67,110 @@
   </div>
 </section>
 
+<div id="walkhud" class="row" hidden>
+  <button type="button" id="walk-exit">Reprendre de la hauteur</button>
+  <button type="button" id="walk-look" aria-pressed="false" title="Regarder en bougeant la souris, sans cliquer (touche V)">Regard à la souris</button>
+</div>
+
+<aside id="nav" aria-label="Se repérer">
+  <div id="map-wrap">
+    <canvas id="minimap" role="img" aria-label="Plan de situation : cliquer pour s’y rendre"></canvas>
+    <button type="button" id="map-zoom" aria-label="Changer l’échelle du plan" title="Plan entier ou quartier">Quartier</button>
+  </div>
+  <div class="row" id="nav-row">
+    <button type="button" id="btn-home" title="Revenir à la vue d’ensemble (touche O)">Vue d’ensemble</button>
+    <button type="button" id="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut (touche N)">
+      <svg viewBox="-12 -12 24 24" width="26" height="26" aria-hidden="true"><g id="compass-rose"><path d="M0-10 3.2 0H-3.2Z" fill="currentColor"/><path d="M0 10 3.2 0H-3.2Z" fill="none" stroke="currentColor" stroke-width="1"/><text x="0" y="-3.2" text-anchor="middle" font-size="5.2" font-weight="700" fill="#101c44">N</text></g></svg>
+    </button>
+  </div>
+</aside>
+
+<div id="toast" hidden role="status"></div>
+
+<div id="stack">
+<div id="hint" hidden role="status"></div>
+<div id="prompt" hidden>
+  <p id="prompt-text"></p>
+  <div class="row">
+    <button type="button" id="prompt-enter" class="primary" hidden>Entrer</button>
+    <button type="button" id="prompt-card">Fiche</button>
+  </div>
+</div>
 <div id="tour" hidden>
+  <div id="tour-head"><span id="tour-title"></span><span id="tour-count"></span></div>
+  <div id="tour-dots" role="group" aria-label="Étapes du parcours"></div>
+  <h3 id="tour-place"></h3>
   <p id="tour-text"></p>
   <div class="row">
     <button type="button" id="tour-prev" class="ghost">Précédent</button>
-    <span id="tour-count"></span>
-    <button type="button" id="tour-next">Suivant</button>
+    <button type="button" id="tour-play" class="ghost" aria-pressed="true">Pause</button>
+    <button type="button" id="tour-next" class="primary">Suivant</button>
+    <span class="spacer"></span>
+    <button type="button" id="tour-enter" hidden>Entrer</button>
+    <button type="button" id="tour-card" class="ghost" hidden>Fiche</button>
     <button type="button" id="tour-stop" class="ghost">Terminer</button>
   </div>
 </div>
-
-<div id="walkhud" hidden>
-  <p id="walk-hint"></p>
-  <button type="button" id="walk-exit">Reprendre de la hauteur</button>
+<aside id="legend" hidden aria-label="Légende du degré de certitude">
+  <div class="panel-head"><h2>Ce que l’on sait</h2><button type="button" class="x" data-close="legend" aria-label="Masquer le calque">×</button></div>
+  <ul id="legend-list"></ul>
+  <p class="legend-note">Le sol, les rues et le cours de la Seine, en couleurs naturelles, viennent du plan de 1380. Les habitants, les étals et les bateaux sont une évocation.</p>
+  <button type="button" id="legend-more" class="link">Lire la méthode</button>
+</aside>
 </div>
 
 <footer id="dock">
   <div class="seg" role="group" aria-label="Mode">
     <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
-    <button type="button" id="mode-tour" aria-pressed="false">Visite guidée</button>
+    <button type="button" id="mode-tour" aria-pressed="false"><span class="long">Visite guidée</span><span class="short">Visite</span></button>
     <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
   </div>
-  <label id="hour-wrap"><span id="hour-label">10 h 30</span><input id="hour" type="range" min="4.5" max="22.5" step="0.25" value="10.5" aria-label="Heure du jour"></label>
-  <label class="check"><input id="toggle-names" type="checkbox" checked> Noms</label>
-  <label class="check"><input id="toggle-people" type="checkbox" checked> Habitants</label>
+  <div id="hour-wrap">
+    <button type="button" id="hour-btn" aria-controls="hour-pop" aria-expanded="false"><span id="hour-label">10 h 30</span></button>
+    <div id="hour-pop">
+      <button type="button" id="hour-play" aria-pressed="false" aria-label="Faire défiler la journée" title="Faire défiler la journée"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M2 1v10l9-5z" fill="currentColor"/><path class="ico-pause" d="M2 1h3v10H2zM7 1h3v10H7z" fill="currentColor"/></svg></button>
+      <input id="hour" type="range" min="4.5" max="22.5" step="0.25" value="10.5" aria-label="Heure du jour">
+      <div id="hour-presets" class="chips" role="group" aria-label="Moments de la journée">
+        <button type="button" data-hour="5.25">Aube</button>
+        <button type="button" data-hour="12">Midi</button>
+        <button type="button" data-hour="18.75">Soir</button>
+        <button type="button" data-hour="21.5">Nuit</button>
+      </div>
+    </div>
+  </div>
+  <div id="view-wrap">
+    <button type="button" id="btn-view" aria-controls="view-menu" aria-expanded="false">Affichage</button>
+    <div id="view-menu" hidden>
+      <label class="check"><input id="toggle-names" type="checkbox" checked> Noms des lieux</label>
+      <label class="check"><input id="toggle-people" type="checkbox" checked> Habitants</label>
+      <label class="check"><input id="toggle-map" type="checkbox" checked> Mini-plan</label>
+      <label class="check"><input id="toggle-cert" type="checkbox"> Degré de certitude</label>
+    </div>
+  </div>
 </footer>
+
+<div id="tours" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="tours-title">
+  <div class="sheet narrow">
+    <div class="panel-head"><h2 id="tours-title">Choisir un parcours</h2><button type="button" class="x" data-close="tours" aria-label="Fermer">×</button></div>
+    <p class="lede">Chaque parcours enchaîne les vues tout seul ; vous pouvez le mettre en pause, reprendre la main à tout moment, puis entrer dans les monuments visités.</p>
+    <div id="tours-list"></div>
+  </div>
+</div>
 
 <div id="sources" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="sources-title">
   <div class="sheet">
     <div class="panel-head"><h2 id="sources-title">Les représentations de Paris médiéval</h2><button type="button" class="x" data-close="sources" aria-label="Fermer">×</button></div>
     <p class="lede">Aucune vue d’ensemble de Paris n’a été dessinée au Moyen Âge. La maquette croise donc trois familles de documents : les plans restitués par les historiens pour le tracé, les enluminures du XVe siècle pour les élévations, et les premiers plans gravés du XVIe siècle pour le détail.</p>
     <div id="sources-body"></div>
-    <h3>Ce qui est attesté, ce qui est restitué</h3>
+    <h3 id="method">Ce qui est attesté, ce qui est restitué</h3>
     <ul class="method">
       <li><b>Attesté par le plan de 1380 :</b> le réseau des rues, les îlots bâtis, les cultures, le cours de la Seine et ses îles, le tracé des deux enceintes avec leurs tours et leurs portes, l’emprise au sol des églises, couvents, hôtels, collèges, halles et ponts.</li>
       <li><b>Restitué d’après les images et les vestiges :</b> les volumes de Notre-Dame, de la Sainte-Chapelle, du Palais, du Louvre, de la Bastille, du Temple et des Châtelets.</li>
       <li><b>Vraisemblable, mais conjectural :</b> la forme de chaque maison (17 000 maisons à pans de bois loties automatiquement le long des rues), l’élévation des églises paroissiales et des hôtels, la végétation, le relief de détail.</li>
       <li><b>Intérieurs :</b> Notre-Dame, la Sainte-Chapelle, la Grand’Salle du Palais, le frigidarium de Cluny, le réfectoire des Bernardins et le donjon de Vincennes suivent leurs dimensions connues ; leur mobilier, comme tous les autres intérieurs, est une restitution signalée dans chaque notice.</li>
-      <li><b>Évocation :</b> les habitants, les bêtes, les étals, les bateaux, les bannières et les chantiers donnent l’échelle et la vie ; leur place exacte est inventée. Les villages des environs, le château de Vincennes et la chartreuse de Vauvert sont situés d’après leur emplacement connu, hors du plan de 1380.</li>
+      <li><b>Évocation :</b> les habitants, les bêtes, les étals, les bateaux, les bannières et les chantiers donnent l’échelle et la vie ; leur place exacte est inventée. Les villages des environs, le château de Vincennes et la chartreuse de Vauvert sont situés d’après leur emplacement connu, hors du plan de 1380 ; les champs, les haies, les vignes et les bois de la campagne sont une évocation.</li>
     </ul>
+    <p class="lede">Dans le menu « Affichage », le calque « Degré de certitude » colore la maquette selon ces catégories.</p>
   </div>
 </div>
 
@@ -103,11 +183,26 @@
       <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
       <dt>Deux doigts</dt><dd>tourner pour pivoter, glisser verticalement pour incliner</dd>
       <dt>Flèches ou Z Q S D</dt><dd>avancer ; A et E pivotent, R et F inclinent</dd>
-      <dt>Monuments</dt><dd>cliquer sur un monument ou sur son nom ouvre sa fiche et son histoire ; « Entrer à l’intérieur » lance la visite. Dedans : glisser pour regarder autour de soi, cliquer sur le sol pour avancer, Échap pour sortir.</dd>
-      <dt>À pied</dt><dd>cliquer dans la scène pour regarder à la souris, flèches ou Z Q S D pour marcher, Maj pour courir, Échap pour sortir. Sur écran tactile : pouce gauche pour marcher, pouce droit pour regarder.</dd>
+      <dt>Double-clic</dt><dd>descendre à pied à cet endroit de la maquette</dd>
+      <dt>Monuments</dt><dd>cliquer sur un monument, sur son nom ou sur son point ouvre sa fiche et son histoire ; « Entrer à l’intérieur » lance la visite. Dedans : glisser pour regarder autour de soi, cliquer sur le sol pour avancer, Échap pour sortir.</dd>
+      <dt>À pied</dt><dd>glisser pour regarder, cliquer sur le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir. Près d’un monument, E permet d’y entrer et F d’ouvrir sa fiche ; V donne le regard à la souris, Échap fait reprendre de la hauteur. Sur écran tactile : pouce gauche pour marcher, pouce droit pour regarder, toucher le sol pour avancer.</dd>
+      <dt>Se repérer</dt><dd>le mini-plan montre où l’on est et où l’on regarde : cliquer dessus pour s’y rendre. La boussole (touche N) remet le nord en haut ; « Vue d’ensemble » (touche O) ramène au-dessus de la ville ; la touche / ouvre la recherche d’un lieu.</dd>
     </dl>
-    <p class="lede">Le curseur du bas change l’heure : au crépuscule, les fenêtres s’allument et les rues se vident. Les habitants apparaissent dès que l’on s’approche des rues ; la case « Habitants » les masque.</p>
+    <p class="lede">Le curseur du bas change l’heure : au crépuscule, les fenêtres s’allument et les rues se vident. Les habitants apparaissent dès que l’on s’approche des rues ; le menu « Affichage » les masque, et colore la maquette selon son degré de certitude.</p>
+    <button type="button" id="help-welcome" class="ghost">Revoir l’écran d’accueil</button>
   </div>
 </div>
 
-<div id="loading"><h1>Paris <span>1380</span></h1><div id="load-label">Chargement…</div><div id="load-track"><div id="load-bar"></div></div></div>
+<div id="loading">
+  <div id="load-box">
+    <h1>Paris <span>1380</span></h1>
+    <p id="load-pitch">La plus grande ville d’Occident à la fin du règne de Charles V, restituée en trois dimensions d’après le plan ALPAGE-CNRS.</p>
+    <div id="load-label">Chargement…</div>
+    <div id="load-track"><div id="load-bar"></div></div>
+    <div id="welcome" hidden>
+      <button type="button" class="door" data-start="tour"><b>Suivre une visite guidée</b><span>Cinq parcours commentés, de la Cité aux enceintes.</span></button>
+      <button type="button" class="door" data-start="fly"><b>Explorer la maquette</b><span>Survoler la ville, lire l’histoire de chaque lieu, entrer dans les monuments.</span></button>
+      <button type="button" class="door" data-start="walk"><b>Descendre dans les rues</b><span>Se promener à pied depuis le parvis de Notre-Dame.</span></button>
+    </div>
+  </div>
+</div>

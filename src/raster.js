@@ -79,6 +79,37 @@ export class Raster {
   }
 }
 
+// Trame d'obstacles : dense dans le cadre du plan, clairsemée au-delà (villages, Vincennes), à 2 m par cellule.
+export class SolidRaster extends Raster {
+  constructor(...a) { super(...a); this.far = new Map(); }
+  farKey(x, z) { return (Math.floor(x / 2) + 8192) * 16384 + Math.floor(z / 2) + 8192; }
+  dense(x, z) { return x >= this.x0 && z >= this.z0 && x < this.x0 + this.w * this.cell && z < this.z0 + this.h * this.cell; }
+  get(x, z) {
+    const i = Math.floor((x - this.x0) / this.cell), j = Math.floor((z - this.z0) / this.cell);
+    if (i < 0 || j < 0 || i >= this.w || j >= this.h) return this.far.size ? this.far.get(this.farKey(x, z)) || 0 : 0;
+    return this.data[j * this.w + i];
+  }
+  fillPoly(pts, v, only = -1) {
+    super.fillPoly(pts, v, only);
+    if (only >= 0 || pts.length < 3) return;
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const p of pts) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1]; }
+    if (this.dense(x0, z0) && this.dense(x1, z1)) return;
+    const n = pts.length, xs = [];
+    for (let z = Math.floor(z0 / 2) * 2 + 1; z <= z1; z += 2) {
+      xs.length = 0;
+      for (let i = 0, k = n - 1; i < n; k = i++) { const a = pts[i], b = pts[k]; if ((a[1] > z) !== (b[1] > z)) xs.push(a[0] + ((z - a[1]) * (b[0] - a[0])) / (b[1] - a[1])); }
+      xs.sort((p, q) => p - q);
+      for (let s = 0; s + 1 < xs.length; s += 2) for (let x = Math.floor(xs[s] / 2) * 2 + 1; x <= xs[s + 1] + 1; x += 2) if (!this.dense(x, z)) this.far.set(this.farKey(x, z), v);
+    }
+  }
+  fillCircle(cx, cz, r, v) {
+    super.fillCircle(cx, cz, r, v);
+    if (this.dense(cx - r, cz - r) && this.dense(cx + r, cz + r)) return;
+    for (let z = Math.floor((cz - r) / 2) * 2 + 1; z <= cz + r; z += 2) for (let x = Math.floor((cx - r) / 2) * 2 + 1; x <= cx + r; x += 2) if ((x - cx) * (x - cx) + (z - cz) * (z - cz) <= r * r + 2 && !this.dense(x, z)) this.far.set(this.farKey(x, z), v);
+  }
+}
+
 // Champ de distance signé à l'eau (positif dans l'eau), échantillonné sur une grille de pas `step`.
 export class DistanceField {
   constructor(lu, step = 2) {

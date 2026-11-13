@@ -1,7 +1,7 @@
 // Application : scène, rendu, boucle, API de pilotage.
 import * as THREE from 'three';
 import { FRAME } from './data.js';
-import { buildLanduse, LU, Raster } from './raster.js';
+import { buildLanduse, LU, SolidRaster } from './raster.js';
 import { Terrain, buildTerrainGeometries } from './terrain.js';
 import { Sky } from './sky.js';
 import { makeWater } from './water.js';
@@ -25,7 +25,7 @@ export class App {
     const lu = buildLanduse();
     const terrain = new Terrain(lu);
     this.lu = lu; this.terrain = terrain;
-    this.solid = new Raster(FRAME.x0, FRAME.z0, FRAME.x1, FRAME.z1, 1);   // obstacles (bâtiments, murs)
+    this.solid = new SolidRaster(FRAME.x0, FRAME.z0, FRAME.x1, FRAME.z1, 1);   // obstacles (bâtiments, murs)
     this.deck = new Map();                                                // tabliers de ponts : hauteur par cellule
 
     const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || Math.min(screen.width, screen.height) < 700;
@@ -50,16 +50,20 @@ export class App {
     this.sky = new Sky(scene);
     const smap = shot || mobile ? 2048 : 4096;
     this.sky.sun.shadow.mapSize.set(smap, smap);
-    this.shadowState = { x: 1e9, z: 1e9, s: 0, hour: -1 };
+    this.shadowState = { x: 1e9, z: 1e9, s: 0, hour: -1, t: 0 };
+    this.shadowEvery = 0;              // > 0 : intervalle minimal (s) entre deux recalculs d'ombres quand seule l'heure change
 
     await step('Modelé du terrain et de la Seine…', 0.08);
     const geos = buildTerrainGeometries(terrain);
     const detail = makeDetailTexture();
     const maxTex = Math.min(renderer.capabilities.maxTextureSize, mobile ? 2048 : 4096);
-    const core = new THREE.Mesh(geos.core, makeGroundMaterial(paintCoreGround(maxTex), detail, { mask: makeStreetMask(lu), cobble: makeCobbleTexture() }));
-    const outer = new THREE.Mesh(geos.outer, makeGroundMaterial(paintOuterGround(terrain), detail));
-    core.receiveShadow = true; outer.receiveShadow = true; core.matrixAutoUpdate = false; outer.matrixAutoUpdate = false;
-    scene.add(core, outer);
+    const core = new THREE.Mesh(geos.core, makeGroundMaterial(paintCoreGround(maxTex, terrain), detail, { mask: makeStreetMask(lu), cobble: makeCobbleTexture() }));
+    await step('Champs, vignes et prés des environs…', 0.13);
+    const country = paintOuterGround(terrain, maxTex);                     // campagne lointaine (répétée en miroir au-delà) et campagne proche, peinte finement
+    const outer = new THREE.Mesh(geos.outer, makeGroundMaterial(country.far, detail, null, country.near));
+    const far = new THREE.Mesh(geos.far, makeGroundMaterial(country.far, detail));
+    core.receiveShadow = true; outer.receiveShadow = true; core.matrixAutoUpdate = false; outer.matrixAutoUpdate = false; far.matrixAutoUpdate = false;
+    scene.add(core, outer, far);
     this.water = makeWater(this.sky);
     scene.add(this.water);
 
@@ -91,10 +95,18 @@ export class App {
   }
   walkable(x, z) {
     if (this.inside) return this.inside.walkable(x, z);
-    if (x < FRAME.x0 + 2 || x > FRAME.x1 - 2 || z < FRAME.z0 + 2 || z > FRAME.z1 - 2) return false;
+    if (x < -8000 || x > 8000 || z < -8000 || z > 8000) return false;      // au-delà du plan, on marche dans la campagne
     if (this.solid.get(x, z)) return false;
     if (this.deck.has(this.deckKey(x, z))) return true;
     return this.terrain.height(x, z) > 0.35;
+  }
+
+  // Un arbre pousse-t-il à moins de 4 m environ ?
+  treeNear(x, z) {
+    const c = this.treeCells; if (!c) return false;
+    const i = Math.floor(x / 4) + 4096, j = Math.floor(z / 4) + 4096;
+    for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) if (c.has((i + a) * 8192 + j + b)) return true;
+    return false;
   }
 
   setHour(h) {
@@ -124,6 +136,7 @@ export class App {
   // Si l'image met durablement plus de 45 ms à se calculer, on allège : résolution, puis ombres des arbres et fumées.
   autoQuality(ms) {
     const q = (this.qStat ||= { n: 0, sum: 0, level: 0, skip: 40 });
+    if (this.qualityHold) { q.n = 0; q.sum = 0; return; }     // journée en accéléré : les ombres recalculées ne comptent pas comme une lenteur
     if (q.skip > 0) { q.skip--; return; }
     q.n++; q.sum += ms;
     if (q.n < 50) return;
@@ -145,8 +158,9 @@ export class App {
     let S = clamp(dist * 0.85, 110, 2400);
     S = Math.pow(1.5, Math.round(Math.log(S) / Math.log(1.5)));
     const tx = rig.target.x, tz = rig.target.z;
-    if (st.hour === this.sky.hour && st.s === S && Math.hypot(tx - st.x, tz - st.z) < S * 0.22) return;
-    st.x = tx; st.z = tz; st.s = S; st.hour = this.sky.hour;
+    const still = st.s === S && Math.hypot(tx - st.x, tz - st.z) < S * 0.22;
+    if (still && (st.hour === this.sky.hour || (this.shadowEvery && this.time - st.t < this.shadowEvery))) return;
+    st.x = tx; st.z = tz; st.s = S; st.hour = this.sky.hour; st.t = this.time;
     const d = this.sky.lightDir;
     sun.target.position.set(tx, 0, tz); sun.target.updateMatrixWorld();
     sun.position.set(tx + d.x * 4000, d.y * 4000, tz + d.z * 4000);
