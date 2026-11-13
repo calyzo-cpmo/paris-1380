@@ -1,6 +1,6 @@
 # Paris 1380 — note de déploiement
 
-À l'attention de la session qui gère Coolify. Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dossier.
+Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dépôt.
 
 ## Ce qui est à déployer
 
@@ -8,19 +8,23 @@ Un seul fichier : `dist/index.html` (environ 1,4 Mo, 450 Ko une fois compressé)
 les vignettes ; toutes les textures et la géométrie sont calculées dans le navigateur. Pas de base de données, pas de
 variables d'environnement, pas de secret, pas de volume.
 
-## Réglages Coolify
+## Réglages
+
+Pour Coolify, ou toute plateforme qui construit un Dockerfile depuis un dépôt Git :
 
 | Réglage | Valeur |
 | --- | --- |
-| Dépôt | `calyzo-cpmo/design` |
-| Branche | `claude/quirky-cannon-dyrmo7` (ou `main` une fois la PR n° 1 fusionnée) |
-| Répertoire de base | `/paris-medieval` |
-| Type de build | Dockerfile (`paris-medieval/Dockerfile`) |
+| Dépôt | `calyzo-cpmo/paris-1380` (public) |
+| Branche | `main` |
+| Répertoire de base | `/` |
+| Type de build | Dockerfile (à la racine) |
 | Port exposé | `80` |
 | Contrôle de santé | `GET /healthz` → `200 ok` |
 
-Variante sans Docker : type de build « Static », répertoire publié `dist`. Le Dockerfile ajoute seulement la compression
-gzip, le point `/healthz` et trois en-têtes.
+En local : `docker build -t paris-1380 . && docker run --rm -p 8080:80 paris-1380`, puis ouvrir `http://localhost:8080`.
+
+Variante sans Docker : n'importe quel hébergement statique, en publiant le répertoire `dist`. Le Dockerfile ajoute
+seulement la compression gzip, le point `/healthz` et trois en-têtes.
 
 Le Dockerfile ne reconstruit pas la page : il copie `dist/index.html` tel qu'il est versionné. Après une modification des
 sources, lancer `npm install && npm run build && npm test` puis committer `dist/index.html`.

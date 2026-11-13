@@ -5,7 +5,7 @@ survol libre, visite guidée en treize étapes, promenade à pied dans des rues 
 visite de leurs intérieurs et heure du jour réglable.
 
 **Ouvrir la maquette :** `dist/index.html` (fichier autonome, aucun serveur nécessaire).
-**La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, réglages Coolify).
+**La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
 
 ## Ce que montre la maquette
 
