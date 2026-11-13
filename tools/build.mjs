@@ -15,7 +15,7 @@ const js = res.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 const css = readFileSync(join(root, 'src/style.css'), 'utf8');
 const body = readFileSync(join(root, 'src/body.html'), 'utf8');
 const fonts = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Grenze+Gotisch:wght@500;700&display=swap">';
-const fragment = `<title>Paris 1380</title>
+const fragment = `<title>Paris à travers le temps</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 ${fonts}
 <style>${css}</style>
@@ -31,9 +31,9 @@ writeFileSync(join(root, 'dist/index.html'), `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Paris 1380 — maquette 3D interactive</title>
+<title>Paris à travers le temps — Paris 1380 en maquette 3D</title>
 <meta name="description" content="${desc}">
-<meta property="og:title" content="Paris 1380 — maquette 3D interactive">
+<meta property="og:title" content="Paris à travers le temps — Paris 1380 en maquette 3D">
 <meta property="og:description" content="${desc}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
@@ -63,9 +63,9 @@ const page89 = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Paris 1789 — maquette 3D interactive</title>
+<title>Paris à travers le temps — Paris 1789 en maquette 3D</title>
 <meta name="description" content="${desc89}">
-<meta property="og:title" content="Paris 1789 — maquette 3D interactive">
+<meta property="og:title" content="Paris à travers le temps — Paris 1789 en maquette 3D">
 <meta property="og:description" content="${desc89}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">

@@ -95,8 +95,16 @@ export function initUI89(app) {
   function openModal(id) { closeMore(); $(id).hidden = false; }
   $('btn-sources').addEventListener('click', () => openModal('sources'));
   $('btn-help').addEventListener('click', () => openModal('help'));
+  // frise des dates : des liens vers la première page, où chaque date pose sa ville sur la maquette de 1380
+  const toggleFrise = (on) => {
+    $('frise').hidden = !on; $('btn-epoch').setAttribute('aria-expanded', String(on)); if (!on) return;
+    closeMore();
+    const jl = $('frise-jalons'), act = jl.querySelector('[aria-current]');       // sur petit écran la frise défile : la date en cours reste en vue
+    if (act && jl.scrollWidth > jl.clientWidth) jl.scrollLeft = act.offsetLeft - jl.offsetLeft - (jl.clientWidth - act.offsetWidth) / 2;
+  };
+  $('btn-epoch').addEventListener('click', () => toggleFrise($('frise').hidden));
   $('btn-1380').addEventListener('click', () => { location.href = 'index.html'; });
-  for (const b of document.querySelectorAll('[data-close]')) b.addEventListener('click', () => { const id = b.dataset.close; if (id === 'card') closeCard(); else if (id === 'places') togglePlaces(false); else $(id).hidden = true; });
+  for (const b of document.querySelectorAll('[data-close]')) b.addEventListener('click', () => { const id = b.dataset.close; if (id === 'card') closeCard(); else if (id === 'places') togglePlaces(false); else if (id === 'frise') toggleFrise(false); else $(id).hidden = true; });
   for (const m of document.querySelectorAll('.modal')) m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; });
   { const ul = $('sources-list'), row = (t, c) => { const li = el('li'); li.append(el('b', null, t + ' : '), c); ul.appendChild(li); };
     row('Îlots, rues nommées et Seine', 'plan de Verniquet, levé de 1782 à 1790 — © ALPAGE : P. Rouet ; rues © ALPAGE : L. Hermenault');
@@ -235,6 +243,7 @@ export function initUI89(app) {
       for (const m of document.querySelectorAll('.modal')) if (!m.hidden) { m.hidden = true; return; }
       if ($('menu-more').classList.contains('open')) { closeMore(); return; }
       if (!$('places').hidden) { togglePlaces(false); return; }
+      if (!$('frise').hidden) { toggleFrise(false); return; }
       if (!$('card').hidden) { closeCard(); return; }
       if (rig.mode === 'walk') stopWalk();
       return;

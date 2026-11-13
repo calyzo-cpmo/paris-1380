@@ -144,15 +144,24 @@ function archPanel(k) {
   const t = tex(c); t.wrapT = THREE.ClampToEdgeWrapping; return t;
 }
 
-export function makeMaterials89(scale) {
-  const k = scale >= 1 ? 1 : 0.5, up = upper(k), rdc = ground(k), at = attic(k), s = makeStone(scale), f = makeStoneFx(scale, scale >= 1 ? 2 : 1), rf = makeRoof(scale), ns = (v) => new THREE.Vector2(v, v);
+// Les seules matières des maisons — étages, rez-de-chaussée, brisis à lucarnes : elles servent aussi, dans la première
+// page, aux dates de la frise postérieures au XVIe siècle.
+export function makeHouseMaterials89(scale) {
+  const k = scale >= 1 ? 1 : 0.5, up = upper(k), rdc = ground(k), at = attic(k);
   return {
-    pont: new THREE.MeshStandardMaterial({ map: archPanel(k), vertexColors: true, roughness: 0.95, metalness: 0 }),
-    nef: new THREE.MeshStandardMaterial({ map: navePanel(k), vertexColors: true, roughness: 0.94, metalness: 0 }),
-    comble: new THREE.MeshStandardMaterial({ map: at.map, emissiveMap: at.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.84, metalness: 0 }),
-    stonefx: new THREE.MeshStandardMaterial({ map: f.map, normalMap: f.normalMap, normalScale: ns(0.7), vertexColors: true, roughness: 0.94, metalness: 0 }),
     facade: new THREE.MeshStandardMaterial({ map: up.map, emissiveMap: up.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.93, metalness: 0 }),
     rdc: new THREE.MeshStandardMaterial({ map: rdc.map, emissiveMap: rdc.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.93, metalness: 0 }),
+    comble: new THREE.MeshStandardMaterial({ map: at.map, emissiveMap: at.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.84, metalness: 0 }),
+  };
+}
+
+export function makeMaterials89(scale) {
+  const k = scale >= 1 ? 1 : 0.5, s = makeStone(scale), f = makeStoneFx(scale, scale >= 1 ? 2 : 1), rf = makeRoof(scale), ns = (v) => new THREE.Vector2(v, v);
+  return {
+    ...makeHouseMaterials89(scale),
+    pont: new THREE.MeshStandardMaterial({ map: archPanel(k), vertexColors: true, roughness: 0.95, metalness: 0 }),
+    nef: new THREE.MeshStandardMaterial({ map: navePanel(k), vertexColors: true, roughness: 0.94, metalness: 0 }),
+    stonefx: new THREE.MeshStandardMaterial({ map: f.map, normalMap: f.normalMap, normalScale: ns(0.7), vertexColors: true, roughness: 0.94, metalness: 0 }),
     stone: new THREE.MeshStandardMaterial({ map: s.map, normalMap: s.normalMap, normalScale: ns(0.6), vertexColors: true, roughness: 0.94, metalness: 0 }),
     roof: new THREE.MeshStandardMaterial({ map: rf.map, normalMap: rf.normalMap, normalScale: ns(0.8), vertexColors: true, roughness: 0.86, metalness: 0 }),
     plain: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 }),

@@ -1,11 +1,15 @@
 // Calque temporel : Paris à d'autres époques, posé sur la maquette de 1380.
 // Données : couches du SIG ALPAGE (enceintes, îlots de 1300 à 1836, Lutèce, établissements religieux, hydrographie),
 // recalées dans le repère de la maquette par tools/extract_epochs.py (data/epoques.json, licence ODbL 1.0).
-// Pour chaque époque : un dessin au sol et sur le mini-plan ; en volume, les îlots bâtis après 1380, les enceintes
-// nouvelles et quelques édifices ; pour les époques antérieures, ce qui n'existe pas encore est rendu en pointillé.
+// Pour chaque époque : un dessin au sol et sur le mini-plan ; sur les îlots bâtis après 1380, des maisons évoquées le
+// long des rues (src/epochfabric.js) ; les édifices postérieurs et les enceintes nouvelles, bâtis en pierre ; pour les
+// époques antérieures, ce qui n'existe pas encore est rendu en pointillé.
 import * as THREE from 'three';
 import E from '../data/epoques.json';
 import { decodePolys, decodeLines } from './vlq.js';
+import { Builder } from './builder.js';
+import { shimApp, lotirIlot, edifice, antique } from './epochfabric.js';
+import { makeHouseMaterials89 } from './p1789/textures.js';
 import { FRAME } from './data.js';
 import { LU } from './raster.js';
 
@@ -25,8 +29,8 @@ export const JALONS = [
     texte: 'D’après le plan de Gomboust, qui montre la ville vers 1652. Sur la rive droite, l’enceinte des Fossés jaunes a repoussé la limite de la ville vers l’ouest.' },
   { id: '1741', label: '1741', an: 1741, titre: 'Paris vers 1741', ilots: '1741', egl: 1741, futur: true,
     texte: 'D’après le plan de Delagrive, levé en 1728 avec une triangulation rigoureuse et mis à jour vers 1741. Les anciennes enceintes ne sont plus que des tracés.' },
-  { id: '1791', label: '1791', an: 1791, titre: 'Paris en 1791', ilots: '1791', egl: 1789, eau: '1791', futur: true,
-    texte: 'D’après le plan de Verniquet, levé de 1782 à 1790. Le mur des Fermiers généraux, bâti de 1784 à 1790, entoure la ville. Les établissements religieux sont ceux de 1789, à la veille de leur suppression.' },
+  { id: '1791', label: '1789', an: 1789, titre: 'Paris en 1789', ilots: '1791', egl: 1789, eau: '1791', futur: true, page: '1789.html',
+    texte: 'Paris à la veille de la Révolution, d’après le plan de Verniquet, levé de 1782 à 1790. Le mur des Fermiers généraux, bâti de 1784 à 1790, entoure la ville. Les établissements religieux sont ceux de 1789, à la veille de leur suppression. Cette date a sa propre maquette, détaillée bâtiment par bâtiment.' },
   { id: '1836', label: '1836', an: 1836, titre: 'Paris vers 1836', ilots: '1836', eau: '1836', futur: true,
     texte: 'D’après l’Atlas par îlots de Philibert Vasserot, dressé de 1810 à 1836 : la ville avant les percées du Second Empire.' },
 ];
@@ -62,16 +66,21 @@ function stroke(ctx, polys, T, style, wd, dash) { ctx.strokeStyle = style; ctx.l
 function line(ctx, lines, T, style, wd) { ctx.strokeStyle = style; ctx.lineWidth = wd; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath(); for (const l of lines) { ctx.moveTo(T.x(l[0][0]), T.y(l[0][1])); for (let i = 1; i < l.length; i++) ctx.lineTo(T.x(l[i][0]), T.y(l[i][1])); } ctx.stroke(); }
 
 // T : { s (pixels par mètre), x(xMonde), y(zMonde) }.
-export function paintEpoch(ctx, T, j) {
+// `lots` : îlots où le calque dresse des maisons ; leur cœur est peint en cours et en jardins plutôt qu'en aplat de plan.
+export function paintEpoch(ctx, T, j, lots) {
   const k = T.s;
   if (j.eau) fill(ctx, eauOf(j.eau), T, COL.eau);
   if (j.ilots) {
     const polys = ilotsOf(j.ilots), t = E.ilots[j.ilots].t, by = { U: [], I: [], R: [] };
     polys.forEach((p, i) => by[t[i]].push(p));
-    fill(ctx, by.U, T, COL.U); fill(ctx, by.I, T, COL.I);
+    const dessin = !!(lots && lots.length);                // la date est dessinée en maisons : pas d'aplats de plan sous la ville
+    if (!dessin) { fill(ctx, by.U, T, COL.U); fill(ctx, by.I, T, COL.I); }
     stroke(ctx, by.R, T, COL.R, Math.max(0.8, 1.6 * k), [6 * Math.max(1, k * 4), 5 * Math.max(1, k * 4)]);
-    stroke(ctx, by.U, T, 'rgba(90,70,40,0.55)', Math.max(0.5, 0.9 * k));
-    stroke(ctx, by.I, T, 'rgba(90,70,40,0.35)', Math.max(0.5, 0.9 * k));
+    if (!dessin) { stroke(ctx, by.U, T, 'rgba(90,70,40,0.55)', Math.max(0.5, 0.9 * k)); stroke(ctx, by.I, T, 'rgba(90,70,40,0.35)', Math.max(0.5, 0.9 * k)); }
+    if (dessin) {
+      const cours = [], jardins = []; for (const r of lots) (Math.abs(areaOf(r[0])) > 5000 ? jardins : cours).push(r);
+      fill(ctx, cours, T, 'rgb(178,166,140)'); fill(ctx, jardins, T, 'rgb(128,148,98)'); stroke(ctx, lots, T, 'rgba(90,70,40,0.45)', Math.max(0.5, 0.9 * k));
+    }
   }
   if (j.lutece) {
     const L = lutece();
@@ -150,11 +159,12 @@ export class Epochs {
     this.foot = null; this.loose = false;
     this.lib = { JALONS, jalon, stats, ilotsOf, enceintes, wallState, eglisesAt, lutece, futur };   // accès aux données du calque (console, tests)
     // un promeneur surpris à l'intérieur d'un volume (changement d'époque) doit pouvoir en sortir
-    app.on('frame', () => { const r = app.rig; this.loose = !!this.foot && r.mode === 'walk' && this.inside(r.walk.x, r.walk.z); });
+    app.on('frame', () => {
+      const r = app.rig; this.loose = !!this.foot && r.mode === 'walk' && this.inside(r.walk.x, r.walk.z);
+      if (this.m89) { const e = app.materials.houses.emissiveIntensity * 0.94; for (const k of ['facade', 'rdc', 'comble']) this.m89[k].emissiveIntensity = e; }      // la nuit, les fenêtres du calque s'éclairent aussi
+    });
     this.mats = {
-      ilot: new THREE.MeshStandardMaterial({ color: 0xece4d0, roughness: 1, metalness: 0, side: THREE.DoubleSide }),
-      ilotBas: new THREE.MeshStandardMaterial({ color: 0xcdbf9c, roughness: 1, metalness: 0, side: THREE.DoubleSide }),
-      or: new THREE.MeshStandardMaterial({ color: 0xdcb866, roughness: 0.9, metalness: 0, side: THREE.DoubleSide }),
+      mur: new THREE.MeshStandardMaterial({ color: 0xcdbb94, roughness: 0.95, metalness: 0, side: THREE.DoubleSide }),
       romain: new THREE.MeshStandardMaterial({ color: 0xe8936a, roughness: 0.95, metalness: 0, side: THREE.DoubleSide }),
     };
   }
@@ -196,7 +206,7 @@ export class Epochs {
       const T = { s, x: (x) => (x - R.x) * s, y: (z) => (z - R.z) * s };
       ctx.lineJoin = 'round';
       if (lots.length) stroke(ctx, lots, T, 'rgba(172,154,122,0.95)', 16 * s);
-      paintEpoch(ctx, T, j);
+      paintEpoch(ctx, T, j, lots);
       ctx.restore(); tex.needsUpdate = true;
     }
     if (j.passe === 1) {
@@ -216,20 +226,33 @@ export class Epochs {
     return k / n;
   }
 
+  // Matières des maisons dessinées : celles de la maquette, plus les façades enduites des XVIIe-XIXe siècles (créées au besoin).
+  houseMats(enduit) {
+    if (enduit && !this.m89) this.m89 = makeHouseMaterials89(this.app.mobile ? 0.5 : 1);
+    return { ...this.app.materials, ...(this.m89 || {}) };
+  }
+
+  // Ce que la date ajoute à la maquette, dessiné : les maisons des îlots bâtis après 1380 (évoquées le long des rues), les
+  // édifices postérieurs que situe le plan restitué, les enceintes debout à cette date, les monuments antiques.
   buildVolumes(j) {
-    const T = this.app.terrain, g = new THREE.Group(), feet = []; let tris = 0;
+    const T = this.app.terrain, g = new THREE.Group(), feet = [], B = new Builder(), shim = shimApp(this.app); let tris = 0, maisons = 0;
     const add = (solid, mat, block) => { const m = solid.mesh(mat); if (m) { g.add(m); tris += solid.pos.length / 9; if (block) feet.push(...solid.foot); } };
+    const pans = j.an < 1600;                              // maisons à pans de bois jusqu'au XVIe siècle, enduites ensuite
     if (j.ilots && !j.passe) {                             // îlots que l'époque montre bâtis et qui ne l'étaient pas en 1380
-      const SU = new Solid(), SI = new Solid(), polys = ilotsOf(j.ilots), t = E.ilots[j.ilots].t;
-      polys.forEach((rings, i) => { if (t[i] === 'R' || this.builtShare(rings[0]) > 0.34) return; if (t[i] === 'U') SU.prism(rings, 9, T); else SI.prism(rings, 3.5, T); });
-      add(SU, this.mats.ilot, true); add(SI, this.mats.ilotBas, true); g.userData.lots = SU.foot.concat(SI.foot);              // îlots denses : hauts et clairs ; îlots intermédiaires : bas et plus sombres
+      const polys = ilotsOf(j.ilots), t = E.ilots[j.ilots].t, lots = [];
+      polys.forEach((rings, i) => { if (t[i] === 'R' || this.builtShare(rings[0]) > 0.34) return; maisons += lotirIlot(shim, B, rings[0], i, { pans, dense: t[i] === 'U', mansardes: j.an < 1700 ? 0.1 : 0.32 }); lots.push(rings); });
+      feet.push(...lots); g.userData.lots = lots;
     }
-    const W = new Solid(), F = new Solid();                // enceintes debout à cette date et absentes de la maquette ; édifices à venir
+    const W = new Solid(), F = new Solid();                // enceintes debout à cette date et absentes de la maquette ; arènes et théâtre antiques
     for (const w of enceintes()) if (wallState(w, j.an) === 1 && (w.id === 'fosses-jaunes' || w.id === 'fermiers-generaux' || (j.passe && (w.id === 'romaine' || w.id === 'carolingienne')))) for (const rings of w.polys) if (Math.abs(areaOf(rings[0])) > 4) W.prism(rings, w.id === 'fermiers-generaux' ? 3.4 : 6, T);
-    if (j.futur) for (const o of futur()) if (o.nature !== 'Voie' && o.nature !== 'Zone bâtie') for (const rings of o.polys) F.prism(rings, o.nature === 'Tour' ? 40 : o.nature === 'Église' ? 22 : 13, T, 0.4);
-    add(W, this.mats.or); add(F, this.mats.or, true);
-    if (j.lutece) { const R = new Solid(); for (const m of lutece().monuments) for (const rings of m.polys) R.prism(rings, /Arènes|Théâtre/.test(m.nom) ? 11 : /Forum/.test(m.nom) ? 9 : 14, T, 0.3); add(R, this.mats.romain, true); }
-    g.userData.tris = tris; g.userData.foot = footIndex(feet); g.userData.blocs = feet.length;
+    if (j.futur) futur().forEach((o, k) => {               // édifices postérieurs à 1380, une fois commencés
+      if (o.nature === 'Voie' || o.nature === 'Zone bâtie' || parseInt(o.date, 10) > j.an) return;
+      for (const rings of o.polys) { edifice(shim, B, o.nature, rings[0], k); feet.push(rings); }
+    });
+    add(W, this.mats.mur);
+    if (j.lutece) { for (const m of lutece().monuments) for (const rings of m.polys) { if (/Arènes|Théâtre/.test(m.nom)) F.prism(rings, 11, T, 0.3); else { antique(shim, B, rings[0]); feet.push(rings); } } add(F, this.mats.romain, true); }
+    for (const m of B.finish(g, this.houseMats(!pans && maisons > 0))) m.userData.dessin = true;
+    g.userData.tris = tris + Math.round(B.tris); g.userData.maisons = maisons; g.userData.foot = footIndex(feet); g.userData.blocs = feet.length;
     return g;
   }
 
@@ -241,11 +264,13 @@ export class Epochs {
     this.foot = null; this.loose = false;
     if (j.base) { U.uEpochOn.value = 0; cu.uEpochMode.value = 0; this.group.visible = false; }
     else {
+      for (const [k, grp] of this.volumes) if (k !== j.id) { grp.traverse((m) => { if (m.geometry) m.geometry.dispose(); }); this.volumes.delete(k); }      // une seule date en mémoire
       if (!this.volumes.has(j.id)) this.volumes.set(j.id, this.buildVolumes(j));
       this.ensureCanvases(); this.paintCanvases(j, this.volumes.get(j.id).userData.lots);
       U.uEpochOn.value = 1; cu.uEpochMode.value = j.passe || 0;
       this.group.add(this.volumes.get(j.id)); this.group.visible = true; this.foot = this.volumes.get(j.id).userData.foot;
     }
+    if (app.shadowState) app.shadowState.hour = -1;        // les maisons du calque portent ombre : la carte d'ombres est à refaire
     if (this.onChange) this.onChange(j);
     return j;
   }

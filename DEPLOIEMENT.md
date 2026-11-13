@@ -1,4 +1,4 @@
-# Paris 1380 — note de déploiement
+# Paris à travers le temps — note de déploiement
 
 Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dépôt.
 
@@ -33,10 +33,11 @@ Après une modification des sources, lancer `npm install && npm run build && npm
 
 ## GitHub Pages (gratuit)
 
-Le dépôt est prêt à être servi tel quel : `index.html`, à la racine, renvoie vers `dist/index.html`, et `.nojekyll` évite
-toute transformation des fichiers. Pour l'activer : dans le dépôt, *Settings* → *Pages* → *Build and deployment* →
+Le dépôt est prêt à être servi tel quel : à la racine, `index.html` renvoie vers `dist/index.html` et `1789.html` vers
+`dist/1789.html` (en gardant le lien partagé), et `.nojekyll` évite toute transformation des fichiers. Pour l'activer : dans le dépôt, *Settings* → *Pages* → *Build and deployment* →
 *Source* : « Deploy from a branch », branche `main`, dossier `/ (root)`, puis *Save*. Le site répond au bout d'une minute
-ou deux à l'adresse <https://calyzo-cpmo.github.io/paris-1380/> ; chaque envoi sur `main` le met à jour.
+ou deux aux adresses <https://calyzo-cpmo.github.io/paris-1380/> (Paris 1380) et
+<https://calyzo-cpmo.github.io/paris-1380/1789.html> (Paris 1789) ; chaque envoi sur `main` le met à jour.
 
 ## À savoir avant d'ouvrir au public
 

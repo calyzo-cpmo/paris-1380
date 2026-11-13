@@ -1,15 +1,17 @@
-# Paris 1380 et Paris 1789 — maquettes 3D interactives
+# Paris à travers le temps — maquettes 3D interactives de Paris en 1380 et en 1789
 
-Restitution en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
+Paris à huit dates, de Lutèce à 1836, dont deux maquettes détaillées : 1380 et 1789. La première page est une restitution
+en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
 survol libre, cinq parcours commentés, promenade à pied dans des rues peuplées et jusque dans la campagne, histoire de
 chaque monument, visite de leurs intérieurs, mini-plan et boussole, heure du jour réglable, calque montrant ce qui est
 attesté, restitué ou conjectural, et frise des époques qui superpose à la maquette le Paris d'autres dates, de Lutèce à 1836.
 
 Une seconde page, **Paris 1789**, montre la ville à la veille de la Révolution, dans le mur des Fermiers généraux :
 plus de vingt mille bâtiments dressés d'après leur emprise réelle, la Seine, le relief, une cinquantaine de repères,
-le survol et la promenade à pied. On y accède par la frise des époques (date 1791) ; elle renvoie à la maquette de 1380.
+le survol et la promenade à pied. On y accède par la date 1789 de la frise des époques ; elle porte la même frise, dont
+les autres dates ramènent à la première page.
 
-**Voir les maquettes en ligne :** <https://calyzo-cpmo.github.io/paris-1380/> (GitHub Pages) ; Paris 1789 : `dist/1789.html`.
+**Voir les maquettes en ligne** (GitHub Pages) : Paris 1380, <https://calyzo-cpmo.github.io/paris-1380/> ; Paris 1789, <https://calyzo-cpmo.github.io/paris-1380/1789.html>. Ces deux adresses renvoient vers les pages elles-mêmes, `dist/index.html` et `dist/1789.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` et `dist/1789.html` (fichiers autonomes, aucun serveur nécessaire).
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
 
@@ -62,12 +64,13 @@ le survol et la promenade à pied. On y accède par la frise des époques (date 
 - **Degré de certitude** : un calque teinte chaque volume — restitué d'après images et vestiges, emprise attestée par le
   plan, conjectural, hors du plan — et chaque fiche l'indique.
 - **Époques** : une frise pose sur la maquette de 1380 le Paris de huit dates — Lutèce, 1300, 1380, 1553, 1652, 1741,
-  1791, 1836. Pour les époques antérieures, ce qui n'existe pas encore passe en pointillé et le tracé d'alors se dessine
-  au sol (rues et monuments de Lutèce, îlots de 1300) ; pour les époques postérieures, les îlots bâtis depuis 1380 se
-  dressent en volumes clairs, les nouvelles enceintes (Fossés jaunes, Fermiers généraux) en doré, les établissements
-  religieux en pastilles, et le mini-plan passe à l'échelle de l'agglomération. Chaque date a son texte, sa légende, ses
-  chiffres et ses crédits ; un bouton fait défiler toute la frise. À pied, les volumes du calque se contournent comme
-  des maisons.
+  1789, 1836. Pour les époques antérieures, ce qui n'existe pas encore passe en pointillé et le tracé d'alors se dessine
+  au sol (rues et monuments de Lutèce, îlots de 1300) ; pour les époques postérieures, les quartiers bâtis depuis 1380
+  sont dessinés en maisons le long des rues — à pans de bois en 1553, enduites à hautes fenêtres ensuite —, les édifices
+  postérieurs et les nouvelles enceintes (Fossés jaunes, Fermiers généraux) en pierre, les établissements religieux en
+  pastilles, et le mini-plan passe à l'échelle de l'agglomération. La date 1789, en doré comme 1380, ouvre sa propre
+  maquette détaillée. Chaque date a son texte, sa légende, ses chiffres et ses crédits ; un bouton fait défiler toute la
+  frise. À pied, les maisons du calque se contournent comme les autres.
 - **Partager** : l'adresse de la page suit la vue, l'heure, la fiche ouverte et l'époque ; le bouton « Partager » la copie.
 - **Téléphone** : barre du bas sur une ligne, fiche en volet à déplier, menus repliés.
 
@@ -149,14 +152,16 @@ simplifiées, recalées sur le repère de la maquette (257 îlots communs aux de
 | 1553 | îlots du plan de Truschet et Hoyau, dit de Bâle | © ALPAGE : D. Gherdevich, H. Noizet |
 | 1652 | îlots du plan de Gomboust | © ALPAGE : D. Gherdevich, H. Noizet |
 | 1741 | îlots du plan de Delagrive | © ALPAGE : D. Gherdevich, H. Noizet |
-| 1791 | îlots et Seine du plan de Verniquet (levé de 1782 à 1790) | © ALPAGE : P. Rouet |
+| 1789 | îlots et Seine du plan de Verniquet (levé de 1782 à 1790) | © ALPAGE : P. Rouet |
 | 1836 | îlots et Seine de l'Atlas de Vasserot (1810-1836) | Arch. nat. F31 73-96 – Arch. Paris © ALPAGE : P. Rouet |
 | toutes | enceintes, de la muraille romaine de la Cité au mur des Fermiers généraux | © ALPAGE : A.-L. Bethe, Y. Brault, N. Faucherre, D. Gherdevich, H. Noizet, P. Rouet |
 | 1300 à 1791 | établissements religieux, avec leurs dates de fondation et de disparition | © ALPAGE : É. Lallau |
 | après 1380 | édifices postérieurs à 1380 situés sur le plan restitué | © ALPAGE : P. Rouet |
 
-Ce que le calque affirme et ce qu'il n'affirme pas : seules les **emprises au sol** viennent des données. La hauteur
-des volumes est conventionnelle (îlots urbains 9 m, intermédiaires 3,5 m). La densité des îlots est celle que figurent
+Ce que le calque affirme et ce qu'il n'affirme pas : seules les **emprises au sol** viennent des données. Les maisons
+qui bordent les îlots bâtis après 1380 sont une évocation (`src/epochfabric.js`) : leur nombre, leur hauteur, leur style
+et leurs toits sont de convention, comme le détail des édifices postérieurs ; les îlots de densité intermédiaire sont
+bâtis de façon clairsemée. La densité des îlots est celle que figurent
 les plans de 1553, 1652 et 1741 ; pour 1791 et 1836, faute de cette information, la taille de l'îlot en tient lieu et
 la légende le dit. En 1300, la limite de l'urbanisation de la rive droite n'est pas connue : les îlots extérieurs ont
 été prolongés jusqu'au futur mur de Charles V par les auteurs de la couche. Les dates des enceintes sont celles de
@@ -170,7 +175,7 @@ leurs fiches ALPAGE ; ni l'enceinte de Thiers ni le Paris d'Haussmann ne figuren
 | Restitué d'après images et vestiges | volumes des grands monuments (Notre-Dame, Sainte-Chapelle, Palais, Louvre, Bastille, Temple, Châtelets) |
 | Vraisemblable mais conjectural | forme de chaque maison, élévation des églises paroissiales et des hôtels, végétation, relief de détail |
 | Intérieurs | dimensions connues pour Notre-Dame, la Sainte-Chapelle, la Grand'Salle, le frigidarium de Cluny, le réfectoire des Bernardins et le donjon de Vincennes ; mobilier restitué d'après textes et inventaires ; les autres intérieurs (paroisses, hôtels, corps de garde) sont des évocations, signalées dans chaque notice |
-| Calque des époques | emprises des îlots, enceintes et établissements religieux issues du SIG ALPAGE, recalées à 2-3 m près ; hauteur des volumes conventionnelle ; densité de 1791 et 1836 déduite de la taille des îlots |
+| Calque des époques | emprises des îlots, enceintes et établissements religieux issues du SIG ALPAGE, recalées à 2-3 m près ; maisons et détail des édifices évoqués ; densité de 1791 et 1836 déduite de la taille des îlots |
 | Évocation | habitants, bêtes, étals, bateaux, bannières, chantiers : ils donnent l'échelle et la vie, leur place exacte est inventée ; villages, Vincennes et chartreuse sont situés d'après leur emplacement connu, hors du plan ; champs, haies, vignes, bois et relief de la campagne sont une évocation |
 
 Le calque « Degré de certitude » (menu « Affichage ») reporte ces catégories sur la maquette : chaque étape de construction
@@ -219,7 +224,8 @@ src/props.js                 étals, puits, échafaudages, grues, marchés, chan
 src/places.js, sources.js    fiches des lieux, catalogue des sources
 src/tours.js                 parcours commentés
 src/certainty.js             calque « degré de certitude », pointillé de ce qui n'existe pas encore à l'époque choisie
-src/epochs.js                calque des époques : jalons, peinture au sol, volumes, emprises infranchissables à pied
+src/epochs.js                calque des époques : jalons, peinture au sol, emprises infranchissables à pied
+src/epochfabric.js           maisons évoquées et édifices de pierre des dates de la frise
 src/vlq.js                   décodage des géométries compactes de data/epoques.json
 src/where.js                 rives, îles et rues nommées du plan (« où suis-je »)
 src/minimap.js               mini-plan
