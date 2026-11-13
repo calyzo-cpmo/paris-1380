@@ -239,7 +239,7 @@ npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans dat
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
 npm run build     # produit dist/index.html et dist/1789.html
-npm test          # 113 vérifications pour Paris 1380, puis 42 pour Paris 1789, dans Chromium (Playwright requis)
+npm test          # 113 vérifications pour Paris 1380, puis 43 pour Paris 1789, dans Chromium (Playwright requis)
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),

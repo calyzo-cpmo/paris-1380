@@ -39,6 +39,11 @@ const rel = await page.evaluate(() => { const a = window.__app, T = a.terrain, P
 check('relief de Girard : la Cité au bord de l’eau, la montagne Sainte-Geneviève et l’Étoile en hauteur', rel.cite > 3 && rel.cite < 12 && rel.genevieve > rel.cite + 15 && rel.etoile > rel.cite + 15, JSON.stringify(rel));
 check('la Seine : lit creusé, prolongée au-delà du plan vers l’aval et vers l’amont', rel.eau && rel.fond < -2 && rel.aval.length === 2 && rel.aval[0][0] < -4000 && rel.aval[1][0] > 2000 && rel.auLoin.every((h) => h < -2) && rel.rive.every((h) => h > 1), JSON.stringify(rel));
 
+// ---------- sol : dans le mur, l'espace public (places, quais) est de terre battue, pas de campagne
+const sol = await page.evaluate(() => { const a = window.__app, P = a.plan, px = (x, z) => { const R = P.rectCentre, c = P.centre, d = c.getContext('2d').getImageData(Math.round(((x - R.x) / R.w) * c.width), Math.round(((z - R.z) / R.h) * c.height), 1, 1).data; return [d[0], d[1], d[2]]; }; return { greve: px(40, -330), tuileries: px(-1695, -1179), louisXV: px(-2118, -1396) }; });
+const terre = (c) => c[0] > c[1] && c[1] > c[2] && c[0] - c[2] > 20, vert = (c) => c[1] > c[0] && c[1] > c[2];
+check('sol : place de Grève en terre battue, jardin des Tuileries en vert, place Louis XV sablée', terre(sol.greve) && vert(sol.tuileries) && terre(sol.louisXV), JSON.stringify(sol));
+
 // ---------- habitants : la foule se forme près des rues, marche, reste sur la voie et hors des murs
 await page.evaluate(() => { const a = window.__app; a.rig.goal = { x: -330, z: -260, dist: 170, az: -0.6, el: 0.45 }; a.rig.cur = { ...a.rig.goal }; }); await frames(30);
 const c0 = await page.evaluate(() => { const a = window.__app, p = a.people.pools[0]; return { total: a.people.total, n: a.people.count, xs: Array.from(p.x.slice(0, 20)), zs: Array.from(p.z.slice(0, 20)), voies: +(a.nav.data.reduce((s, v) => s + v, 0) / a.nav.data.length).toFixed(2) }; });

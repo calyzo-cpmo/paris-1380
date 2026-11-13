@@ -37,12 +37,24 @@ export function ilotClasses() {
 // Enclos nommés par l'atlas : jardins et promenades plantées d'un côté, places et terrains sablés de l'autre.
 export const ENC_JARDIN = /^(Jardin|Parc|Les Champs Elys|Clos|Esplanade|Palais de la Chambre des Pairs)/, ENC_SABLE = /^(Place|Champ de Mars|Marché)/;
 
+// Contour de la ville : le point du mur des Fermiers généraux le plus éloigné du centre, par secteur d'un demi-degré.
+// Tout ce qui s'y trouve hors des îlots et du fleuve est de l'espace public : rues, quais, places.
+let enceinte = null;
+export function contourVille() {
+  if (enceinte) return enceinte;
+  const N = 720, far = new Array(N).fill(null);
+  for (const rings of mur()) for (const p of rings[0]) { const dx = p[0] - CENTRE.x, dz = p[1] - CENTRE.z, k = Math.floor(((Math.atan2(dz, dx) + Math.PI) / (2 * Math.PI)) * N) % N, d = dx * dx + dz * dz; if (!far[k] || d > far[k].d) far[k] = { d, p }; }
+  return (enceinte = far.filter(Boolean).map((f) => f.p));
+}
+
 // T : { s (pixels par mètre), x(xMonde), y(zMonde) }.
 export function paintPlan(x, T, tile, cls, ext = []) {
   const s = T.s, pat = x.createPattern(tile, 'repeat'), k = (TUILE * s) / tile.width;
   pat.setTransform(new DOMMatrix().translate(T.x(0), T.y(0)).scale(k));
   x.fillStyle = pat; x.fillRect(0, 0, x.canvas.width, x.canvas.height);
   const by = { c: [], j: [], r: [] }; ilots().forEach((rings, i) => by[cls[i]].push(rings));
+  fill(x, T, [[contourVille()]], 'rgb(168,156,134)');                                    // dans le mur, l'espace public est de terre battue
+  fill(x, T, by.r, pat);                                                                  // les îlots ruraux gardent leurs cultures
   stroke(x, T, by.r, 'rgba(176,160,128,0.9)', Math.max(1.5, 9 * s));                     // chemins des faubourgs
   stroke(x, T, by.c.concat(by.j), 'rgb(168,156,134)', Math.max(2, 15 * s));              // chaussées
   fill(x, T, by.j, 'rgb(134,148,96)'); stroke(x, T, by.j, 'rgba(96,104,70,0.6)', Math.max(0.6, 1.2 * s));
