@@ -309,7 +309,7 @@ await page.evaluate(() => { window.__app.ui.stopTour(); window.__app.ui.select(n
 await page.click('#btn-epoch'); await frames(2);
 const fr0 = await page.evaluate(() => { const a = window.__app; return { ids: [...document.querySelectorAll('#frise-jalons button')].map((b) => b.dataset.id).join(' '), actif: document.querySelector('#frise-jalons [aria-pressed="true"]').dataset.id, on: a.epochU.uEpochOn.value, info: !document.getElementById('frise-info').hidden, bouton: document.getElementById('btn-epoch').getAttribute('aria-expanded') }; });
 check('frise des époques : huit jalons, 1380 au repos', (await visible('#frise')) && fr0.ids === 'lutece 1300 1380 1553 1652 1741 1791 1836' && fr0.actif === '1380' && fr0.on === 0 && fr0.info && fr0.bouton === 'true', JSON.stringify(fr0));
-const attendu = { lutece: [2, 'Lutèce', 100, 4], 1300: [1, 'Paris 1300', 0, 5], 1553: [0, 'Paris 1553', 3000, 6], 1652: [0, 'Paris 1652', 8000, 6], 1741: [0, 'Paris 1741', 9000, 6], 1791: [0, 'Paris 1791', 20000, 7], 1836: [0, 'Paris 1836', 20000, 6] };
+const attendu = { lutece: [2, 'Lutèce', 100, 4], 1300: [1, 'Paris 1300', 0, 5], 1553: [0, 'Paris 1553', 3000, 6], 1652: [0, 'Paris 1652', 8000, 6], 1741: [0, 'Paris 1741', 9000, 6], 1791: [0, 'Paris 1789', 20000, 7], 1836: [0, 'Paris 1836', 20000, 6] };
 for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
   await page.click(`#frise-jalons button[data-id="${id}"]`); await frames(2);
   const e = await page.evaluate(() => { const a = window.__app, g = a.epochs.group.children[0]; return { on: a.epochU.uEpochOn.value, mode: a.cert.uniforms.uEpochMode.value, tris: g ? g.userData.tris : 0, vis: a.epochs.group.visible, titre: document.querySelector('#brand h1').textContent, dock: document.getElementById('epoch-label').textContent, leg: document.querySelectorAll('#frise-legend li').length, stats: document.getElementById('frise-stats').textContent.length, credit: document.getElementById('frise-credit').textContent, corps: document.body.classList.contains('epoch'), plan: !!a.ui.mini.epoch, lien: a.ui.link() }; });
@@ -318,7 +318,20 @@ for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
 }
 // la frise mène à la seconde maquette depuis la date qui en est la plus proche
 const l89 = await page.evaluate(() => { const a = window.__app, p = document.getElementById('frise-1789'), vu = {}; for (const id of ['1741', '1791', '1836']) { a.ui.setEpoch(id); vu[id] = !p.hidden; } return { vu, href: p.querySelector('a').getAttribute('href'), texte: p.querySelector('a').textContent }; });
-check('frise : en 1791, un lien ouvre la maquette de Paris 1789', l89.vu['1791'] && !l89.vu['1741'] && !l89.vu['1836'] && l89.href === '1789.html' && /1789/.test(l89.texte), JSON.stringify(l89));
+check('frise : à la date 1789, un lien ouvre la maquette détaillée', l89.vu['1791'] && !l89.vu['1741'] && !l89.vu['1836'] && l89.href === '1789.html' && /1789/.test(l89.texte), JSON.stringify(l89));
+// la date 1789 figure dans la frise sous ce nom et mène à sa maquette ; les autres dates sont dessinées, sans volumes blancs
+const dess = await page.evaluate(() => {
+  const a = window.__app, M = a.materials, lien = document.querySelector('#frise-jalons [data-id="1791"]'), out = { lien: [lien.tagName, lien.getAttribute('href'), lien.textContent], noms: [...document.querySelectorAll('#frise-jalons > *')].map((b) => b.textContent).join(' ') };
+  for (const id of ['1553', '1741']) {
+    a.ui.setEpoch(id); const g = a.epochs.group.children[0], by = {}; let blanc = 0;
+    g.traverse((m) => { if (!m.isMesh) return; const k = Object.keys(M).find((q) => M[q] === m.material) || (a.epochs.m89 && Object.keys(a.epochs.m89).find((q) => a.epochs.m89[q] === m.material)) || 'autre'; by[k] = (by[k] || 0) + m.geometry.attributes.position.count; if (m.material.color && m.material.color.getHex() === 0xece4d0) blanc++; });
+    out[id] = { maisons: g.userData.maisons, by, blanc, cache: a.epochs.volumes.size };
+  }
+  a.ui.setEpoch('1380'); return out;
+});
+check('frise : « 1789 » y figure et mène à sa maquette', dess.lien[0] === 'A' && dess.lien[1] === '1789.html' && dess.lien[2] === '1789' && dess.noms === 'Lutèce 1300 1380 1553 1652 1741 1789 1836', JSON.stringify([dess.lien, dess.noms]));
+check('dates dessinées : en 1553, maisons à pans de bois sur les quartiers nouveaux, aucun volume blanc', dess['1553'].maisons > 300 && dess['1553'].by.houses > 20000 && dess['1553'].by.roof > 5000 && !dess['1553'].blanc && !dess['1553'].by.facade, JSON.stringify(dess['1553']));
+check('dates dessinées : en 1741, maisons enduites à combles, édifices de pierre, une seule date en mémoire', dess['1741'].maisons > 1500 && dess['1741'].by.facade > 50000 && dess['1741'].by.comble > 2000 && dess['1741'].by.stonefx > 100 && !dess['1741'].blanc && dess['1741'].cache === 1, JSON.stringify(dess['1741']));
 // les chiffres racontent la croissance ; les enceintes se succèdent ; le masque de 1300 laisse en pointillé ce qui n'existe pas encore
 const ev = await page.evaluate(() => {
   const a = window.__app, E = a.epochs, L = E.lib, st = {}; for (const j of L.JALONS) { const s = L.stats(j); st[j.id] = { ilots: s.ilots || 0, ha: s.haUrbain || 0, egl: s.eglises || 0, murs: s.enceintes.length, rues: s.rues || 0 }; }

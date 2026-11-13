@@ -53,6 +53,8 @@ h1, h2, h3, p, dl, ul, ol { margin: 0; }
 #brand h1, #loading h1 { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1; letter-spacing: 0.01em; }
 #brand h1 span, #loading h1 span { color: var(--gold); }
 #brand p { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+#brand #brand-site, #load-site { font-family: var(--sans, inherit); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin: 0 0 3px; white-space: nowrap; }
+#load-site { font-size: 13px; letter-spacing: 0.2em; margin: 0; }
 #where { color: var(--ink) !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #where b { color: var(--gold); font-weight: 500; }
 #menu { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; position: relative; }
@@ -184,7 +186,15 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #frise-play .ico-pause, #frise-play[aria-pressed="true"] .ico-play { display: none; }
 #frise-play[aria-pressed="true"] .ico-pause { display: inline; }
 #frise-jalons { flex: 1; min-width: 0; }
-#frise-jalons button { flex: 1 1 0; min-width: 0; padding: 5px 2px; font-family: var(--serif); font-size: 14.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#frise-jalons button, #frise-jalons a { flex: 1 1 0; min-width: 0; padding: 5px 2px; font-family: var(--serif); font-size: 14.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#frise-jalons a { background: var(--panel); border: 1px solid var(--line); margin-left: -1px; color: inherit; text-align: center; text-decoration: none; cursor: pointer; }
+#frise-jalons a:first-child { margin-left: 0; border-radius: 2px 0 0 2px; }
+#frise-jalons a:last-child { border-radius: 0 2px 2px 0; }
+#frise-jalons a:hover { border-color: var(--gold); }
+#frise-jalons a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+#frise-jalons a[aria-pressed="true"], #frise-jalons a[aria-current="page"] { background: var(--gold); color: #1b1606; border-color: var(--gold); font-weight: 700; }
+#frise-jalons .maquette:not([aria-pressed="true"]):not([aria-current="page"]), #frise-jalons .base:not([aria-pressed="true"]) { color: var(--gold); }
+#frise-note { flex: none; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 #frise-jalons button.base:not([aria-pressed="true"]) { color: var(--gold); }
 #frise-more { flex: none; padding: 5px 10px; }
 #frise-info { position: fixed; left: var(--gutter-l); top: calc(84px + env(safe-area-inset-top, 0px)); width: min(330px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 76px); overflow: auto; padding: 12px 14px 12px; z-index: 4; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
@@ -334,7 +344,8 @@ body.walking #scene canvas:active { cursor: grabbing; }
   #compass { width: 36px; height: 36px; }
   #frise { gap: 5px; padding: 6px; }
   #frise-jalons { overflow-x: auto; scrollbar-width: none; }
-  #frise-jalons button { flex: 0 0 auto; font-size: 13px; padding: 6px 9px; }
+  #frise-jalons button, #frise-jalons a { flex: 0 0 auto; font-size: 13px; padding: 6px 9px; }
+  #frise-note { display: none; }
   #frise-more { padding: 5px 7px; font-size: 13px; }
   #frise-info { left: 0; right: 0; top: auto; bottom: calc(var(--dock-h) + 62px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 44%; border-left: 0; border-right: 0; padding: 10px 14px; }
   #frise-text { font-size: 14.5px; }

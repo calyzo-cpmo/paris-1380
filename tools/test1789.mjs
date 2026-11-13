@@ -176,9 +176,21 @@ check('sources : couches ALPAGE créditées, licence ODbL, décalage de date ann
 await page.keyboard.press('Escape');
 check('Échap referme les sources', await page.evaluate(() => document.getElementById('sources').hidden));
 await page.click('#btn-help'); check('aide', await visible('#help')); await page.keyboard.press('Escape');
+// ---------- frise des dates : 1789 en cours, les autres dates mènent à la première page
+await page.click('#btn-epoch');
+const fr = await page.evaluate(() => { const l = [...document.querySelectorAll('#frise-jalons a')]; return { ouvert: !document.getElementById('frise').hidden, noms: l.map((a) => a.textContent).join(' '), liens: l.map((a) => a.getAttribute('href')), ici: l.filter((a) => a.getAttribute('aria-current') === 'page').map((a) => a.textContent).join(), site: document.getElementById('brand-site').textContent, titre: document.title }; });
+check('frise des dates : 1789 en cours, les autres dates mènent à la première page ; le site s’appelle « Paris à travers le temps »', fr.ouvert && fr.noms === 'Lutèce 1300 1380 1553 1652 1741 1789 1836' && fr.ici === '1789' && fr.liens[2] === 'index.html' && fr.liens[3] === 'index.html#e=1553' && fr.liens[6] === null && fr.liens[7] === 'index.html#e=1836' && fr.site === 'Paris à travers le temps' && /^Paris à travers le temps/.test(fr.titre), JSON.stringify(fr));
+await page.keyboard.press('Escape');
+check('Échap referme la frise des dates', await page.evaluate(() => document.getElementById('frise').hidden && document.getElementById('btn-epoch').getAttribute('aria-expanded') === 'false'));
 const nav = page.waitForURL(/index\.html/, { timeout: 60000 }).then(() => true).catch(() => false);
 await page.click('#btn-1380');
 check('bouton « Paris 1380 » : retour à la première maquette', await nav, page.url().slice(-40));
+// ---------- adresse courte : à la racine du site (GitHub Pages), 1789.html renvoie vers la page et garde le lien partagé
+{ const p2 = await browser.newPage();
+  await p2.goto('file://' + join(root, '1789.html') + '?x=1#c=-858,-842,700,0.4,0.6&h=18.75', { waitUntil: 'commit' }).catch(() => {});
+  const ok = await p2.waitForURL(/dist\/1789\.html\?x=1#c=-858,-842,700/, { timeout: 60000 }).then(() => true).catch(() => false);
+  check('adresse courte : 1789.html, à la racine du site, renvoie vers la page en gardant le lien partagé', ok, p2.url().slice(-70));
+  await p2.close(); }
 await page.goto('file://' + join(root, 'dist/1789.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 300000 });
 

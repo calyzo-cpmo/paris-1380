@@ -540,9 +540,15 @@ export function initUI(app) {
 
   // ---------- calque temporel : la frise des époques
   const epochs = (app.epochs = new Epochs(app));
-  const LEG = { U: ['', '#e8d0a0'], I: ['', 'rgba(232,208,160,0.5)'], R: ['o', '#f4ecd8'], mur: ['l', '#f0c860'], ancien: ['d', '#f0c860'], egl: ['p', '#c7a3f5'], eau: ['', '#568cc4'], vol: ['', '#ece4d0'], rue: ['l', '#ff9a6a'], mon: ['', '#ff9a6a'], or: ['', '#dcb866'], pt: ['s', '#b9c4d8'] };
+  const LEG = { U: ['', '#e8d0a0'], I: ['', 'rgba(232,208,160,0.5)'], R: ['o', '#f4ecd8'], mur: ['l', '#f0c860'], ancien: ['d', '#f0c860'], egl: ['p', '#c7a3f5'], eau: ['', '#568cc4'], vol: ['', '#b0704e'], rue: ['l', '#ff9a6a'], mon: ['', '#ff9a6a'], or: ['', '#e6dcc4'], pt: ['s', '#b9c4d8'] };
   const jl = $('frise-jalons');
-  for (const j of JALONS) { const b = el('button', j.base ? 'base' : null, j.label); b.type = 'button'; b.dataset.id = j.id; b.title = j.titre; b.setAttribute('aria-pressed', String(!!j.base)); b.addEventListener('click', () => { stopEpochPlay(); setEpoch(j.id); }); jl.appendChild(b); }
+  for (const j of JALONS) {
+    // une date qui a sa propre maquette (1789) est un lien vers elle ; les autres posent la ville de cette date sur celle-ci
+    const b = el(j.page ? 'a' : 'button', j.page ? 'maquette' : j.base ? 'base' : null, j.label); b.dataset.id = j.id; b.setAttribute('aria-pressed', String(!!j.base));
+    if (j.page) { b.href = j.page; b.title = 'Ouvrir la maquette détaillée de Paris en ' + j.label; b.addEventListener('click', stopEpochPlay); }
+    else { b.type = 'button'; b.title = j.titre; b.addEventListener('click', () => { stopEpochPlay(); setEpoch(j.id); }); }
+    jl.appendChild(b);
+  }
   function setEpoch(id) {
     const j = epochs.set(id), s = epochStats(j), nf = (n) => n.toLocaleString('fr-FR');
     for (const b of jl.children) b.setAttribute('aria-pressed', String(b.dataset.id === j.id));
@@ -554,7 +560,7 @@ export function initUI(app) {
     $('epoch-label').textContent = j.label; $('frise-title').textContent = j.titre; $('frise-text').textContent = typo(j.texte);
     // titre de la page : la maquette reste celle de 1380, le calque le rappelle
     const h1 = document.querySelector('#brand h1'); h1.firstChild.nodeValue = j.lutece ? '' : 'Paris '; h1.querySelector('span').textContent = j.label;
-    $('brand-sub').textContent = j.base ? 'Maquette restituée d’après le plan ALPAGE-CNRS' : 'Calque d’époque sur la maquette de 1380';
+    $('brand-sub').textContent = j.base ? 'Maquette restituée d’après le plan ALPAGE-CNRS' : 'La ville à cette date, sur la maquette de 1380';
     body.classList.toggle('epoch', !j.base);
     const leg = $('frise-legend'); leg.textContent = '';
     const item = (k, text) => { const li = el('li'), sw = el('i', LEG[k][0] || null); sw.style.setProperty('--c', LEG[k][1]); li.append(sw, text); leg.appendChild(li); };
@@ -569,8 +575,8 @@ export function initUI(app) {
       if (EPOQUES.enceintes.some((w) => j.an >= w.jusqu)) item('ancien', 'ancien tracé');
       if (j.egl) item('egl', 'établissements religieux');
       if (j.eau) item('eau', 'la Seine à cette date');
-      if (j.ilots && !j.passe) item('vol', 'en volume : bâti après 1380');
-      if (j.futur) item('or', 'édifices et enceintes postérieurs');
+      if (j.ilots && !j.passe) item('vol', 'maisons évoquées : quartiers bâtis après 1380');
+      if (j.futur) item('or', 'édifices bâtis après 1380');
       if (j.passe) item('pt', 'en pointillé : pas encore bâti');
     }
     const st = $('frise-stats'); st.textContent = '';
@@ -582,7 +588,7 @@ export function initUI(app) {
     bits.forEach(([n, t], i) => { if (i) st.append(' · '); if (n) st.append(el('b', null, n)); st.append(i === 0 && !n ? t.charAt(0).toUpperCase() + t.slice(1) : t); });
     $('frise-credit').textContent = j.base ? '' : typo([s.source, s.credit, 'licence ODbL'].filter(Boolean).join(' — '));
     $('frise-wide').hidden = !!j.base; $('frise-src').hidden = !!j.base;
-    $('frise-1789').hidden = j.id !== '1791';               // la date la plus proche de la seconde maquette
+    $('frise-1789').hidden = !j.page;               // la date la plus proche de la seconde maquette
     if (j.base) { const li = el('li'); li.textContent = 'Choisissez une date sur la frise : la maquette reste celle de 1380, l’autre époque vient s’y superposer.'; leg.appendChild(li); }
     mini.setEpoch(j.base ? null : { id: j.id, city: epochs.city, wide: epochs.wide, rectCity: epochs.rectCity, rectWide: epochs.rectWide }, !!j.ilots && !j.passe);
     $('map-zoom').textContent = zoomLabel();

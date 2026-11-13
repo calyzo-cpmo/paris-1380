@@ -1,8 +1,8 @@
 {
   "name": "paris-1380",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "private": true,
-  "description": "Maquettes 3D interactives de Paris vers 1380 et en 1789, construites sur les données du projet ALPAGE",
+  "description": "Paris à travers le temps : maquettes 3D interactives de Paris vers 1380 et en 1789, construites sur les données du projet ALPAGE",
   "type": "module",
   "scripts": {
     "extract": "python3 tools/extract_alpage.py",
