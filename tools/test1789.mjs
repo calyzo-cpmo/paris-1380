@@ -39,10 +39,42 @@ const rel = await page.evaluate(() => { const a = window.__app, T = a.terrain, P
 check('relief de Girard : la Cité au bord de l’eau, la montagne Sainte-Geneviève et l’Étoile en hauteur', rel.cite > 3 && rel.cite < 12 && rel.genevieve > rel.cite + 15 && rel.etoile > rel.cite + 15, JSON.stringify(rel));
 check('la Seine : lit creusé, prolongée au-delà du plan vers l’aval et vers l’amont', rel.eau && rel.fond < -2 && rel.aval.length === 2 && rel.aval[0][0] < -4000 && rel.aval[1][0] > 2000 && rel.auLoin.every((h) => h < -2) && rel.rive.every((h) => h > 1), JSON.stringify(rel));
 
-// ---------- sol : dans le mur, l'espace public (places, quais) est de terre battue, pas de campagne
+// ---------- sol : dans le mur, l'espace public (places, quais) est pavé, pas de campagne
 const sol = await page.evaluate(() => { const a = window.__app, P = a.plan, px = (x, z) => { const R = P.rectCentre, c = P.centre, d = c.getContext('2d').getImageData(Math.round(((x - R.x) / R.w) * c.width), Math.round(((z - R.z) / R.h) * c.height), 1, 1).data; return [d[0], d[1], d[2]]; }; return { greve: px(40, -330), tuileries: px(-1695, -1179), louisXV: px(-2118, -1396) }; });
 const terre = (c) => c[0] > c[1] && c[1] > c[2] && c[0] - c[2] > 20, vert = (c) => c[1] > c[0] && c[1] > c[2];
-check('sol : place de Grève en terre battue, jardin des Tuileries en vert, place Louis XV sablée', terre(sol.greve) && vert(sol.tuileries) && terre(sol.louisXV), JSON.stringify(sol));
+const pave = (c) => c[0] > c[1] && c[1] > c[2] && c[0] - c[2] >= 10 && c[0] - c[2] < 36 && c[0] > 120 && c[0] < 180;      // gris chaud
+check('sol : place de Grève pavée, jardin des Tuileries en vert, place Louis XV sablée', pave(sol.greve) && vert(sol.tuileries) && terre(sol.louisXV), JSON.stringify(sol));
+
+// ---------- aspect : toits, églises, quais (refonte visuelle)
+const vis = await page.evaluate(() => {
+  const a = window.__app, M = a.materials, T = a.terrain, by = {}; let roofCol = 0, roofN = 0, flat = 0;
+  for (const m of a.cityMeshes) {
+    const k = Object.keys(M).find((q) => M[q] === m.material) || '?', g = m.geometry; by[k] = (by[k] || 0) + (g.index ? g.index.count : g.attributes.position.count) / 3;
+    if (k === 'roof') { const c = g.attributes.color, nr = g.attributes.normal; for (let i = 0; i < c.count; i += 7) { roofCol += (c.getX(i) + c.getY(i) + c.getZ(i)) / 3; roofN++; if (nr.getY(i) > 0.985) flat++; } }
+  }
+  // devant chaque mur de quai (1,2 m côté eau), le sol maillé doit rester sous l'eau : on le mesure sur le maillage lui-même
+  const core = a.scene.children.find((m) => m.material === a.groundMat && m !== a.quaiMesh), P = core.geometry.attributes.position, I = core.geometry.index, pts = [];
+  for (const ex of a.quaiPans) for (const l of [ex.outer, ...ex.holes]) l.forEach((s, i) => {
+    const L = Math.hypot(s.c[0] - s.a[0], s.c[1] - s.a[1]), mx = (s.a[0] + s.c[0]) / 2, mz = (s.a[1] + s.c[1]) / 2; if (i % 2 || L < 4 || mx < -1970 || mx > 1420) return;
+    let nx = (s.c[1] - s.a[1]) / L, nz = -(s.c[0] - s.a[0]) / L; if (T.wetAt(mx + nx * 5, mz + nz * 5) < T.wetAt(mx - nx * 5, mz - nz * 5)) { nx = -nx; nz = -nz; }
+    pts.push([mx + nx * 1.2, mz + nz * 1.2, -99]);
+  });
+  const cell = 12, grid = new Map(); pts.forEach((p, k) => { const key = Math.floor(p[0] / cell) + ',' + Math.floor(p[1] / cell); if (!grid.has(key)) grid.set(key, []); grid.get(key).push(k); });
+  for (let t = 0; t < I.count; t += 3) {
+    const i0 = I.getX(t), i1 = I.getX(t + 1), i2 = I.getX(t + 2), ax = P.getX(i0), az = P.getZ(i0), bx = P.getX(i1), bz = P.getZ(i1), cx = P.getX(i2), cz = P.getZ(i2);
+    const x0 = Math.min(ax, bx, cx), x1 = Math.max(ax, bx, cx), z0 = Math.min(az, bz, cz), z1 = Math.max(az, bz, cz), den = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz); if (Math.abs(den) < 1e-9) continue;
+    for (let gx = Math.floor(x0 / cell); gx <= Math.floor(x1 / cell); gx++) for (let gz = Math.floor(z0 / cell); gz <= Math.floor(z1 / cell); gz++) {
+      const l = grid.get(gx + ',' + gz); if (!l) continue;
+      for (const k of l) { const p = pts[k], u = ((bz - cz) * (p[0] - cx) + (cx - bx) * (p[1] - cz)) / den, v = ((cz - az) * (p[0] - cx) + (ax - cx) * (p[1] - cz)) / den, w = 1 - u - v; if (u < -1e-6 || v < -1e-6 || w < -1e-6) continue; p[2] = Math.max(p[2], u * P.getY(i0) + v * P.getY(i1) + w * P.getY(i2)); }
+    }
+  }
+  const mesures = pts.filter((p) => p[2] > -90), pn = a.ui.byId.get('pont-neuf');
+  return { by, roofMean: +(roofCol / roofN).toFixed(3), flat: +(flat / roofN).toFixed(3), paroisses: a.paroisses.size, nd: !!a.ndRing, dallage: a.quaiMesh.geometry.attributes.position.count / 3, murs: mesures.length, emerge: mesures.filter((p) => p[2] > -0.05).length, haut: +Math.max(...mesures.map((p) => p[2])).toFixed(2), pont: +(T.height(pn.x, pn.z) - T.land(pn.x, pn.z)).toFixed(2), berge: +T.height(-3600, T.ext[0] ? -700 : -700).toFixed(1) };
+});
+check('toits : teintes justes (ardoise sombre, tuile), combles à versants, brisis à lucarnes, souches de cheminée', vis.roofMean < 0.3 && vis.flat < 0.3 && vis.by.comble > 50000 && vis.by.plain > 120000 && vis.by.roof > 300000, JSON.stringify(vis.by) + ' ' + vis.roofMean + ' ' + vis.flat);
+check('églises : Notre-Dame en cathédrale, paroisses de l’atlas bâties en églises gothiques, nefs classiques', vis.nd && vis.by.stonefx > 1000 && vis.paroisses >= 12 && vis.by.nef > 300, JSON.stringify({ nd: vis.nd, paroisses: vis.paroisses, stonefx: vis.by.stonefx, nef: vis.by.nef }));
+check('quais et ponts : murs à parapet, arches sous les ponts, dallage au niveau du sol', st.quais > 1000 && st.arches >= 40 && vis.dallage > 3000 && vis.by.pont > 100 && Math.abs(vis.pont) < 0.05, JSON.stringify({ quais: st.quais, arches: st.arches, dallage: vis.dallage, pont: vis.pont }));
+check('quais : devant les murs, le sol reste sous l’eau', vis.murs > 200 && vis.emerge === 0, JSON.stringify({ murs: vis.murs, emerge: vis.emerge, haut: vis.haut }));
 
 // ---------- habitants : la foule se forme près des rues, marche, reste sur la voie et hors des murs
 await page.evaluate(() => { const a = window.__app; a.rig.goal = { x: -330, z: -260, dist: 170, az: -0.6, el: 0.45 }; a.rig.cur = { ...a.rig.goal }; }); await frames(30);

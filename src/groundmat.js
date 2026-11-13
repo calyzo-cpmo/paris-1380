@@ -23,6 +23,22 @@ export function makeDetailTexture() {
   return tex;
 }
 
+// Pavés : texture carrelable de pierres irrégulières.
+export function makeCobbleTexture() {
+  const N = 256, cv = document.createElement('canvas'); cv.width = cv.height = N;
+  const ctx = cv.getContext('2d', { willReadFrequently: true }), r = mulberry32(17);
+  ctx.fillStyle = 'rgb(86,78,66)'; ctx.fillRect(0, 0, N, N);
+  const G = 10, cell = N / G;
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+    const x = i * cell + (j % 2 ? cell / 2 : 0) + (r() - 0.5) * 3, y = j * cell + (r() - 0.5) * 3, w = cell - 3.5 + (r() - 0.5) * 3, h = cell - 3.5 + (r() - 0.5) * 3, v = 150 + r() * 70;
+    ctx.fillStyle = `rgb(${v | 0},${(v * 0.96) | 0},${(v * 0.88) | 0})`;
+    for (const ox of [0, -N, N]) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x + ox + 1.5, y + 1.5, w, h, 5); else ctx.rect(x + ox + 1.5, y + 1.5, w, h); ctx.fill(); }
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 8;
+  return tex;
+}
+
 export function makeGroundMaterial(map, detail, street, near, epoch) {
   const m = new THREE.MeshStandardMaterial({ map, roughness: 1, metalness: 0 });
   m.onBeforeCompile = (sh) => {

@@ -77,11 +77,12 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
 ## Paris 1789 — la seconde maquette
 
 - **Ce qu'elle montre** : Paris dans le mur des Fermiers généraux (9,8 × 7,5 km de terrain modelé) ; 20 334 corps de
-  bâtiment posés sur leur emprise réelle, façades enduites à hautes fenêtres, combles brisés d'ardoise au centre et
-  toits de tuile vers les faubourgs ; la Seine, ses îles et ses ponts ; le relief ; les jardins et les places ;
-  21 monuments (tours de Notre-Dame, Bastille, Invalides et leur dôme, École militaire, Luxembourg, Saint-Sulpice,
+  bâtiment posés sur leur emprise réelle, façades enduites à hautes fenêtres, combles brisés d'ardoise à lucarnes,
+  toits de tuile à deux versants, souches de cheminée ; la Seine entre ses quais de pierre, ses îles et ses ponts à
+  arches ; le relief ; les rues pavées, les jardins et les places ;
+  21 monuments (Notre-Dame sans la flèche de sa croisée, Bastille, Invalides et leur dôme, École militaire, Luxembourg, Saint-Sulpice,
   Sainte-Geneviève, Val-de-Grâce, Observatoire, tour du Temple, portes Saint-Denis et Saint-Martin, barrières de
-  Ledoux…) et les clochers de 44 paroisses ; jusqu'à 4 400 habitants en costumes de la fin du XVIIIe siècle (veste et
+  Ledoux…) et 44 paroisses, bâties en églises là où l'atlas garde leur emprise, signalées par un clocher ailleurs ; jusqu'à 4 400 habitants en costumes de la fin du XVIIIe siècle (veste et
   gilet, habit et tricorne, tablier d'artisan, gardes-françaises, abbés, robes à l'anglaise, fichus et bonnets),
   cavaliers et charrettes dans les rues de la ville dense ; 53 repères avec une courte notice ; le nom de la rue où l'on se trouve, tiré du plan de
   Verniquet (1 194 noms, dans leur graphie d'époque).
@@ -104,7 +105,11 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   - aucune couche ne date exactement de 1789. L'emprise des bâtiments vient de Vasserot, postérieur d'une génération :
     c'est la source la plus proche qui donne chaque bâtiment, et quelques édifices qu'elle montre sont postérieurs à
     la Révolution ;
-  - la hauteur des maisons, leurs façades et leurs toits sont conventionnels (cinq étages au centre, deux vers le mur) ;
+  - la hauteur des maisons (cinq étages au centre, deux vers le mur), leurs façades, la forme de leurs combles, leur
+    couverture d'ardoise ou de tuile et leurs cheminées sont conventionnelles ;
+  - du Cours-la-Reine à l'Arsenal, les rives sont figurées en quais de pierre continus, trois mètres en avant du tracé
+    du plan, alors que plusieurs grèves descendaient encore en pente jusqu'à l'eau ; les arches des ponts sont peintes
+    sur leurs flancs (nombre et portée de convention) et l'on ne passe pas dessous ;
   - 550 îlots, surtout dans les faubourgs, ne sont pas couverts par l'atlas : leur bâti est évoqué par un front de
     maisons le long des rues ;
   - les monuments sont placés et orientés d'après les données (emprise donnée par l'atlas, enclos qu'il nomme,
@@ -112,7 +117,7 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
     évocation, et la hauteur des clochers est conventionnelle. Trois édifices hors de l'atlas ne sont pas encore
     modelés (Salpêtrière, Gobelins, Saint-Lazare) et leur fiche le dit ;
   - les habitants sont une évocation ; ils ne circulent que dans la ville dense (5 × 4,2 km autour du centre) ;
-  - les ponts sont des chaussées pleines, sans arches ; il n'y a pas encore de parcours commentés ni d'intérieurs ;
+  - il n'y a pas encore de parcours commentés ni d'intérieurs ;
   - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
 
 ## Sources
@@ -198,7 +203,9 @@ src/grid.js, groundmat.js    maillage de terrain et matériau du sol, communs au
 src/ground.js                peinture du sol : plan de 1380, campagne proche et lointaine
 src/country.js               campagne : villages, chemins, bois, parcellaire en lanières, nature des cultures
 src/houses.js                lotissement des îlots et maisons
-src/special.js               églises, couvents, hôtels, collèges, halles, enclos
+src/stonework.js             bâtisseurs de pierre communs aux deux pages : murs à baies, tours, contreforts, église générique
+src/cathedral.js             Notre-Dame sur son emprise (avec ou sans la flèche de la croisée), commune aux deux pages
+src/special.js               couvents, hôtels, collèges, halles, enclos de 1380
 src/walls.js, monuments.js   enceintes, portes, Bastille, Louvre, Notre-Dame, Palais, ponts…
 src/landscape.js             arbres, haies, bosquets, vergers, croix de chemin, bateaux à quai, fumées, moulins à vent
 src/people.js                personnages articulés instanciés : foule mobile, cavaliers, charrettes, bêtes, figurants ; deux niveaux de détail (commun aux deux pages)
@@ -220,9 +227,11 @@ src/state.js                 carnet de visite, réglages mémorisés, lien parta
 src/ui.js, controls.js       interface et caméra
 src/body1789.html            page Paris 1789 (mêmes styles que la première)
 src/p1789/data.js            accès aux données de 1789
-src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan
-src/p1789/textures.js        façades de la fin du XVIIIe siècle
-src/p1789/blocks.js          teintes, façades à travées, corps de bâtiment (commun aux maisons et aux monuments)
+src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan, sol des quais
+src/p1789/textures.js        façades de la fin du XVIIIe siècle, brisis à lucarnes, nefs classiques, flancs de pont à arches
+src/p1789/blocks.js          teintes, façades à travées, corps de bâtiment, combles (brisés, en bâtière, à croupes), souches
+src/p1789/eglises.js         Notre-Dame, églises gothiques et clochers, bâtis avec src/cathedral.js et src/stonework.js
+src/p1789/quais.js           murs de quai, parapets, flancs de pont à arches, dallage jusqu'au mur
 src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots évoqués, mur, arbres, collisions, rues
 src/p1789/monuments.js       tours, dômes, clochers et grands ensembles posés sur les emprises et les enclos de l'atlas
 src/p1789/figures.js         visages et costumes de 1789, choix du costume de chaque passant

@@ -134,21 +134,46 @@ export function cap(b, outer, holes, y, o = {}) {
 
 const key = (p) => Math.round(p[0] * 100) + ',' + Math.round(p[1] * 100);
 
+// Couture de deux anneaux emboîtés (la bande entre un polygone et son érodé) : chaque triangle prend un côté sur un
+// anneau et son sommet sur l'autre, si bien que les pans restent plans — une triangulation par oreilles, elle, rabote
+// les angles. Rend des triplets d'indices dans A.concat(Bq).
+function stitch(A, Bq) {
+  const n = A.length, m = Bq.length, dir = polyArea(A) * polyArea(Bq) >= 0 ? 1 : -1, tris = [];
+  let j0 = 0, best = Infinity;
+  for (let j = 0; j < m; j++) { const d = (Bq[j][0] - A[0][0]) ** 2 + (Bq[j][1] - A[0][1]) ** 2; if (d < best) { best = d; j0 = j; } }
+  const J = (k) => (((j0 + dir * k) % m) + m) % m;
+  let i = 0, k = 0;
+  while (i < n || k < m) {
+    const a = A[i % n], q = Bq[J(k)];
+    let adv = k >= m;
+    if (i < n && k < m) { const a1 = A[(i + 1) % n], q1 = Bq[J(k + 1)]; adv = (a1[0] - q[0]) ** 2 + (a1[1] - q[1]) ** 2 <= (q1[0] - a[0]) ** 2 + (q1[1] - a[1]) ** 2; }
+    if (adv) { tris.push([i % n, (i + 1) % n, n + J(k)]); i++; } else { tris.push([i % n, n + J(k + 1), n + J(k)]); k++; }
+  }
+  return tris;
+}
+
 // Toit à croupes sur un polygone quelconque : bandes successives du polygone érodé (squelette droit par paliers).
+// o.brisis { d, h, b, col, us } : comble brisé — une première bande raide (retrait d, hauteur h) placée dans le lot b,
+// puis le terrasson à la pente `pitch`. o.minStep : pas en deçà duquel on ferme le faîte par une dalle.
+// o.stitch : bandes cousues d'un anneau à l'autre (pans plans) plutôt que triangulées par oreilles.
 export function skeletonRoof(b, exIn, y, o = {}) {
-  const pitch = o.pitch ?? 1.1, step0 = o.step ?? 0.9, maxH = o.maxH ?? 1e9, us = o.us ?? 0.33, col = o.col ?? 0xffffff;
+  const pitch = o.pitch ?? 1.1, step0 = o.step ?? 0.9, maxH = o.maxH ?? 1e9, us = o.us ?? 0.33, col = o.col ?? 0xffffff, minStep = o.minStep ?? step0 * 0.26;
+  let bd = o.brisis ? o.brisis.d : 0, bh = o.brisis ? o.brisis.h : 0;
+  const H = (d) => (d < bd ? (d / bd) * bh : bh + (d - bd) * pitch);
   let cur = o.overhang ? offsetEx([exIn], o.overhang) : [exIn];
   let t = 0, guard = 0, step = step0;
   let top = y;
-  const emit = (ex, hOuter, hInner, innerKeys) => {
+  const emit = (ex, hOuter, hInner, innerKeys, bb = b, cc = col, uu = us) => {
     const all = ex.outer.concat(...ex.holes);
     const hs = all.map((p) => (innerKeys && innerKeys.has(key(p)) ? hInner : hOuter));
-    const tris = THREE.ShapeUtils.triangulateShape(ex.outer.map(V2), ex.holes.map((h) => h.map(V2)));
+    const tris = o.stitch && innerKeys && ex.holes.length === 1 ? stitch(ex.outer, ex.holes[0]) : THREE.ShapeUtils.triangulateShape(ex.outer.map(V2), ex.holes.map((h) => h.map(V2)));
     for (const tr of tris) {
       let i0 = tr[0], i1 = tr[1], i2 = tr[2];
       let a = all[i0], c = all[i1], d = all[i2];
       if (!a || !c || !d) continue;
-      if ((c[0] - a[0]) * (d[1] - a[1]) - (c[1] - a[1]) * (d[0] - a[0]) > 0) { const q = i1; i1 = i2; i2 = q; c = all[i1]; d = all[i2]; }
+      const cr = (c[0] - a[0]) * (d[1] - a[1]) - (c[1] - a[1]) * (d[0] - a[0]);
+      if (Math.abs(cr) < 1e-6) continue;                       // triangle dégénéré
+      if (cr > 0) { const q = i1; i1 = i2; i2 = q; c = all[i1]; d = all[i2]; }
       const ya = hs[i0], yc = hs[i1], yd = hs[i2];
       // repère de pente pour les UV : u le long de l'égout, v en montant
       const e1x = c[0] - a[0], e1y = yc - ya, e1z = c[1] - a[1], e2x = d[0] - a[0], e2y = yd - ya, e2z = d[1] - a[1];
@@ -157,25 +182,27 @@ export function skeletonRoof(b, exIn, y, o = {}) {
       const hl = Math.hypot(nx, nz);
       let tx = 1, tz = 0, k = 1;
       if (hl > 0.05) { tx = -nz / hl; tz = nx / hl; k = 1 / Math.max(0.2, ny); }
-      const uvu = (p) => (p[0] * tx + p[1] * tz) * us;
-      const uvv = (p, yy) => (hl > 0.05 ? (yy - y) / hl : p[0] * tz - p[1] * tx) * us;
-      b.tri(a[0], ya, a[1], c[0], yc, c[1], d[0], yd, d[1], uvu(a), uvv(a, ya), uvu(c), uvv(c, yc), uvu(d), uvv(d, yd), col);
+      const uvu = (p) => (p[0] * tx + p[1] * tz) * uu;
+      const uvv = (p, yy) => (hl > 0.05 ? (yy - y) / hl : p[0] * tz - p[1] * tx) * uu;
+      bb.tri(a[0], ya, a[1], c[0], yc, c[1], d[0], yd, d[1], uvu(a), uvv(a, ya), uvu(c), uvv(c, yc), uvu(d), uvv(d, yd), cc);
     }
   };
   while (cur.length && guard++ < 80) {
-    const h0 = y + t * pitch;
-    if (t * pitch >= maxH) { for (const ex of cur) emit(ex, h0, h0, null); top = h0; break; }
-    let next = offsetEx(cur, -step);
+    const h0 = y + H(t);
+    if (H(t) >= maxH) { for (const ex of cur) emit(ex, h0, h0, null); top = h0; break; }
+    const inB = t < bd - 1e-6, st = inB ? bd - t : step;
+    const next = offsetEx(cur, -st);
     if (!next.length) {
-      if (step > step0 * 0.26) { step *= 0.5; continue; }
+      if (inB) { bd = 0; bh = 0; continue; }               // corps trop étroit pour un brisis : simple toit à versants
+      if (step > minStep) { step *= 0.5; continue; }
       for (const ex of cur) emit(ex, h0, h0, null);
       top = h0; break;
     }
-    const h1 = y + (t + step) * pitch;
+    const h1 = y + H(t + st);
     const inner = new Set();
     for (const ex of next) { for (const p of ex.outer) inner.add(key(p)); for (const hh of ex.holes) for (const p of hh) inner.add(key(p)); }
-    for (const ex of difference(cur, next)) emit(ex, h0, h1, inner);
-    cur = next; t += step; top = h1;
+    for (const ex of difference(cur, next)) { if (inB) emit(ex, h0, h1, inner, o.brisis.b || b, o.brisis.col ?? col, o.brisis.us ?? us); else emit(ex, h0, h1, inner); }
+    cur = next; t += st; top = h1;
   }
   return top;
 }
