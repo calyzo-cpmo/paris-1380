@@ -1,6 +1,7 @@
 // Peinture du sol : rues, cours, jardins, cultures (plan de 1380) et campagne alentour.
 import * as THREE from 'three';
-import { FRAME, layer, polys } from './data.js';
+import { FRAME, layer, polys, EXTRA_ROAD } from './data.js';
+import { LU } from './raster.js';
 import { WORLD } from './terrain.js';
 import { hash2, offsetEx, mulberry32 } from './geom.js';
 
@@ -110,6 +111,9 @@ export function paintCoreGround(maxSize) {
   // Égout (ruisseau de Ménilmontant)
   ctx.strokeStyle = rgb([70, 84, 70], 0.9); ctx.lineWidth = 3.5 * s; ctx.lineCap = 'round';
   for (const l of layer('Egout')) if (!l.dash && l.pts.length > 1) { ctx.beginPath(); ctx.moveTo(T.x(l.pts[0][0]), T.y(l.pts[0][1])); for (const p of l.pts) ctx.lineTo(T.x(p[0]), T.y(p[1])); ctx.stroke(); }
+  // route du faubourg Saint-Jacques (zone hors plan)
+  ctx.strokeStyle = rgb(STREET); ctx.lineWidth = 7 * s; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(T.x(EXTRA_ROAD[0][0]), T.y(EXTRA_ROAD[0][1] - 40)); for (const p of EXTRA_ROAD) ctx.lineTo(T.x(p[0]), T.y(p[1])); ctx.stroke();
   noiseOverlay(ctx, W, H, 0.38, 7);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter;
@@ -179,13 +183,46 @@ export function makeDetailTexture() {
   return tex;
 }
 
-export function makeGroundMaterial(map, detail) {
+// Pavés : texture carrelable de pierres irrégulières.
+export function makeCobbleTexture() {
+  const N = 256, cv = document.createElement('canvas'); cv.width = cv.height = N;
+  const ctx = cv.getContext('2d', { willReadFrequently: true }), r = mulberry32(17);
+  ctx.fillStyle = 'rgb(86,78,66)'; ctx.fillRect(0, 0, N, N);
+  const G = 10, cell = N / G;
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+    const x = i * cell + (j % 2 ? cell / 2 : 0) + (r() - 0.5) * 3, y = j * cell + (r() - 0.5) * 3, w = cell - 3.5 + (r() - 0.5) * 3, h = cell - 3.5 + (r() - 0.5) * 3, v = 150 + r() * 70;
+    ctx.fillStyle = `rgb(${v | 0},${(v * 0.96) | 0},${(v * 0.88) | 0})`;
+    for (const ox of [0, -N, N]) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x + ox + 1.5, y + 1.5, w, h, 5); else ctx.rect(x + ox + 1.5, y + 1.5, w, h); ctx.fill(); }
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 8;
+  return tex;
+}
+
+// Masque des voies (2 m par point) : rues de ville pavées, chemins de campagne en terre.
+export function makeStreetMask(lu) {
+  const step = 2, w = Math.ceil(lu.w / step), h = Math.ceil(lu.h / step), d = new Uint8Array(w * h);
+  const urban = (x, z) => { const c = lu.get(x, z); return c === LU.BATI || c === LU.RES || c === LU.COURT; };
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const x = lu.x0 + (i + 0.5) * step, z = lu.z0 + (h - 1 - j + 0.5) * step, c = lu.get(x, z);
+    if (c !== LU.OPEN && c !== LU.BRIDGE) continue;
+    d[j * w + i] = urban(x + 14, z) || urban(x - 14, z) || urban(x, z + 14) || urban(x, z - 14) || urban(x + 26, z + 26) || urban(x - 26, z - 26) ? 255 : 70;
+  }
+  const t = new THREE.DataTexture(d, w, h, THREE.RedFormat, THREE.UnsignedByteType);
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true;
+  return t;
+}
+
+export function makeGroundMaterial(map, detail, street) {
   const m = new THREE.MeshStandardMaterial({ map, roughness: 1, metalness: 0 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uDetail = { value: detail };
+    if (street) { sh.uniforms.uMask = { value: street.mask }; sh.uniforms.uCobble = { value: street.cobble }; }
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWxz = (modelMatrix * vec4(position, 1.0)).xz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail;')
-      .replace('#include <map_fragment>', '#include <map_fragment>\nfloat dA = texture2D(uDetail, vWxz * 0.21).r; float dB = texture2D(uDetail, vWxz * 0.023).r;\ndiffuseColor.rgb *= (0.62 + 0.5 * dA) * (0.8 + 0.34 * dB);');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail;' + (street ? '\nuniform sampler2D uMask;\nuniform sampler2D uCobble;' : ''))
+      .replace('#include <map_fragment>', '#include <map_fragment>\nfloat dA = texture2D(uDetail, vWxz * 0.21).r; float dB = texture2D(uDetail, vWxz * 0.023).r;\ndiffuseColor.rgb *= (0.62 + 0.5 * dA) * (0.8 + 0.34 * dB);'
+        + (street ? '\nfloat stM = texture2D(uMask, vMapUv).r; vec3 cob = texture2D(uCobble, vWxz * 0.4).rgb;\ndiffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.5 + cob * 1.15), smoothstep(0.1, 0.9, stM) * 0.85);' : ''));
   };
+  m.customProgramCacheKey = () => (street ? 'ground-street' : 'ground');
   return m;
 }

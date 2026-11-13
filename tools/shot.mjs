@@ -18,6 +18,7 @@ const info = await page.evaluate(([cam, hour, js]) => {
   if (hour) app.setHour(parseFloat(hour));
   if (cam) { const v = cam.split(',').map(Number); app.setView([v[0], v[1], v[2]], [v[3], v[4], v[5]]); }
   if (js) { try { (0, eval)(js); } catch (e) { return { evalError: String(e) }; } }
+  for (let i = 0; i < 60; i++) { app.rig.update(0); app.time += 0.05; app.emit('frame', 0.05); }     // laisse la foule se mettre en place
   const t = performance.now(); app.renderNow(); const t1 = performance.now() - t;
   app.__t = t1;
   return Object.assign(app.stats ? app.stats() : {}, { renderMs: Math.round(app.__t) });

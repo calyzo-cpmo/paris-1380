@@ -1,7 +1,7 @@
 # Paris 1380 — maquette 3D interactive
 
 Restitution en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
-survol libre, visite guidée en treize étapes, promenade à pied dans les rues, fiches historiques et heure du jour réglable.
+survol libre, visite guidée en treize étapes, promenade à pied dans des rues peuplées, fiches historiques et heure du jour réglable.
 
 **Ouvrir la maquette :** `dist/index.html` (fichier autonome, aucun serveur nécessaire).
 
@@ -13,7 +13,13 @@ survol libre, visite guidée en treize étapes, promenade à pied dans les rues,
 - les ponts habités (Grand-Pont, Petit-Pont, pont Saint-Michel), le pont aux Meuniers et ses moulins ;
 - une centaine d'églises, couvents, abbayes, collèges, hôtels princiers, halles et cimetières sur leurs emprises ;
 - environ 17 000 maisons à pans de bois loties le long de toutes les rues ;
-- la campagne, les faubourgs, le gibet de Montfaucon, les moulins à vent, les bateaux des ports.
+- la campagne, les faubourgs, le gibet de Montfaucon, les moulins à vent, les bateaux des ports ;
+- **la vie** : jusqu'à 4 800 passants, cavaliers, charrettes et bêtes qui circulent dans les rues autour du point de vue
+  (moins nombreux la nuit), 3 800 figurants (marchands, sergents aux portes et sur les murs, moines, ouvriers, lavandières,
+  bergers et troupeaux), bateaux en route sur la Seine, roues des moulins, bannières, vols d'oiseaux ;
+- **le détail** : façades en double définition, auvents, enseignes, lucarnes, tonneaux, 190 étals de marché, puits, rues pavées,
+  contreforts et croix des églises, archères des tours, échafaudages et grues des chantiers (Bastille, pont Saint-Michel,
+  églises en construction), meules, 27 villages des environs, château de Vincennes, chartreuse de Vauvert.
 
 ## Sources
 
@@ -35,7 +41,8 @@ et dans le panneau « Sources » de la page.
 | --- | --- |
 | Attesté par le plan de 1380 | rues, îlots bâtis, cultures, cours de la Seine, tracé des enceintes, tours et portes, emprise au sol des édifices |
 | Restitué d'après images et vestiges | volumes des grands monuments (Notre-Dame, Sainte-Chapelle, Palais, Louvre, Bastille, Temple, Châtelets) |
-| Vraisemblable mais conjectural | forme de chaque maison, élévation des églises paroissiales et des hôtels, végétation, bateaux, relief de détail |
+| Vraisemblable mais conjectural | forme de chaque maison, élévation des églises paroissiales et des hôtels, végétation, relief de détail |
+| Évocation | habitants, bêtes, étals, bateaux, bannières, chantiers : ils donnent l'échelle et la vie, leur place exacte est inventée ; villages, Vincennes et chartreuse sont situés d'après leur emplacement connu, hors du plan |
 
 ## Organisation
 
@@ -46,13 +53,17 @@ data/thumbs.json             vignettes des sources (domaine public)
 tools/extract_alpage.py      SVG → JSON (calques, courbes aplanies, libellés)
 tools/build.mjs              assemble la page autonome dans dist/
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
-tools/test.mjs               test fonctionnel : visite, marche, heure, sources, mobile, console sans erreur
+tools/test.mjs               test fonctionnel : foule, visite, marche, heure, sources, mobile, console sans erreur
+tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/make_thumbs.py         vignettes des sources (réduction locale des images du domaine public)
 src/terrain.js, raster.js    relief, berges, occupation du sol
 src/houses.js                lotissement des îlots et maisons
 src/special.js               églises, couvents, hôtels, collèges, halles, enclos
 src/walls.js, monuments.js   enceintes, portes, Bastille, Louvre, Notre-Dame, Palais, ponts…
-src/landscape.js             arbres, bateaux, fumées, moulins
+src/landscape.js             arbres, bateaux à quai, fumées, moulins à vent
+src/people.js                personnages articulés instanciés : foule mobile, cavaliers, charrettes, bêtes, figurants
+src/life.js                  bateaux en route, bannières, roues des moulins, oiseaux
+src/props.js                 étals, puits, échafaudages, grues, marchés, chantiers, villages, Vincennes, chartreuse
 src/places.js, sources.js    fiches des lieux, visite guidée, catalogue des sources
 src/ui.js, controls.js       interface et caméra
 ```
@@ -63,7 +74,7 @@ src/ui.js, controls.js       interface et caméra
 npm install
 npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
 npm run build     # produit dist/index.html
-npm test          # 19 vérifications automatisées dans Chromium (Playwright requis)
+npm test          # 25 vérifications automatisées dans Chromium (Playwright requis)
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),

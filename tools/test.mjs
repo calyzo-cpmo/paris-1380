@@ -16,7 +16,22 @@ const check = (name, cond, extra = '') => { if (cond) { ok++; console.log('  ok 
 const frames = (n) => page.evaluate((n) => { const a = window.__app; for (let i = 0; i < n; i++) { a.rig.update(0.05); a.time += 0.05; a.emit('frame', 0.05); } a.renderNow(); }, n);
 check('démarrage', await page.evaluate(() => window.__ready === true && !window.__failed));
 const st = await page.evaluate(() => ({ places: window.__app.places.length, gates: window.__app.gates.length, trees: window.__app.treeCount, meshes: window.__app.cityMeshes.length }));
-check('lieux, portes, arbres', st.places >= 55 && st.gates >= 15 && st.trees > 5000, JSON.stringify(st));
+check('lieux, portes, arbres', st.places >= 60 && st.gates >= 15 && st.trees > 5000, JSON.stringify(st));
+const life = await page.evaluate(() => { const a = window.__app; return { passants: a.people.total, figurants: a.figurants.length, bannieres: a.flags.length, roues: a.wheels.length, villages: a.villages.length, chantiers: a.chantiers.length }; });
+check('vie : passants, figurants, bannières, moulins, villages', life.passants > 1000 && life.figurants > 1500 && life.bannieres >= 15 && life.roues >= 5 && life.villages >= 20, JSON.stringify(life));
+// la foule se forme quand on s'approche des rues, marche, et se retire sur demande ou la nuit
+await page.evaluate(() => window.__app.setView([-250, 160, -820], [-335, 6, -990]));
+await frames(30);
+const c0 = await page.evaluate(() => { const a = window.__app, p = a.people.pools[0]; return { n: a.people.count, x: p.x[0], z: p.z[0], onStreet: a.people.nav(p.x[0], p.z[0]) }; });
+await frames(60);
+const c2 = await page.evaluate(([x0, z0]) => { const a = window.__app, p = a.people.pools[0]; let off = 0; for (let i = 0; i < p.active; i++) if (p.ok[i] && !a.people.nav(p.x[i], p.z[i])) off++; return { n: a.people.count, d: Math.hypot(p.x[0] - x0, p.z[0] - z0), off, active: p.active }; }, [c0.x, c0.z]);
+check('foule présente près des rues', c0.n > 300 && c0.onStreet === 1, JSON.stringify(c0));
+check('les passants marchent et restent sur la voie', c2.d > 0.5 && c2.off === 0, JSON.stringify(c2));
+await page.click('#toggle-people'); await frames(2);
+check('case Habitants : foule masquée', await page.evaluate(() => window.__app.people.group.visible === false));
+await page.click('#toggle-people'); await frames(2);
+check('case Habitants : foule rétablie', await page.evaluate(() => window.__app.people.group.visible === true && window.__app.people.count > 300));
+await page.evaluate(() => window.__app.setView([-1250, 1500, 1750], [-80, 0, -120]));   // retour à la vue d'ensemble
 await frames(5);
 check('étiquettes affichées', await page.evaluate(() => [...document.querySelectorAll('.label')].filter((l) => l.style.display !== 'none').length) >= 3);
 // liste des lieux et fiche
@@ -39,6 +54,9 @@ check('aide', await page.evaluate(() => document.getElementById('help').hidden))
 await page.evaluate(() => { const h = document.getElementById('hour'); h.value = '21'; h.dispatchEvent(new Event('input', { bubbles: true })); });
 const night = await page.evaluate(() => ({ label: document.getElementById('hour-label').textContent, em: window.__app.materials.houses.emissiveIntensity, sun: window.__app.sky.day }));
 check('nuit : fenêtres éclairées', night.label === '21 h 00' && night.em > 0.8, JSON.stringify(night));
+await page.evaluate(() => window.__app.setView([-250, 160, -820], [-335, 6, -990])); await frames(5);
+const nightCrowd = await page.evaluate(() => window.__app.people.count);
+check('nuit : rues presque vides', nightCrowd < c0.n * 0.4, `${nightCrowd} contre ${c0.n} le jour`);
 await frames(3);
 // visite guidée
 await page.click('#mode-tour');

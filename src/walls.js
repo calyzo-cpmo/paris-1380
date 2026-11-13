@@ -1,9 +1,9 @@
 // Enceintes de Philippe Auguste et de Charles V, portes, Bastille, Louvre.
 import * as THREE from 'three';
 import { layer, polys, circles } from './data.js';
-import { polyArea, centroid, minAreaRect, dpRing, polylineLength, mulberry32, distSeg } from './geom.js';
+import { polyArea, centroid, minAreaRect, dpRing, polylineLength, mulberry32, distSeg, offsetEx } from './geom.js';
 import { rgb, tint, walls, cap, box, cyl, cone, disc, crenels, rectCorners, skeletonRoof, gableRoof, ccw } from './builder.js';
-import { COL, roundTower, squareTower, fxWalls, fxPanel, wallLine, markSolid } from './special.js';
+import { COL, roundTower, squareTower, fxWalls, fxPanel, wallLine, markSolid, flagAt } from './special.js';
 import { cellUV } from './textures.js';
 
 const WALL = rgb(226, 216, 196), WALL_OLD = rgb(212, 204, 186);
@@ -31,6 +31,13 @@ function curtain(app, B, pts, h, col) {
   }
   crenels(st, ring, top, { closed: true, col, w: 1.2, gap: 0.9, h: 1.0, th: 0.5 });
   markSolid(app, ring);
+  // guetteurs sur le chemin de ronde
+  let acc = 60;
+  for (const ex of offsetEx([ring], -1.25)) for (let i = 0; i < ex.outer.length; i++) {
+    const a = ex.outer[i], q = ex.outer[(i + 1) % ex.outer.length];
+    acc += Math.hypot(q[0] - a[0], q[1] - a[1]);
+    if (acc > 170) { acc = 0; app.figurants.push([a[0], a[1], Math.atan2(q[1] - a[1], -(q[0] - a[0])), 'man', [84, 88, 104], top(a[0], a[1])]); }
+  }
 }
 
 // Porte : deux piles et un étage de garde, passage ouvert dans l'axe de la rue.
@@ -60,6 +67,10 @@ export function gate(app, B, x, z, ux, uz, o = {}) {
   if (o.roof === 'hip') skeletonRoof(B.at('roof', x, z), { outer: c, holes: [] }, gy + H, { pitch: 1.5, col: o.roofCol ?? COL.slate, overhang: 0.5 });
   else { cap(st, c, [], gy + H, { col: tint(col, 0.7) }); crenels(st, c, gy + H, { closed: true, col }); }
   if (o.turrets) for (const p of c) roundTower(app, B, p[0], p[1], o.turrets, H + 2.5, { roof: 'cone', roofCol: o.roofCol ?? COL.slate, col, machi: false, seg: 10, base: gy });
+  // sergents de garde de part et d'autre du passage, bannière sur les portes principales
+  for (const s of [-1, 1]) for (const t of [-1, 1]) app.figurants.push([x + ux * t * (pass / 2 + 0.8) - uz * s * (D / 2 + 1.5), z + uz * t * (pass / 2 + 0.8) + ux * s * (D / 2 + 1.5), Math.atan2(-uz * s, ux * s), 'man', [84, 88, 104], null]);
+  const flag = o.flag ?? (o.turrets ? 0 : null);
+  if (flag != null) flagAt(app, B, x, z, gy + H + (o.roof === 'hip' ? D * 0.72 : 0.2), 5.5, flag);
   return gy + H;
 }
 
@@ -174,6 +185,7 @@ export function buildBastille(app, B) {
     disc(st, x, z, rr + 0.5, gy + H - 0.9, { col: tint(col, 0.66), seg: 18 });
     const cr = []; for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; cr.push([x + Math.cos(a) * (rr + 0.3), z + Math.sin(a) * (rr + 0.3)]); }
     crenels(st, cr, gy + H, { closed: true, col, w: 1.2, gap: 0.8, h: 1.1 });
+    if (towers.indexOf(s) % 3 === 0) flagAt(app, B, x, z, gy + H - 0.9, 7, towers.indexOf(s) % 2);
     app.solid.fillCircle(x, z, rr, 2);
   }
   // guérite du guet sur la terrasse
@@ -215,11 +227,11 @@ export function buildLouvre(app, B) {
     if (s.r > 6.2) {
       roundTower(app, B, x, z, 7.6, 31, { base: gy, roof: 'cone', roofCol, roofH: 13, col, seg: 20, deep: 4 });
       donjon = [x, z];
-      const pl = B.at('plain', x, z); cyl(pl, x, z, 0.12, gy + 45, gy + 49, { seg: 4, col: COL.gold });
+      flagAt(app, B, x, z, gy + 44.6, 6.5, 0, 1.5);
     } else {
       const h = s.r > 5 ? 23 : 21;
       roundTower(app, B, x, z, s.r * 0.95, h, { base: gy, roof: 'cone', roofCol, roofH: s.r > 5 ? 10.5 : 8, col, seg: 16, deep: 5 });
-      const pl = B.at('plain', x, z); cyl(pl, x, z, 0.1, gy + h + (s.r > 5 ? 11.5 : 9), gy + h + (s.r > 5 ? 14 : 11), { seg: 4, col: COL.gold });
+      if (s.r > 5) flagAt(app, B, x, z, gy + h + 11.2, 4.6, 0); else { const pl = B.at('plain', x, z); cyl(pl, x, z, 0.1, gy + h + 9, gy + h + 11, { seg: 4, col: COL.gold }); }
     }
   }
   // lucarnes et hautes souches de cheminées, comme sur la miniature d'octobre des Très Riches Heures

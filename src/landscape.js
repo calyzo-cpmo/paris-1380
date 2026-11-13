@@ -45,7 +45,8 @@ function treeGeometry() {
 export function buildTrees(app) {
   const lu = app.lu, occ = app.solid, T = app.terrain, r = mulberry32(555);
   const spots = [];
-  const add = (x, z, s, kind) => { const y = T.height(x, z); if (y < 0.6) return; spots.push(x, y, z, s, kind); };
+  const clear = app.clearings || [];
+  const add = (x, z, s, kind) => { for (const c of clear) if ((x - c[0]) * (x - c[0]) + (z - c[1]) * (z - c[1]) < c[2] * c[2]) return; const y = T.height(x, z); if (y < 0.6) return; spots.push(x, y, z, s, kind); };
   // dans le cadre du plan : jardins, cœurs d'îlot, vergers, haies, prés des îles
   const step = 6.5;
   for (let z = FRAME.z0 + 3; z < FRAME.z1 - 3; z += step) for (let x = FRAME.x0 + 3; x < FRAME.x1 - 3; x += step) {
@@ -202,8 +203,8 @@ export function buildSmoke(app) {
         vec3 p = position + vec3(t * t * 14.0 + sin(aSeed * 7.0 + t * 5.0) * 1.2 * t, t * 13.0, t * 5.0 + cos(aSeed * 3.0 + t * 4.0) * 1.2 * t);
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = min(64.0, uScale * (0.7 + t * 3.2) / -mv.z);
-        vA = sin(t * 3.14159) * smoothstep(1800.0, 300.0, -mv.z);
+        gl_PointSize = min(46.0, uScale * (0.7 + t * 3.2) / -mv.z);
+        vA = sin(t * 3.14159) * smoothstep(1800.0, 300.0, -mv.z) * smoothstep(25.0, 140.0, -mv.z);
       }`,
     fragmentShader: /* glsl */`
       uniform vec3 uCol; uniform float uOpacity; varying float vA;

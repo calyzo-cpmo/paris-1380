@@ -2,7 +2,7 @@
 import { polys } from './data.js';
 import { LU } from './raster.js';
 import { mulberry32, polyArea, dpRing, offsetEx, smoothstep, clamp, centroid } from './geom.js';
-import { rgb, gableRoof } from './builder.js';
+import { rgb, tint, gableRoof, box, cyl, disc } from './builder.js';
 import { cellUV } from './textures.js';
 
 export const PLASTERS = [rgb(255, 250, 240), rgb(246, 232, 204), rgb(236, 212, 172), rgb(238, 212, 196), rgb(220, 214, 204), rgb(250, 240, 220), rgb(228, 200, 160)];
@@ -77,7 +77,56 @@ export function placeHouse(app, B, r, H) {
     for (let i = 0; i < 4; i++) { const p = q[i], n2 = q[(i + 3) % 4]; b.quad(p[0], yTop, p[1], n2[0], yTop, n2[1], n2[0], top, n2[1], p[0], top, p[1], st[0], st[2], st[0] + 0.02, st[2] + 0.04, cc, 0.8, 0.9); }
     if (app.chimneys.length < 4000) app.chimneys.push(px, top, pz);
   }
+  if (!H.plain) houseDetails(app, B, r, H, yF, yTop, fx, fz, dd, b, rb);
   return ridge;
+}
+
+const SIGNS = [rgb(150, 40, 36), rgb(40, 60, 120), rgb(196, 160, 60), rgb(60, 100, 60), rgb(220, 210, 190), rgb(34, 32, 36), rgb(170, 90, 40)];
+const AWNINGS = [rgb(104, 82, 58), rgb(120, 96, 68), rgb(176, 140, 84), rgb(140, 66, 52), rgb(200, 190, 166), rgb(92, 108, 82)];
+const BARREL = rgb(112, 88, 62), BARREL_D = rgb(74, 58, 42), IRONC = rgb(54, 52, 54);
+
+// Détails d'une maison de ville : auvent d'échoppe, enseigne pendante, lucarne, tonneaux et caisses devant la porte.
+function houseDetails(app, B, r, H, yF, yTop, fx, fz, dd, hb, rb) {
+  const { ox, oz, rx, rz, nx, nz, w, floors, gableFront, roofCol, plaster } = H, dens = H.dens ?? 0.5;
+  const pb = B.at('plain', ox + rx * w / 2, oz + rz * w / 2);
+  const P = (u, v) => [ox + rx * u - nx * v, oz + rz * u - nz * v];          // v : saillie sur la rue
+  if (H.gfRow === 0 && r() < 0.62) {                                         // auvent au-dessus de l'ouvroir
+    const a = P(w * 0.92, 1.05), c = P(w * 0.08, 1.05), d = P(w * 0.08, 0.03), e = P(w * 0.92, 0.03), col = AWNINGS[(r() * AWNINGS.length) | 0], y0 = yF + 2.32, y1 = yF + 2.78;
+    pb.quad(a[0], y0, a[1], c[0], y0, c[1], d[0], y1, d[1], e[0], y1, e[1], 0, 0, 1, 1, col);
+    pb.quad(c[0], y0, c[1], a[0], y0, a[1], e[0], y1, e[1], d[0], y1, d[1], 0, 0, 1, 1, tint(col, 0.55));
+  }
+  if (floors > 1 && r() < 0.14 + 0.24 * dens) {                              // enseigne sur sa potence
+    const u = w * (r() < 0.5 ? 0.16 : 0.84), ys = yF + GF + 0.3, col = SIGNS[(r() * SIGNS.length) | 0], m = P(u, 0.6);
+    box(pb, { cx: m[0], cz: m[1], ux: nx, uz: nz, hl: 0.6, hw: 0.03 }, ys, ys + 0.06, { col: IRONC });
+    const a = P(u, 0.32), c = P(u, 1.0);
+    pb.quad(a[0], ys - 0.66, a[1], c[0], ys - 0.66, c[1], c[0], ys - 0.08, c[1], a[0], ys - 0.08, a[1], 0, 0, 1, 1, col);
+    pb.quad(c[0], ys - 0.66, c[1], a[0], ys - 0.66, a[1], a[0], ys - 0.08, a[1], c[0], ys - 0.08, c[1], 0, 0, 1, 1, col);
+  }
+  if (r() < 0.08 + 0.1 * dens) {                                             // tonneaux, caisses
+    const n = 1 + ((r() * 3) | 0);
+    for (let k = 0; k < n; k++) {
+      const p = P(w * (0.15 + 0.7 * r()), 0.45 + r() * 0.2), y = yF - 0.08;
+      if (r() < 0.65) { cyl(pb, p[0], p[1], 0.32, y, y + 0.88, { seg: 7, col: BARREL, s0: 0.8 }); disc(pb, p[0], p[1], 0.32, y + 0.88, { seg: 7, col: BARREL_D }); }
+      else box(pb, { cx: p[0], cz: p[1], ux: rx, uz: rz, hl: 0.42, hw: 0.3 }, y, y + 0.5, { col: BARREL, s0: 0.8 });
+    }
+  }
+  if (!gableFront && w > 5 && r() < 0.75) {                                   // lucarnes sur le versant côté rue
+    const rise = (dd / 2) * Math.min(H.pitch, 1.15), slope = rise / (dd / 2), n = w > 8.2 ? 2 : 1, hD = 1.15, half = 0.58;
+    const Q = (u, v) => [fx + rx * u + nx * v, fz + rz * u + nz * v];
+    const win = cellUV(2, (r() * 8) | 0), wu0 = win[0] + (win[1] - win[0]) * 0.2, wu1 = win[0] + (win[1] - win[0]) * 0.42, wv0 = win[2] + (win[3] - win[2]) * 0.28, wv1 = win[2] + (win[3] - win[2]) * 0.75;
+    for (let k = 0; k < n; k++) {
+      const u = w * (n === 1 ? 0.5 : k ? 0.72 : 0.28), e = dd * 0.11, y1 = yTop + e * slope, y2 = y1 + hD, e2 = e + hD / slope, e3 = e + (hD + 0.5) / slope;
+      const l = Q(u - half, e), q = Q(u + half, e), lb = Q(u - half, e2), qb = Q(u + half, e2), m = Q(u, e - 0.12), mb = Q(u, e3), lo = Q(u - half - 0.12, e - 0.12), qo = Q(u + half + 0.12, e - 0.12);
+      hb.quad(q[0], y1, q[1], l[0], y1, l[1], l[0], y2, l[1], q[0], y2, q[1], wu0, wv0, wu1, wv1, plaster);
+      hb.tri(q[0], y2, q[1], l[0], y2, l[1], (l[0] + q[0]) / 2, y2 + 0.5, (l[1] + q[1]) / 2, wu0, wv1, wu1, wv1, (wu0 + wu1) / 2, wv1 + 0.004, plaster);
+      const pl = cellUV(6, 3);
+      hb.tri(l[0], y1, l[1], lb[0], y2, lb[1], l[0], y2, l[1], pl[0], pl[2], pl[0] + 0.02, pl[3], pl[0], pl[3], plaster, 0.9, 0.9, 0.9);
+      hb.tri(q[0], y1, q[1], q[0], y2, q[1], qb[0], y2, qb[1], pl[0], pl[2], pl[0], pl[3], pl[0] + 0.02, pl[3], plaster, 0.9, 0.9, 0.9);
+      // petit toit à deux pans
+      rb.quad(lo[0], y2 - 0.05, lo[1], lb[0], y2 - 0.05, lb[1], mb[0], y2 + 0.5, mb[1], m[0], y2 + 0.5, m[1], 0, 0, 0.4, 0.3, roofCol);
+      rb.quad(m[0], y2 + 0.5, m[1], mb[0], y2 + 0.5, mb[1], qb[0], y2 - 0.05, qb[1], qo[0], y2 - 0.05, qo[1], 0, 0.3, 0.4, 0, roofCol);
+    }
+  }
 }
 
 // Lotit le pourtour d'un polygone : maisons mitoyennes, façade sur la limite.
@@ -120,7 +169,7 @@ function lotRing(app, B, r, ring, o) {
       placeHouse(app, B, r, {
         ox, oz, rx, rz, nx, nz, w, d, floors, gableFront, style, gfRow: thatch ? 7 : r() < 0.6 * dens + 0.15 ? 0 : 1,
         jetty: floors > 1 && !thatch ? 0.28 + r() * 0.2 : 0, pitch: thatch ? 1.0 : 1.15 + r() * 0.45,
-        plaster: PLASTERS[(r() * PLASTERS.length) | 0], roofCol: thatch ? THATCH : r() < 0.03 ? SLATE : TILES[(r() * TILES.length) | 0],
+        plaster: PLASTERS[(r() * PLASTERS.length) | 0], roofCol: thatch ? THATCH : r() < 0.03 ? SLATE : TILES[(r() * TILES.length) | 0], dens, plain: thatch,
       });
       occ.fillRect(ox + rx * w / 2 + nx * d / 2, oz + rz * w / 2 + nz * d / 2, rx, rz, w / 2, d / 2, 1);
       placed++; last = d; s += w;

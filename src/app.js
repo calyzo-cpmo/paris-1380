@@ -5,7 +5,7 @@ import { buildLanduse, LU, Raster } from './raster.js';
 import { Terrain, buildTerrainGeometries } from './terrain.js';
 import { Sky } from './sky.js';
 import { makeWater } from './water.js';
-import { paintCoreGround, paintOuterGround, makeDetailTexture, makeGroundMaterial } from './ground.js';
+import { paintCoreGround, paintOuterGround, makeDetailTexture, makeGroundMaterial, makeCobbleTexture, makeStreetMask } from './ground.js';
 import { CameraRig } from './controls.js';
 import { buildCity } from './city.js';
 import { clamp } from './geom.js';
@@ -56,7 +56,7 @@ export class App {
     const geos = buildTerrainGeometries(terrain);
     const detail = makeDetailTexture();
     const maxTex = Math.min(renderer.capabilities.maxTextureSize, mobile ? 2048 : 4096);
-    const core = new THREE.Mesh(geos.core, makeGroundMaterial(paintCoreGround(maxTex), detail));
+    const core = new THREE.Mesh(geos.core, makeGroundMaterial(paintCoreGround(maxTex), detail, { mask: makeStreetMask(lu), cobble: makeCobbleTexture() }));
     const outer = new THREE.Mesh(geos.outer, makeGroundMaterial(paintOuterGround(terrain), detail));
     core.receiveShadow = true; outer.receiveShadow = true; core.matrixAutoUpdate = false; outer.matrixAutoUpdate = false;
     scene.add(core, outer);
@@ -130,6 +130,7 @@ export class App {
       q.level++; q.skip = 30;
       this.quality = [1, 0.8, 0.65, 0.55][q.level];
       if (q.level >= 2 && this.trees) this.trees.traverse((o) => { o.castShadow = false; });
+      this.crowdScale = [1, 0.8, 0.55, 0.35][q.level];
       if (q.level >= 3 && this.smoke) this.smoke.visible = false;
       this.shadowState.hour = -1;
       this.resize();

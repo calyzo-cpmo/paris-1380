@@ -7,11 +7,15 @@ const gray = (v) => `rgb(${v | 0},${v | 0},${v | 0})`;
 const vary = (c, r, k = 0.08) => { const f = 1 + (r() - 0.5) * 2 * k; return [c[0] * f, c[1] * f, c[2] * f]; };
 
 // Peintre à trois couches : couleur, relief (pour la carte de normales), émission (fenêtres éclairées).
+// Contexte factice : absorbe tous les appels de dessin d'une couche non demandée.
+const NOOP = new Proxy(function () {}, { get: (t, k) => (k === 'canvas' ? null : NOOP), set: () => true, apply: () => NOOP });
+
 class Painter {
-  constructor(w, h, scale, emis) {
+  // layers : 'c' couleur, 'h' relief, 'e' émission. Les couches absentes sont remplacées par un contexte factice.
+  constructor(w, h, scale, emis, layers = 'che') {
     this.w = w; this.h = h;
     const mk = () => { const c = document.createElement('canvas'); c.width = w * scale; c.height = h * scale; const x = c.getContext('2d', { willReadFrequently: true }); x.setTransform(scale, 0, 0, scale, 0, 0); return x; };
-    this.c = mk(); this.hh = mk(); this.e = emis ? mk() : null;
+    this.c = layers.includes('c') ? mk() : NOOP; this.hh = layers.includes('h') ? mk() : NOOP; this.e = emis && layers.includes('e') ? mk() : null;
     this.hh.fillStyle = gray(128); this.hh.fillRect(0, 0, w, h);
     if (this.e) { this.e.fillStyle = '#000'; this.e.fillRect(0, 0, w, h); }
   }
@@ -194,8 +198,8 @@ function woodCell(P, r, X, Y, kind) {
   }
 }
 
-export function makeHouseAtlas(scale) {
-  const P = new Painter(2048, 2048, scale, true), r = mulberry32(1380);
+function paintHouses(P) {
+  const r = mulberry32(1380);
   for (let c = 0; c < 8; c++) {
     groundFloor(P, r, c * 256, 0, 0);
     groundFloor(P, r, c * 256, 256, c % 3 === 2 ? 2 : 1);
@@ -206,11 +210,17 @@ export function makeHouseAtlas(scale) {
     plainCell(P, r, c * 256, 1536);
     woodCell(P, r, c * 256, 1792, c);
   }
+}
+
+// La couleur est dessinée deux fois plus finement que le relief et l'émission (même tirage aléatoire, donc même dessin).
+export function makeHouseAtlas(scale, hi = 1) {
+  const A = new Painter(2048, 2048, scale * hi, false, 'c'), Bp = new Painter(2048, 2048, scale, true, 'he');
+  paintHouses(A); paintHouses(Bp);
   const W = 2048 * scale;
-  grain(P.c, W, W, 0.14, 11);
+  grain(A.c, W * hi, W * hi, 0.14, 11);
   return {
-    map: tex(P.c.canvas, true, true, false), normalMap: tex(normalFromHeight(P.hh, W, W, 2.4, false), false, true, false),
-    emissiveMap: tex(P.e.canvas, true, true, false), canvas: P.c.canvas,
+    map: tex(A.c.canvas, true, true, false), normalMap: tex(normalFromHeight(Bp.hh, W, W, 2.4, false), false, true, false),
+    emissiveMap: tex(Bp.e.canvas, true, true, false), canvas: A.c.canvas,
   };
 }
 
@@ -297,8 +307,8 @@ function fxRow(P, r, row, draw) {
   }
 }
 
-export function makeStoneFx(scale) {
-  const P = new Painter(2048, 2048, scale, false), r = mulberry32(1163);
+function paintStoneFx(P) {
+  const r = mulberry32(1163);
   const buttress = (X, Y) => { P.rect(X, Y, 16, 256, [232, 222, 200], 200); P.rect(X + 240, Y, 16, 256, [232, 222, 200], 200); P.shade(X + 16, Y, 12, 256, 0.3, 0, false); };
   // 0 : hautes baies gothiques entre contreforts
   fxRow(P, r, 0, (X, Y) => { lancet(P, r, X + 128, Y + 26, 104, Y + 236); buttress(X, Y); P.rect(X, Y + 244, 256, 6, [236, 228, 206], 190); });
@@ -364,9 +374,14 @@ export function makeStoneFx(scale) {
   cell(7, 6, (X, Y) => { for (let i = 0; i < 4; i++) { const cx = X + 32 + i * 64; P.path((c) => pointed(c, cx, Y + 40, 52, Y + 236), [196, 184, 160], 80); P.stroke((c) => pointed(c, cx, Y + 40, 52, Y + 236), 5, [240, 231, 210], 200); } P.rect(X, Y + 236, 256, 8, [240, 231, 210], 200); });
   // 7 : grandes verrières à quatre lancettes (chapelles hautes, chœurs)
   fxRow(P, r, 7, (X, Y) => { lancet(P, r, X + 128, Y + 12, 196, Y + 244, { lights: 4, mould: 9 }); P.rect(X, Y, 14, 256, [236, 226, 204], 205); P.rect(X + 242, Y, 14, 256, [236, 226, 204], 205); });
+}
+
+export function makeStoneFx(scale, hi = 1) {
+  const A = new Painter(2048, 2048, scale * hi, false, 'c'), Bp = new Painter(2048, 2048, scale, false, 'h');
+  paintStoneFx(A); paintStoneFx(Bp);
   const W = 2048 * scale;
-  grain(P.c, W, W, 0.13, 9);
-  return { map: tex(P.c.canvas, true, true, false), normalMap: tex(normalFromHeight(P.hh, W, W, 2.4, false), false, true, false), canvas: P.c.canvas };
+  grain(A.c, W * hi, W * hi, 0.13, 9);
+  return { map: tex(A.c.canvas, true, true, false), normalMap: tex(normalFromHeight(Bp.hh, W, W, 2.4, false), false, true, false), canvas: A.c.canvas };
 }
 
 // Coordonnées d'atlas : rangée r (0 en haut), cellule c → [u0, u1, vBas, vHaut].
@@ -376,7 +391,8 @@ export function cellUV(row, c0, n = 1) {
 }
 
 export function makeMaterials(scale) {
-  const h = makeHouseAtlas(scale), s = makeStone(scale), f = makeStoneFx(scale), rf = makeRoof(scale);
+  const hi = scale >= 1 ? 2 : 1;      // sur ordinateur : façades et baies dessinées en double définition
+  const h = makeHouseAtlas(scale, hi), s = makeStone(scale), f = makeStoneFx(scale, hi), rf = makeRoof(scale);
   const ns = (v) => new THREE.Vector2(v, v);
   const mats = {
     houses: new THREE.MeshStandardMaterial({ map: h.map, normalMap: h.normalMap, normalScale: ns(0.7), emissiveMap: h.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.93, metalness: 0 }),

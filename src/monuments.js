@@ -2,7 +2,7 @@
 import { layer, polys, circles } from './data.js';
 import { polyArea, centroid, minAreaRect, dpRing, mulberry32, offsetEx, pointInPoly } from './geom.js';
 import { rgb, tint, walls, cap, box, cyl, cone, disc, crenels, rectCorners, skeletonRoof, gableRoof, ccw } from './builder.js';
-import { COL, roundTower, squareTower, fxWalls, fxPanel, wallLine, markSolid, stoneBuilding, church, abbey } from './special.js';
+import { COL, roundTower, squareTower, fxWalls, fxPanel, wallLine, markSolid, stoneBuilding, church, abbey, flagAt, cross } from './special.js';
 import { gate } from './walls.js';
 import { placeHouse, PLASTERS, TILES } from './houses.js';
 import { cellUV } from './textures.js';
@@ -111,6 +111,14 @@ export function buildNotreDame(app, B) {
   facePanel(B, front, 'w', 0, 12.4, gy + 17, gy + 29.4, 6, 0, col);            // rose occidentale
   for (const sg of [-1, 1]) facePanel(B, front, 'w', sg * 13.8, 9, gy + 17.5, gy + 29, 0, 2, col);
   for (let k = -3; k <= 3; k++) facePanel(B, front, 'w', k * fw * 2 / 7, fw * 2 / 7, gy + 31, gy + 38, 6, 7, col);   // galerie à jour
+  // quatre contreforts à ressauts rythment la façade et montent le long des tours
+  for (const c of [-fw + 0.4, -6.9, 6.9, fw - 0.4]) {
+    const p = P(R, -L - 1.0, c);
+    box(st, { cx: p[0], cz: p[1], ux: R.ux, uz: R.uz, hl: 1.0, hw: 0.95 }, gy - 1, gy + 31, { col, top: false, s0: 0.7 });
+    const q = P(R, -L - 0.75, c);
+    box(st, { cx: q[0], cz: q[1], ux: R.ux, uz: R.uz, hl: 0.7, hw: 0.8 }, gy + 31, gy + 67.5, { col, s0: 0.95 });
+  }
+  cross(st, P(R, -L + 14, 0)[0], gy + 43, P(R, -L + 14, 0)[1], -R.uz, R.ux, 1.6, col);
   const tops = [];
   for (const sg of [-1, 1]) {
     const tw = sub(R, -L - 0.3, -L + 13.2, sg > 0 ? fw - 13.2 : -fw, sg > 0 ? fw : -fw + 13.2);
@@ -119,6 +127,7 @@ export function buildNotreDame(app, B) {
     for (const f of ['w', 'e', 'n', 's']) facePanel(B, tw, f, 0, 9.4, gy + 46, gy + 65, 0, 0, col, 2);
     cap(st, c, [], gy + 69, { col: lead });
     crenels(st, c, gy + 69, { closed: true, col, w: 0.5, gap: 0.45, h: 1.0, th: 0.3 });
+    for (const k of [0, 1, 2, 3]) { const e = c[k], cxm = tw.cx, czm = tw.cz, dx = e[0] - cxm, dz = e[1] - czm, l = Math.hypot(dx, dz); box(st, { cx: e[0] + dx / l * 0.25, cz: e[1] + dz / l * 0.25, ux: R.ux, uz: R.uz, hl: 0.75, hw: 0.75 }, gy + 43, gy + 68, { col, s0: 0.95 }); }
     tops.push([tw.cx, tw.cz]);
   }
   // palais épiscopal, au sud de la cathédrale
@@ -192,11 +201,11 @@ export function buildPalais(app, B) {
   facePanel(B, hR, 'e', 0, 4.2, gyN + 15, gyN + 19.2, 6, 3, COL.white);          // première horloge publique de Paris (1371)
   facePanel(B, hR, 'n', 0, 4.2, gyN + 15, gyN + 19.2, 6, 3, COL.white);
   const lan = B.at('plain', hR.cx, hR.cz); cyl(lan, hR.cx, hR.cz, 1.4, gyN + 42, gyN + 46, { seg: 8, col: rgb(120, 128, 134) }); cone(lan, hR.cx, hR.cz, 1.8, gyN + 46, gyN + 52, { seg: 8, col: rgb(120, 128, 134) });
-  for (const [x, z, rr, h] of [[-352, -391, 4.4, 22], [-364, -396, 4.4, 22], [-399, -408, 4.6, 20]]) roundTower(app, B, x, z, rr, h, { base: gyN, roof: 'cone', roofCol: slate, roofH: 9, col, deep: 4 });
+  for (const [x, z, rr, h] of [[-352, -391, 4.4, 22], [-364, -396, 4.4, 22], [-399, -408, 4.6, 20]]) roundTower(app, B, x, z, rr, h, { base: gyN, roof: 'cone', roofCol: slate, roofH: 9, col, deep: 4, flag: rr > 4.5 ? 0 : null });
   for (const s of circles('Palais')) {
     const [x, z] = s.pts[0];
     if (s.fill === '#E6E6E6' || s.fill === 'NONE') continue;                      // piliers de la Grand'Salle
-    if (s.r > 4.5) roundTower(app, B, x, z, 5.4, 27, { roof: 'cone', roofCol: slate, roofH: 10, col });       // grosse tour (donjon)
+    if (s.r > 4.5) roundTower(app, B, x, z, 5.4, 27, { roof: 'cone', roofCol: slate, roofH: 10, col, flag: 0 });       // grosse tour (donjon)
     else roundTower(app, B, x, z, Math.max(2.2, s.r), s.r > 2.5 ? 15 : 12, { roof: 'cone', roofCol: slate, col, machi: s.r > 2.5 });
   }
   // clôtures et jardin du roi
@@ -218,6 +227,7 @@ export function buildFortresses(app, B) {
     skeletonRoof(B.at('roof', c[0], c[1]), { outer: rectCorners({ ...R, hl: 6.6, hw: 6.6 }), holes: [] }, gy + 40, { pitch: 1.9, col: COL.slate });
     for (const p of rectCorners(R)) roundTower(app, B, p[0], p[1], 2.6, 40, { base: gy, roof: 'cone', roofCol: COL.slate, roofH: 9, col, machi: false, seg: 12 });
     app.solid.fillRect(R.cx, R.cz, R.ux, R.uz, R.hl, R.hw, 2);
+    flagAt(app, B, c[0], c[1], gy + 51, 5, 1, 1.3);
     out.temple = { x: c[0], z: c[1], top: gy + 50 };
   }
   // Grand Châtelet : forteresse-prison gardant le Grand-Pont
@@ -304,7 +314,7 @@ function bridge(app, B, a, b, o) {
     const r = o.rng, dHouse = o.houseDepth ?? 5.2, road = o.road ?? 3.2;
     for (const sg of [-1, 1]) {
       let t = 2.5;
-      while (t + 3.5 < L - 2) {
+      while (t + 3.5 < (o.houseTo ?? 1) * L - 2) {
         const w = 3.8 + r() * 1.8;
         // origine : coin avant-gauche sur le bord de chaussée ; n pointe vers l'eau
         const rx = sg > 0 ? ux : -ux, rz = sg > 0 ? uz : -uz;
@@ -322,12 +332,10 @@ function bridge(app, B, a, b, o) {
       const R2 = { cx: a[0] + ux * t + nx * (hw + 2.2), cz: a[1] + uz * t + nz * (hw + 2.2), ux, uz, hl: 2.6, hw: 2.2 }, cc = rectCorners(R2);
       for (let i = 0; i < 4; i++) { const p = cc[i], q = cc[(i + 1) % 4]; hb.quad(q[0], yD - 2.6, q[1], p[0], yD - 2.6, p[1], p[0], yD + 2.6, p[1], q[0], yD + 2.6, q[1], uv[0], uv[2], uv[1], uv[3], COL.white, 0.7, 1); }
       gableRoof(B.at('roof', mx, mz), null, R2, yD + 2.6, 2.2, { col: COL.tileOld });
-      // roue à aubes
-      const pl = B.at('plain', mx, mz), wx = R2.cx + nx * 2.9, wz = R2.cz + nz * 2.9;
-      for (let k = 0; k < 4; k++) { const an = (k / 4) * Math.PI, cy = Math.cos(an) * 2.3, cs = Math.sin(an) * 2.3; pl.quad(wx - ux * cs, 0.6 - cy, wz - uz * cs, wx + ux * cs, 0.6 + cy, wz + uz * cs, wx + ux * cs + nx * 1.2, 0.6 + cy, wz + uz * cs + nz * 1.2, wx - ux * cs + nx * 1.2, 0.6 - cy, wz - uz * cs + nz * 1.2, 0, 0, 1, 1, COL.woodDark); pl.quad(wx + ux * cs, 0.6 + cy, wz + uz * cs, wx - ux * cs, 0.6 - cy, wz - uz * cs, wx - ux * cs + nx * 1.2, 0.6 - cy, wz - uz * cs + nz * 1.2, wx + ux * cs + nx * 1.2, 0.6 + cy, wz + uz * cs + nz * 1.2, 0, 0, 1, 1, COL.woodDark); }
+      app.wheels.push({ x: R2.cx + ux * 3.7, y: 0.55, z: R2.cz + uz * 3.7, ux, uz });        // roue à aubes, animée à part
     }
   }
-  return { x: mx, z: mz, y: yD };
+  return { x: mx, z: mz, y: yD, start: [a[0], a[1]], end: [b[0], b[1]] };
 }
 
 export function buildBridges(app, B) {
@@ -337,7 +345,7 @@ export function buildBridges(app, B) {
   out.meuniers = bridge(app, B, [-248, -481], [-318, -376], { width: 5, kind: 'wood', mills: true, pileEvery: 4.5 });
   out.mibray = bridge(app, B, [-108, -420], [-149, -310], { width: 4.5, kind: 'wood' });
   out.petitPont = bridge(app, B, [-241, -62], [-268, 12], { width: 14, kind: 'stone', houses: true, rng: r, houseDepth: 4.4, road: 2.6 });
-  out.saintMichel = bridge(app, B, [-409, -162], [-428, -94], { width: 15, kind: 'stone', houses: true, rng: r, houseDepth: 4.6, road: 2.9 });
+  out.saintMichel = bridge(app, B, [-409, -162], [-428, -94], { width: 15, kind: 'stone', houses: true, rng: r, houseDepth: 4.6, road: 2.9, houseTo: 0.6 });   // en chantier vers 1380 : la moitié sud n'est pas encore bâtie
   out.tournelle = bridge(app, B, [345, 200], [401, 293], { width: 5.5, kind: 'wood' });
   // passerelles sur les canaux et fossés
   for (const s of polys('Ponts')) { const A = Math.abs(polyArea(s.pts)); if (A < 120) { const R = minAreaRect(s.pts); bridge(app, B, P(R, -R.hl - 2, 0), P(R, R.hl + 2, 0), { width: Math.max(3, R.hw * 2), kind: 'wood', rail: false }); } }

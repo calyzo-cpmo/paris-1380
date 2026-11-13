@@ -67,6 +67,18 @@ export function stoneBuilding(app, B, pts, o = {}) {
   return top;
 }
 
+// Croix (faîtes, flèches, cimetières).
+export function cross(b, x, y, z, ux, uz, s = 1, col = rgb(60, 58, 58)) {
+  box(b, { cx: x, cz: z, ux, uz, hl: 0.05 * s, hw: 0.05 * s }, y, y + 1.3 * s, { col, top: false });
+  box(b, { cx: x, cz: z, ux, uz, hl: 0.36 * s, hw: 0.05 * s }, y + 0.8 * s, y + 0.92 * s, { col });
+}
+
+// Mât et bannière (la toile, animée, est créée à part à partir de app.flags).
+export function flagAt(app, B, x, z, y0, h, kind = 0, size = 1) {
+  cyl(B.at('plain', x, z), x, z, 0.07, y0, y0 + h, { seg: 4, col: rgb(90, 76, 60) });
+  app.flags.push([x, y0 + h - 0.8 * size, z, kind, size]);
+}
+
 // Tour ronde : fût, couronnement crénelé ou poivrière.
 export function roundTower(app, B, x, z, r, h, o = {}) {
   const T = app.terrain, y0 = Math.max(0.2, T.height(x, z)) - (o.deep ?? 1.2), yT = (o.base ?? Math.max(0.2, T.height(x, z))) + h;
@@ -77,9 +89,16 @@ export function roundTower(app, B, x, z, r, h, o = {}) {
     cyl(fx, x, z, r + 0.45, yT - 1.9, yT + 1.1, { seg: o.seg ?? 14, col, vBot: uv[2], vTop: uv[3], us: 1 / 16, fit: false, s0: 1 });
     disc(st, x, z, r + 0.45, yT - 1.9 + 0.02, { col: tint(col, 0.5) });
   }
+  if (o.slits !== false && r >= 2.6 && h >= 12) {          // ceinture d'archères à mi-hauteur
+    const circ = 2 * Math.PI * r, uT = Math.max(1, Math.round(circ / 4.5)) / 8, uv4 = cellUV(4, 0), ym = yT - h * 0.45;
+    cyl(B.at('stonefx', x, z), x, z, r + 0.04, ym - 1.7, ym + 1.7, { seg: o.seg ?? 14, col, vBot: uv4[2], vTop: uv4[3], us: uT / circ, s0: 1 });
+  }
   if (o.roof === 'cone') {
-    cone(B.at('roof', x, z), x, z, r + 0.75, yT + (r > 2.2 ? 1.0 : 0), yT + (o.roofH ?? r * 2.3) + 1, { seg: o.seg ?? 14, col: o.roofCol ?? COL.slate });
+    const apex = yT + (o.roofH ?? r * 2.3) + 1;
+    cone(B.at('roof', x, z), x, z, r + 0.75, yT + (r > 2.2 ? 1.0 : 0), apex, { seg: o.seg ?? 14, col: o.roofCol ?? COL.slate });
+    if (o.flag != null) flagAt(app, B, x, z, apex - 0.4, 4.2, o.flag);
   } else {
+    if (o.flag != null) flagAt(app, B, x, z, yT + 0.2, 6, o.flag);
     disc(st, x, z, r + 0.4, yT + 0.2, { col: tint(col, 0.72) });
     const ring = []; const seg = 16; for (let i = 0; i < seg; i++) { const a = (i / seg) * Math.PI * 2; ring.push([x + Math.cos(a) * (r + 0.25), z + Math.sin(a) * (r + 0.25)]); }
     crenels(st, ring, yT + 1.1, { closed: true, col, w: 0.9, gap: 0.7, h: 0.9 });
@@ -95,10 +114,15 @@ export function squareTower(app, B, R, h, o = {}) {
   const body = o.belfry ? yT - o.belfry : yT;
   walls(st, c, y0, body, { col });
   if (o.belfry) fxWalls(B, c, body, yT, 1, { col, bay: R.hw * 2, s0: 1, minBay: 1.5 });
-  if (o.roof === 'spire') { cone(B.at('roof', R.cx, R.cz), R.cx, R.cz, Math.max(R.hl, R.hw) * 1.45, yT, yT + (o.roofH ?? R.hw * 4.2), { seg: 4, a0: Math.atan2(R.uz, R.ux) + Math.PI / 4, col: o.roofCol ?? COL.slate }); }
+  if (o.roof === 'spire') {
+    const apex = yT + (o.roofH ?? R.hw * 4.2);
+    cone(B.at('roof', R.cx, R.cz), R.cx, R.cz, Math.max(R.hl, R.hw) * 1.45, yT, apex, { seg: 4, a0: Math.atan2(R.uz, R.ux) + Math.PI / 4, col: o.roofCol ?? COL.slate });
+    if (o.cross !== false) cross(B.at('plain', R.cx, R.cz), R.cx, apex - 0.15, R.cz, -R.uz, R.ux, 1.2, COL.gold);
+  }
   else if (o.roof === 'saddle') gableRoof(B.at('roof', R.cx, R.cz), st, R, yT, R.hw * 1.5, { col: o.roofCol ?? COL.tile, gable: { col } });
   else if (o.roof === 'hip') skeletonRoof(B.at('roof', R.cx, R.cz), { outer: c, holes: [] }, yT, { pitch: 1.6, col: o.roofCol ?? COL.slate, overhang: 0.4 });
   else { cap(st, c, [], yT, { col: tint(col, 0.72) }); crenels(st, c, yT, { closed: true, col }); }
+  if (o.flag != null) flagAt(app, B, R.cx, R.cz, yT + (o.roof === 'hip' ? R.hw * 1.5 : 0.1), 6, o.flag);
   app.solid.fillRect(R.cx, R.cz, R.ux, R.uz, R.hl, R.hw, 2);
   return yT;
 }
@@ -118,6 +142,21 @@ export function wallLine(app, B, pts, h, th, o = {}) {
   }
 }
 
+// Contreforts le long d'un anneau (sens positif) : un par travée sur les pans assez longs.
+export function buttresses(B, ring, g, h, col) {
+  const n = ring.length;
+  for (let i = 0; i < n; i++) {
+    const a = ring[i], c = ring[(i + 1) % n], L = Math.hypot(c[0] - a[0], c[1] - a[1]);
+    if (L < 6.5) continue;
+    const dx = (c[0] - a[0]) / L, dz = (c[1] - a[1]) / L, ox = dz, oz = -dx, k = Math.max(2, Math.round(L / 5.2));
+    for (let j = 0; j <= k; j++) {
+      const t = (j / k) * L, x = a[0] + dx * t + ox * 0.5, z = a[1] + dz * t + oz * 0.5, st = B.at('stone', x, z);
+      box(st, { cx: x, cz: z, ux: ox, uz: oz, hl: 0.6, hw: 0.42 }, g.y0, g.yF + h * 0.7, { col, top: false });
+      box(st, { cx: x - ox * 0.18, cz: z - oz * 0.18, ux: ox, uz: oz, hl: 0.42, hw: 0.38 }, g.yF + h * 0.7, g.yF + h, { col });
+    }
+  }
+}
+
 // Église générique sur son emprise : nef, bas-côtés, chevet, clocher.
 export function church(app, B, pts, r, o = {}) {
   const exs = cleanPoly(pts); if (!exs.length) return;
@@ -131,6 +170,10 @@ export function church(app, B, pts, r, o = {}) {
   const col = o.col ?? (r() < 0.5 ? COL.stone : COL.stoneWarm), roofCol = o.roofCol ?? (r() < 0.55 ? COL.slate : COL.tileDark);
   const rb = B.at('roof', g.c[0], g.c[1]), st = B.at('stone', g.c[0], g.c[1]);
   markSolid(app, ring);
+  // contreforts au droit des travées
+  buttresses(B, ccw(ring), g, (W < 12.5 || area < 260 ? (o.wallH ?? 5.5 + W * 0.38) : (o.aisleH ?? clamp(5.5 + W * 0.14, 6.5, 12))) * 0.92, col);
+  // fidèles et mendiants devant le portail
+  if (app.figurants) for (let i = 0; i < 3; i++) { const a = (r() - 0.5) * W * 0.7, d = 2 + r() * 5; app.figurants.push([R.cx - R.ux * (R.hl + d) - R.uz * a, R.cz - R.uz * (R.hl + d) + R.ux * a, r() * 6.28, r() < 0.5 ? 'man' : 'robe', null, null]); }
   let ridge;
   if (W < 12.5 || area < 260) {
     // chapelle à vaisseau unique
@@ -145,7 +188,8 @@ export function church(app, B, pts, r, o = {}) {
     const fxp = R.cx - R.ux * R.hl * 0.25, fzp = R.cz - R.uz * R.hl * 0.25;
     cyl(B.at('plain', fxp, fzp), fxp, fzp, 0.7, ridge - 0.6, ridge + 1.6, { seg: 6, col: COL.lead });
     cone(B.at('plain', fxp, fzp), fxp, fzp, 0.95, ridge + 1.6, ridge + 1.6 + W * 0.55 + 2, { seg: 6, col: COL.lead });
-    return { ridge, R, g };
+    cross(B.at('plain', fxp, fzp), fxp, ridge + 1.5 + W * 0.55 + 2, fzp, -R.uz, R.ux, 1.0, COL.gold);
+    return { ridge, R, g, hA: hW };
   }
   // église à bas-côtés
   const hA = o.aisleH ?? clamp(5.5 + W * 0.14, 6.5, 12), Wn = W * (o.naveRatio ?? 0.46);
@@ -173,6 +217,7 @@ export function church(app, B, pts, r, o = {}) {
   fxPanel(B, cxp + hx * pw / 2 - R.ux * 0.06, czp + hz * pw / 2 - R.uz * 0.06, cxp - hx * pw / 2 - R.ux * 0.06, czp - hz * pw / 2 - R.uz * 0.06, g.yF, g.yF + pw * 1.05, 6, 1, col);
   const rs = Math.min(Wn * 0.62, hN - pw * 1.05 - 1.2);
   if (rs > 2.5) fxPanel(B, cxp + hx * rs / 2 - R.ux * 0.06, czp + hz * rs / 2 - R.uz * 0.06, cxp - hx * rs / 2 - R.ux * 0.06, czp - hz * rs / 2 - R.uz * 0.06, g.yF + pw * 1.05 + 0.6, g.yF + pw * 1.05 + 0.6 + rs, 6, 0, col);
+  cross(st, nave.cx - R.ux * nave.hl, ridge - 0.1, nave.cz - R.uz * nave.hl, -R.uz, R.ux, 1.5, COL.stone);
   // clocher sur un flanc, près de la façade
   if (o.tower !== false) {
     const side = o.towerSide ?? (r() < 0.5 ? 1 : -1), tw = clamp(W * 0.2, 4.2, 7.5), along = o.towerAt ?? -0.72;
@@ -268,9 +313,12 @@ export function buildSpecials(app, B) {
       if (s.fill === '#FF0000' || s.fill === '#F3102B') {
         // une emprise très découpée (palais épiscopal, bâtiments conventuels accolés) n'est pas un simple vaisseau d'église
         const R = minAreaRect(s.pts), rect = Math.abs(polyArea(s.pts)) / (4 * R.hl * R.hw);
+        let res = null;
         if (rect < 0.5) stoneBuilding(app, B, s.pts, { floors: 2, roofCol: COL.slate, maxRoof: 8, pitch: 1.3 });
-        else if (R.hw * 2 > 30 || Math.abs(polyArea(s.pts)) > 2600) abbey(app, B, s.pts, r);
-        else church(app, B, s.pts, r);
+        else if (R.hw * 2 > 30 || Math.abs(polyArea(s.pts)) > 2600) res = abbey(app, B, s.pts, r);
+        else res = church(app, B, s.pts, r);
+        // édifice figuré « en construction » sur le plan : un échafaudage et une grue le long du flanc sud
+        if (name === 'EnConstruction' && res) { const Q = res.R; app.chantiers.push({ x: Q.cx - Q.uz * (Q.hw + 0.5), z: Q.cz + Q.ux * (Q.hw + 0.5), ux: Q.ux, uz: Q.uz, len: Math.min(Q.hl * 1.3, 26), h: Math.max(6, (res.hA ?? 8) - 0.5) }); }
       }
       else if (s.fill === '#C92548') stoneBuilding(app, B, s.pts, { floors: 2, roofCol: r() < 0.5 ? COL.tileDark : COL.slate, col: COL.stone, maxRoof: 7 });
     }

@@ -113,6 +113,7 @@ export function initUI(app) {
   function setHour(h, fromSlider) { app.setHour(h); $('hour-label').textContent = fmtHour(h); if (!fromSlider) hour.value = String(h); }
   hour.addEventListener('input', () => setHour(parseFloat(hour.value), true));
   $('toggle-names').addEventListener('change', (e) => { namesOn = e.target.checked; });
+  $('toggle-people').addEventListener('change', (e) => { if (app.people) app.people.enabled = e.target.checked; });
 
   // ---------- modes
   function setMode(m, keep) {

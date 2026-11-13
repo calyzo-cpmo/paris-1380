@@ -25,3 +25,6 @@ export function layer(name) {
 export const polys = (name, fill) => layer(name).filter((s) => s.kind === 'poly' && s.pts.length >= 3 && (fill == null || (Array.isArray(fill) ? fill.includes(s.fill) : s.fill === fill)));
 export const lines = (name) => layer(name).filter((s) => s.kind !== 'circle' && s.fill === 'NONE');
 export const circles = (name) => layer(name).filter((s) => s.kind === 'circle');
+
+// Route d'Orléans au sortir de la porte Saint-Jacques, dans la zone que masque la légende du plan (tracé restitué).
+export const EXTRA_ROAD = [[-586, 735], [-600, 880], [-636, 1060], [-652, 1260], [-640, 1455]];
