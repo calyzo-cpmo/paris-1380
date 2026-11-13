@@ -6,6 +6,7 @@ import { mulberry32, centroid, polyArea, minAreaRect, clamp, pointInPoly } from 
 import { rgb, tint, box, cyl, cone, disc, gableRoof, rectCorners, walls } from './builder.js';
 import { COL, wallLine, squareTower, roundTower, church, cross, flagAt } from './special.js';
 import { placeHouse, PLASTERS, TILES } from './houses.js';
+import { VILLAGES } from './country.js';
 
 const WOOD = rgb(112, 88, 62), WOOD_D = rgb(78, 60, 44), HAY = rgb(196, 172, 104), IRON = rgb(60, 58, 58);
 const CLOTHS = [rgb(186, 150, 84), rgb(150, 62, 50), rgb(214, 204, 180), rgb(96, 116, 84), rgb(70, 92, 132), rgb(168, 120, 70)];
@@ -214,19 +215,13 @@ function hamlet(app, B, r, pts, o = {}) {
         if (o.onlyOut && (lu.get(cx, cz) !== LU.OUT || occ.rectFraction(cx, cz, rx, rz, w / 2, d / 2, (v) => v !== 0) > 0)) continue;
         const thatch = r() < (o.thatch ?? 0.6);
         placeHouse(app, B, r, { ox, oz, rx, rz, nx, nz, w, d, floors: 1 + (r() < (o.two ?? 0.35) ? 1 : 0), gableFront: r() < 0.35, style: thatch ? 7 : r() < 0.5 ? 2 : 4, gfRow: thatch ? 7 : 1, jetty: 0, pitch: thatch ? 1.0 : 1.2, plaster: PLASTERS[(r() * PLASTERS.length) | 0], roofCol: thatch ? rgb(150, 134, 96) : TILES[(r() * TILES.length) | 0], plain: true });
-        if (o.onlyOut) occ.fillRect(cx, cz, rx, rz, w / 2, d / 2, 1);
+        occ.fillRect(cx, cz, rx, rz, w / 2, d / 2, 1);
         n++;
       }
     }
   }
   return n;
 }
-
-// Villages des environs (positions actuelles approximatives, rapportées à Notre-Dame).
-const VILLAGES = [['La Chapelle', 717, -4080, 0.2, 26], ['La Villette', 2420, -4000, 0.5, 22], ['Belleville', 2790, -2110, 1.0, 26], ['Charonne', 3890, -550, 0.3, 18], ['Montmartre', -560, -3640, 1.2, 24], ['Clignancourt', -300, -4420, 0.1, 12],
-  ['Ville-l’Évêque', -2040, -2000, 0.4, 16], ['Le Roule', -3290, -2450, 0.3, 14], ['Chaillot', -4240, -1330, 1.3, 20], ['Passy', -5270, -440, 1.1, 16], ['Auteuil', -6070, 560, 0.2, 16], ['Vaugirard', -3655, 1450, 0.5, 20], ['Issy', -5850, 3220, 0.9, 18],
-  ['Vanves', -4460, 3560, 0.3, 14], ['Montrouge', -2260, 4000, 0.1, 14], ['Gentilly', -505, 4340, 1.0, 16], ['Ivry', 2570, 4450, 0.4, 18], ['Bercy', 2570, 1890, 0.9, 12], ['Conflans', 4550, 3450, 0.6, 16], ['Saint-Mandé', 4990, 1220, 0.2, 12],
-  ['Montreuil', 6820, -1110, 0.5, 22], ['Bagnolet', 4990, -1780, 1.2, 14], ['Pantin', 4250, -4560, 0.3, 16], ['Saint-Ouen', -1160, -6560, 0.2, 16], ['Clichy', -3210, -5670, 0.6, 16], ['Saint-Marcel', 150, 1750, 1.35, 30], ['Saint-Denis', 250, -8300, 0.2, 60]];
 
 export function buildCountry(app, B) {
   const r = mulberry32(1380), T = app.terrain;

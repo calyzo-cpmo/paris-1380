@@ -2,10 +2,11 @@
 import * as THREE from 'three';
 import { FRAME, layer, polys, circles, LABELS } from './data.js';
 import { LU } from './raster.js';
-import { mulberry32, hash2, polyArea, centroid, dpRing, pointInPoly } from './geom.js';
+import { mulberry32, hash2, polyArea, centroid, dpRing, pointInPoly, pointAt } from './geom.js';
 import { rgb, tint, box, cyl, cone, rectCorners, ccw } from './builder.js';
 import { COL, wallLine } from './special.js';
 import { WORLD } from './terrain.js';
+import { ROADS, BIEVRE, BLOCK, block, hedged, landKind, woodBlobs, inWood, nearRoad, orchardTrees } from './country.js';
 
 // ---------------------------------------------------------------- arbres (instances)
 function treeGeometry() {
@@ -46,7 +47,8 @@ export function buildTrees(app) {
   const lu = app.lu, occ = app.solid, T = app.terrain, r = mulberry32(555);
   const spots = [];
   const clear = app.clearings || [];
-  const add = (x, z, s, kind) => { for (const c of clear) if ((x - c[0]) * (x - c[0]) + (z - c[1]) * (z - c[1]) < c[2] * c[2]) return; const y = T.height(x, z); if (y < 0.6) return; spots.push(x, y, z, s, kind); };
+  const cells = (app.treeCells = new Set());         // présence d'un arbre par cellule de 4 m (voir app.treeNear)
+  const add = (x, z, s, kind) => { for (const c of clear) if ((x - c[0]) * (x - c[0]) + (z - c[1]) * (z - c[1]) < c[2] * c[2]) return; const y = T.height(x, z); if (y < 0.6) return; spots.push(x, y, z, s, kind); cells.add((Math.floor(x / 4) + 4096) * 8192 + Math.floor(z / 4) + 4096); };
   // dans le cadre du plan : jardins, cœurs d'îlot, vergers, haies, prés des îles
   const step = 6.5;
   for (let z = FRAME.z0 + 3; z < FRAME.z1 - 3; z += step) for (let x = FRAME.x0 + 3; x < FRAME.x1 - 3; x += step) {
@@ -76,11 +78,15 @@ export function buildTrees(app) {
     if (T.sdWater(x, z) > -8) continue;
     add(x, z, 1.8 + r() * 2.2, r() < 0.2 ? 1 : 0);
   }
+  // haies, vergers et ripisylve de la campagne (voir buildCountryside)
+  const ct = app.countryTrees || [];
+  for (let i = 0; i < ct.length; i += 4) add(ct[i], ct[i + 1], ct[i + 2], ct[i + 3]);
   // répartition en dalles pour l'élagage par le champ de vision
   const TILE = 900, tiles = new Map();
   for (let i = 0; i < spots.length; i += 5) { const k = Math.floor(spots[i] / TILE) + '|' + Math.floor(spots[i + 2] / TILE); if (!tiles.has(k)) tiles.set(k, []); tiles.get(k).push(i); }
   const geo = treeGeometry();
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 });
+  if (app.cert) app.cert.certify(mat, 4);         // la végétation est conjecturale
   const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), v3 = new THREE.Vector3(), s3 = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), c3 = new THREE.Color();
   const group = new THREE.Group();
   for (const list of tiles.values()) {
@@ -101,6 +107,82 @@ export function buildTrees(app) {
   app.scene.add(group);
   app.treeCount = spots.length / 5;
   return group;
+}
+
+// ---------------------------------------------------------------- campagne : haies vives, bois, vergers, croix de chemin
+// Bosquet : une calotte basse et bosselée, posée sur le relief ; les arbres plantés par buildTrees en dépassent.
+function dome(B, T, b, r) {
+  if (T.height(b.x, b.z) < 1) return 0;
+  const bt = B.at('plain', b.x, b.z), seg = 9, h = 9 + r() * 5, c = Math.cos(b.rot), s = Math.sin(b.rot), g = 0.8 + b.tone * 0.35;
+  const col = rgb((44 * g) | 0, (74 * g) | 0, (36 * g) | 0);
+  const rings = [[1.0, -2.5, 0.6], [0.8, h * 0.62, 0.86], [0.45, h * 0.94, 1.05]];        // [rayon relatif, hauteur, éclat]
+  const P = rings.map(([rho, hh]) => { const o = []; for (let k = 0; k < seg; k++) { const a = (k / seg) * 6.283, j = 0.86 + r() * 0.28, u = Math.cos(a) * b.rx * rho * j, v = Math.sin(a) * b.rz * rho * j, x = b.x + u * c - v * s, z = b.z + u * s + v * c; o.push([x, Math.max(T.height(x, z), 0.3) + hh * (0.9 + r() * 0.2), z]); } return o; });
+  for (let m = 0; m < 2; m++) for (let k = 0; k < seg; k++) { const k1 = (k + 1) % seg, A = P[m][k1], Bq = P[m][k], C = P[m + 1][k], D = P[m + 1][k1]; bt.quad(A[0], A[1], A[2], Bq[0], Bq[1], Bq[2], C[0], C[1], C[2], D[0], D[1], D[2], 0, 0, 1, 1, col, rings[m][2], rings[m + 1][2]); }
+  const ty = Math.max(...P[2].map((p) => p[1])) + h * 0.08;
+  for (let k = 0; k < seg; k++) { const k1 = (k + 1) % seg, A = P[2][k1], Bq = P[2][k]; bt.tri(A[0], A[1], A[2], Bq[0], Bq[1], Bq[2], b.x, ty, b.z, 0, 0, 1, 0, 0.5, 1, col, rings[2][2], rings[2][2], 1.12); }
+  return seg * 5;
+}
+
+export function buildCountryside(app, B) {
+  const T = app.terrain, lu = app.lu, r = mulberry32(4711), extra = (app.countryTrees = []), F = app.figurants, mobile = app.mobile;
+  const inFrame = (x, z) => x > FRAME.x0 && x < FRAME.x1 && z > FRAME.z0 && z < FRAME.z1;
+  const field = (x, z) => { if (!inFrame(x, z)) return true; const c = lu.get(x, z); return c === LU.FIELD || c === LU.OUT; };
+  const RAD = mobile ? 2900 : 4300, n0 = Math.ceil(RAD / BLOCK) + 2;
+  const stats = { hedges: 0, domes: 0, orchard: 0, crosses: 0 };
+  for (let j = -n0 - 2; j <= n0; j++) for (let i = -n0; i <= n0; i++) {
+    const q = block(i, j);
+    if (Math.hypot(q.cx, q.cz + 300) > RAD) continue;
+    // haies vives sur les limites de quartier que la texture du sol marque en vert sombre
+    for (const [side, a, b] of [[0, q.pts[0], q.pts[1]], [1, q.pts[0], q.pts[3]]]) {
+      if (!hedged(i, j, side)) continue;
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, n = Math.max(2, Math.round(L / 13)), seg = L / n;
+      for (let k = 0; k < n; k++) {
+        const mx = a[0] + ux * (k + 0.5) * seg, mz = a[1] + uz * (k + 0.5) * seg;
+        if (!field(mx, mz) || app.solid.get(mx, mz) || T.sdWater(mx, mz) > -14 || inWood(mx, mz, 10) || nearRoad(mx, mz, 9) || r() < 0.07) continue;
+        const y = T.height(mx, mz), h = 1.6 + r() * 1.6, g = 0.85 + r() * 0.3;
+        box(B.at('plain', mx, mz), { cx: mx + (r() - 0.5) * 0.8, cz: mz + (r() - 0.5) * 0.8, ux, uz, hl: seg / 2 + 0.5, hw: 1.1 + r() * 0.7 }, y - 0.8, y + h, { col: rgb((78 * g) | 0, (112 * g) | 0, (56 * g) | 0), topCol: rgb((96 * g) | 0, (134 * g) | 0, (66 * g) | 0), s0: 0.82 });
+        stats.hedges++;
+        if (r() < 0.3) extra.push(mx + (r() - 0.5) * 2, mz + (r() - 0.5) * 2, 1.5 + r() * 1.3, 0);          // arbres de haut jet dans la haie
+      }
+    }
+    if (inFrame(q.cx, q.cz)) continue;
+    const kind = landKind(T, q.cx, q.cz, q.h);
+    // vergers autour des villages : les arbres tombent sur les points de la texture
+    if (kind === 'verger' && !mobile) for (const [x, z] of orchardTrees(q)) if (!app.solid.get(x, z) && !inWood(x, z)) { extra.push(x, z, 1.0 + r() * 0.45, 0); stats.orchard++; }
+    // un peu de monde aux champs : bergers et troupeaux dans les prés et les jachères, paysans dans les cultures
+    if (mobile || Math.hypot(q.cx, q.cz + 300) > 3300 || inWood(q.cx, q.cz, 20)) continue;
+    const u = r(), px = q.cx + (r() - 0.5) * 60, pz = q.cz + (r() - 0.5) * 60;
+    if (T.height(px, pz) < 1.2 || app.solid.get(px, pz)) continue;
+    if ((kind === 'pre' || kind === 'jachere') && u < 0.22) {
+      const sheep = r() < 0.65, n = sheep ? 6 + ((r() * 9) | 0) : 3 + ((r() * 4) | 0);
+      F.push([px, pz, r() * 6.28, 'man', [120, 100, 78], null, 'peasant']);
+      for (let k = 0; k < n; k++) { const a = r() * 6.28, d = 2 + r() * 12, sx = px + Math.cos(a) * d, sz = pz + Math.sin(a) * d; if (T.height(sx, sz) > 1 && !app.solid.get(sx, sz)) F.push([sx, sz, r() * 6.28, sheep ? 'sheep' : 'beast', null, null]); }
+    } else if (kind !== 'pre' && kind !== 'jachere' && u < 0.16) { const n = 1 + ((r() * 3) | 0); for (let k = 0; k < n; k++) F.push([px + (r() - 0.5) * 14, pz + (r() - 0.5) * 14, r() * 6.28, r() < 0.6 ? 'man' : 'robe', null, null, 'peasant']); }
+  }
+  // bois : bosquets en volume
+  for (const b of woodBlobs()) if (dome(B, T, b, r)) stats.domes++;
+  // la Bièvre : saules et aulnes sur ses rives
+  let len = 0; for (let k = 0; k < BIEVRE.length - 1; k++) len += Math.hypot(BIEVRE[k + 1][0] - BIEVRE[k][0], BIEVRE[k + 1][1] - BIEVRE[k][1]);
+  for (let sd = 10; sd < len; sd += mobile ? 40 : 17) {
+    const p = pointAt(BIEVRE, sd), side = r() < 0.5 ? 1 : -1, off = 6 + r() * 9;
+    const x = p.x - p.dz * off * side, z = p.z + p.dx * off * side;
+    if (!inFrame(x, z) && !app.solid.get(x, z)) extra.push(x, z, 1.7 + r() * 1.4, r() < 0.45 ? 1 : 0);
+  }
+  // croix de chemin, à quelques centaines de pas des portes
+  for (const rd of ROADS) {
+    const p = pointAt(rd, 260 + r() * 200), ux = p.dx, uz = p.dz;
+    const x = p.x - uz * 7.5, z = p.z + ux * 7.5, y = T.height(x, z);
+    if (y < 1.5 || inFrame(x, z) || app.solid.get(x, z)) continue;
+    const st = B.at('stone', x, z);
+    box(st, { cx: x, cz: z, ux, uz, hl: 0.95, hw: 0.95 }, y - 0.3, y + 0.45, { col: COL.stone });
+    box(st, { cx: x, cz: z, ux, uz, hl: 0.6, hw: 0.6 }, y + 0.45, y + 0.85, { col: COL.stone });
+    box(st, { cx: x, cz: z, ux, uz, hl: 0.13, hw: 0.13 }, y + 0.85, y + 3.5, { col: COL.stone });
+    box(st, { cx: x, cz: z, ux: -uz, uz: ux, hl: 0.62, hw: 0.12 }, y + 2.75, y + 3.0, { col: COL.stone });
+    app.solid.fillCircle(x, z, 1.1, 3);
+    stats.crosses++;
+  }
+  app.countryside = stats;
+  return stats;
 }
 
 // ---------------------------------------------------------------- bateaux

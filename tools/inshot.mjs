@@ -12,7 +12,7 @@ page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') 
 page.on('pageerror', (e) => errors.push('pageerror: ' + String(e.stack || e).slice(0, 700)));
 await page.goto('file://' + join(root, 'dist/index.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 200000 });
-await page.addStyleTag({ content: '#top,#dock,#card,#tour,#walkhud,#inhud{display:none!important}' });
+await page.addStyleTag({ content: '#top,#dock,#card,#nav,#stack,#walkhud,#inhud{display:none!important}' });
 let n = 0;
 for (const [id, view, hour] of shots) {
   const info = await page.evaluate(([id, view, hour]) => {

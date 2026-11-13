@@ -18,6 +18,8 @@ export class CameraRig {
     this.joy = { x: 0, y: 0 };
     this.userMoved = false;
     this.onUserInput = null;
+    this.walkTo = null;            // à pied : point vers lequel on marche tout seul (clic au sol)
+    this.walkStall = 0;
     this._bind();
   }
 
@@ -35,7 +37,7 @@ export class CameraRig {
       if (this.mode === 'walk' && !this.grab && document.pointerLockElement === d) { this._look(e.movementX, e.movementY); return; }
       if (!drag) return;
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
-      if (this.mode === 'walk') { if (this.grab) this._look(-dx * 1.15, -dy * 1.15); else this._look(dx, dy); }      // en intérieur : la vue suit la main, comme dans une visite virtuelle
+      if (this.mode === 'walk') this._look(-dx * 1.15, -dy * 1.15);      // à pied comme en intérieur : la vue suit la main, comme dans une visite virtuelle
       else if (drag.rot) this._rotate(dx, dy);
       else this._pan(dx, dy);
     });
@@ -62,7 +64,7 @@ export class CameraRig {
     g.x = clamp(g.x, -6500, 6500); g.z = clamp(g.z, -6500, 6500);
   }
   _rotate(dx, dy) { const g = this.goal; g.az -= dx * 0.0052; g.el = clamp(g.el + dy * 0.0042, 0.035, 1.5); }
-  _look(dx, dy) { const w = this.walk; w.yaw -= dx * 0.0028; w.pitch = clamp(w.pitch - dy * 0.0026, -1.2, 1.3); }
+  _look(dx, dy) { const w = this.walk; w.yaw -= dx * 0.0028; w.pitch = clamp(w.pitch - dy * 0.0026, -1.2, 1.3); w.yawGoal = null; }
 
   _touchMove(e) {
     const t = this.touch.get(e.pointerId); if (!t) return;
@@ -98,24 +100,24 @@ export class CameraRig {
     this.update(0);
   }
 
-  flyTo(v, seconds = 2.6) {
+  flyTo(v, seconds = 2.6, onDone = null) {
     const from = { ...this.cur };
     const to = { x: v.x, z: v.z, dist: v.dist ?? from.dist, az: v.az ?? from.az, el: v.el ?? from.el };
     while (to.az - from.az > Math.PI) to.az -= 2 * Math.PI;
     while (to.az - from.az < -Math.PI) to.az += 2 * Math.PI;
-    this.fly = { from, to, t: 0, dur: seconds, lift: Math.min(1400, Math.hypot(to.x - from.x, to.z - from.z) * 0.45) };
+    this.fly = { from, to, t: 0, dur: seconds, lift: Math.min(1400, Math.hypot(to.x - from.x, to.z - from.z) * 0.45), onDone };
     this.mode = 'orbit';
   }
 
-  enterWalk(x, z, yaw = 0) {
-    this.mode = 'walk'; this.fly = null;
-    this.walk = { x, z, yaw, pitch: -0.02, vx: 0, vz: 0 };
+  enterWalk(x, z, yaw = 0, pitch = -0.02) {
+    this.mode = 'walk'; this.fly = null; this.walkTo = null; this.walkStall = 0;
+    this.walk = { x, z, yaw, pitch, vx: 0, vz: 0 };
   }
   exitWalk() {
     if (this.mode !== 'walk') return;
     const w = this.walk;
-    this.mode = 'orbit';
-    this.goal = { x: w.x, z: w.z, dist: 260, az: w.yaw + Math.PI, el: 0.5 };
+    this.mode = 'orbit'; this.walkTo = null;
+    this.goal = { x: w.x, z: w.z, dist: 260, az: w.yaw, el: 0.5 };
     this.cur = { ...this.goal, dist: 30, el: 0.1 };
     if (document.pointerLockElement) document.exitPointerLock();
   }
@@ -126,16 +128,23 @@ export class CameraRig {
       const w = this.walk;
       let f = (K.has('KeyW') || K.has('ArrowUp') ? 1 : 0) - (K.has('KeyS') || K.has('ArrowDown') ? 1 : 0) - this.joy.y;
       let r = (K.has('KeyD') ? 1 : 0) - (K.has('KeyA') ? 1 : 0) + this.joy.x;
-      if (K.has('ArrowLeft')) w.yaw += dt * 1.6; if (K.has('ArrowRight')) w.yaw -= dt * 1.6;
+      if (K.has('ArrowLeft')) { w.yaw += dt * 1.6; w.yawGoal = null; } if (K.has('ArrowRight')) { w.yaw -= dt * 1.6; w.yawGoal = null; }
+      if (w.yawGoal != null) { let d = w.yawGoal - w.yaw; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; w.yaw += d * Math.min(1, dt * 5); if (Math.abs(d) < 0.01) w.yawGoal = null; }
       const sp = (K.has('ShiftLeft') || K.has('ShiftRight') ? 11 : 4.2);
       const s = Math.sin(w.yaw), c = Math.cos(w.yaw);
-      const tx = (-s * f + c * r) * sp, tz = (-c * f - s * r) * sp;
+      let tx = (-s * f + c * r) * sp, tz = (-c * f - s * r) * sp;
+      if (this.walkTo && (f || r)) this.walkTo = null;                 // le clavier ou la manette reprennent la main
+      if (this.walkTo) {
+        const dx = this.walkTo[0] - w.x, dz = this.walkTo[1] - w.z, l = Math.hypot(dx, dz);
+        if (l < 0.5) { this.walkTo = null; tx = tz = 0; } else { const v = Math.min(sp * 1.2, 1.2 + l * 1.6); tx = (dx / l) * v; tz = (dz / l) * v; }
+      }
       w.vx = lerp(w.vx, tx, Math.min(1, dt * 9)); w.vz = lerp(w.vz, tz, Math.min(1, dt * 9));
-      const nx = w.x + w.vx * dt, nz = w.z + w.vz * dt;
+      const ox = w.x, oz = w.z, nx = w.x + w.vx * dt, nz = w.z + w.vz * dt;
       if (this.world.walkable(nx, nz)) { w.x = nx; w.z = nz; }
       else if (this.world.walkable(nx, w.z)) { w.x = nx; w.vz = 0; }
       else if (this.world.walkable(w.x, nz)) { w.z = nz; w.vx = 0; }
-      else { w.vx = w.vz = 0; }
+      else { w.vx = w.vz = 0; this.walkTo = null; }
+      if (this.walkTo && dt > 0) { this.walkStall = Math.hypot(w.x - ox, w.z - oz) < 0.5 * dt ? this.walkStall + dt : 0; if (this.walkStall > 0.6) { this.walkTo = null; this.walkStall = 0; } }
       const y = this.world.walkHeight(w.x, w.z) + 1.68;
       w.y = w.y == null ? y : lerp(w.y, y, Math.min(1, dt * 10));
       cam.position.set(w.x, w.y, w.z);
@@ -152,7 +161,7 @@ export class CameraRig {
       g.az = lerp(f.from.az, f.to.az, t); g.el = lerp(f.from.el, f.to.el, t);
       g.dist = lerp(f.from.dist, f.to.dist, t) + Math.sin(Math.PI * t) * f.lift;
       this.cur = { ...g };
-      if (f.t >= 1) this.fly = null;
+      if (f.t >= 1) { this.fly = null; if (f.onDone) f.onDone(); }
     } else {
       const sp = g.dist * 0.9 * dt, s = Math.sin(g.az), c = Math.cos(g.az);
       const f = (K.has('KeyW') || K.has('ArrowUp') ? 1 : 0) - (K.has('KeyS') || K.has('ArrowDown') ? 1 : 0);

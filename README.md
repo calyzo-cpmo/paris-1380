@@ -1,8 +1,9 @@
 # Paris 1380 — maquette 3D interactive
 
 Restitution en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
-survol libre, visite guidée en treize étapes, promenade à pied dans des rues peuplées, histoire de chaque monument,
-visite de leurs intérieurs et heure du jour réglable.
+survol libre, cinq parcours commentés, promenade à pied dans des rues peuplées et jusque dans la campagne, histoire de
+chaque monument, visite de leurs intérieurs, mini-plan et boussole, heure du jour réglable et calque montrant ce qui est
+attesté, restitué ou conjectural.
 
 **Voir la maquette en ligne :** <https://calyzo-cpmo.github.io/paris-1380/> (GitHub Pages, une fois activé dans les réglages du dépôt).
 **L'ouvrir sur son ordinateur :** `dist/index.html` (fichier autonome, aucun serveur nécessaire).
@@ -28,9 +29,39 @@ visite de leurs intérieurs et heure du jour réglable.
   Notre-Dame (nef, transept, roses, chœur clos), chapelle haute de la Sainte-Chapelle, Grand'Salle du Palais, librairie de
   Charles V au Louvre, chambre de l'horloge, salle des malades de l'Hôtel-Dieu, frigidarium des thermes de Cluny, réfectoire
   des Bernardins, chambre du roi à Vincennes, églises, hôtels, halles, corps de garde des portes et des tours ;
+- **les abords** : au-delà des murs, des champs en lanières, des haies vives, des vignes sur les coteaux, des prés au bord
+  de l'eau, les marais maraîchers du nord, des vergers autour des villages, des bois en volume, la Bièvre et ses saules,
+  des croix de chemin, des bergers et leurs troupeaux ; une couronne de plateaux ferme l'horizon et le sol se prolonge
+  dans la brume jusqu'à 27 km ;
 - **le détail** : façades en double définition, auvents, enseignes, lucarnes, tonneaux, 190 étals de marché, puits, rues pavées,
   contreforts et croix des églises, archères des tours, échafaudages et grues des chantiers (Bastille, pont Saint-Michel,
   églises en construction), meules, 27 villages des environs, château de Vincennes, chartreuse de Vauvert.
+
+## Parcourir la maquette
+
+- **Accueil** : une fois la ville construite, trois portes d'entrée — suivre une visite guidée, explorer la maquette,
+  descendre dans les rues. Un lien partagé rouvre directement sa vue.
+- **Lieux** : chaque lieu porte une pastille à la couleur de sa catégorie ; les grands lieux affichent leur nom, les autres
+  apparaissent en s'approchant ou au survol, et une petite arche signale les intérieurs à visiter. La liste se filtre
+  (intérieurs, lieux pas encore vus) et tient un carnet de visite : lieux vus, intérieurs visités, parcours suivis,
+  conservés dans le navigateur.
+- **Parcours commentés** : le grand tour, le Paris de Charles V, les deux enceintes, la Seine et ses ponts, l'Université.
+  Barre de progression, pause, accès direct à une étape, entrée dans le monument de l'étape, tracé sur le mini-plan.
+- **À pied** : on arrive face au monument, avec du recul ; glisser pour regarder, cliquer le sol pour avancer, ou marcher
+  au clavier. Les noms des lieux proches restent affichés avec leur distance ; devant un monument, on peut lire sa fiche
+  ou y entrer, puis ressortir au même endroit. Un double-clic sur la maquette fait descendre à cet endroit, y compris
+  hors des murs.
+- **Se repérer** : mini-plan de 1380 (position, direction du regard, clic pour s'y rendre, échelle de la ville ou du
+  quartier), boussole qui remet le nord en haut, retour à la vue d'ensemble, et indication de la rive, de la rue
+  (une centaine de rues nommées sur le plan) ou du lieu voisin.
+- **Heure** : curseur, quatre moments de la journée, journée en accéléré.
+- **Degré de certitude** : un calque teinte chaque volume — restitué d'après images et vestiges, emprise attestée par le
+  plan, conjectural, hors du plan — et chaque fiche l'indique.
+- **Partager** : l'adresse de la page suit la vue, l'heure et la fiche ouverte ; le bouton « Partager » la copie.
+- **Téléphone** : barre du bas sur une ligne, fiche en volet à déplier, menus repliés.
+
+Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` mini-plan ; à pied, `E` entrer, `F` fiche,
+`V` regard à la souris, `Échap` pour remonter.
 
 ## Sources
 
@@ -54,7 +85,10 @@ et dans le panneau « Sources » de la page.
 | Restitué d'après images et vestiges | volumes des grands monuments (Notre-Dame, Sainte-Chapelle, Palais, Louvre, Bastille, Temple, Châtelets) |
 | Vraisemblable mais conjectural | forme de chaque maison, élévation des églises paroissiales et des hôtels, végétation, relief de détail |
 | Intérieurs | dimensions connues pour Notre-Dame, la Sainte-Chapelle, la Grand'Salle, le frigidarium de Cluny, le réfectoire des Bernardins et le donjon de Vincennes ; mobilier restitué d'après textes et inventaires ; les autres intérieurs (paroisses, hôtels, corps de garde) sont des évocations, signalées dans chaque notice |
-| Évocation | habitants, bêtes, étals, bateaux, bannières, chantiers : ils donnent l'échelle et la vie, leur place exacte est inventée ; villages, Vincennes et chartreuse sont situés d'après leur emplacement connu, hors du plan |
+| Évocation | habitants, bêtes, étals, bateaux, bannières, chantiers : ils donnent l'échelle et la vie, leur place exacte est inventée ; villages, Vincennes et chartreuse sont situés d'après leur emplacement connu, hors du plan ; champs, haies, vignes, bois et relief de la campagne sont une évocation |
+
+Le calque « Degré de certitude » (menu « Affichage ») reporte ces catégories sur la maquette : chaque étape de construction
+classe les volumes qu'elle pose (`src/certainty.js`, `src/city.js`).
 
 ## Organisation
 
@@ -65,15 +99,18 @@ data/thumbs.json             vignettes des sources (domaine public)
 tools/extract_alpage.py      SVG → JSON (calques, courbes aplanies, libellés)
 tools/build.mjs              assemble la page autonome dans dist/
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
-tools/test.mjs               test fonctionnel : foule, visite, marche, heure, sources, clic sur les monuments, intérieurs, mobile, console sans erreur
+tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, téléphone, console sans erreur
+tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/inshot.mjs, uishot.mjs captures des intérieurs et de l'interface
 tools/make_thumbs.py         vignettes des sources (réduction locale des images du domaine public)
-src/terrain.js, raster.js    relief, berges, occupation du sol
+src/terrain.js, raster.js    relief, berges, plateaux de l'horizon, occupation du sol, trame d'obstacles
+src/ground.js                peinture du sol : plan de 1380, campagne proche et lointaine
+src/country.js               campagne : villages, chemins, bois, parcellaire en lanières, nature des cultures
 src/houses.js                lotissement des îlots et maisons
 src/special.js               églises, couvents, hôtels, collèges, halles, enclos
 src/walls.js, monuments.js   enceintes, portes, Bastille, Louvre, Notre-Dame, Palais, ponts…
-src/landscape.js             arbres, bateaux à quai, fumées, moulins à vent
+src/landscape.js             arbres, haies, bosquets, vergers, croix de chemin, bateaux à quai, fumées, moulins à vent
 src/people.js                personnages articulés instanciés : foule mobile, cavaliers, charrettes, bêtes, figurants ; deux niveaux de détail
 src/figures.js               atlas peint des visages et des costumes
 src/interiors.js             générateurs d'intérieurs (nef, grande salle, tour) et conduite de la visite
@@ -82,7 +119,12 @@ src/interior_specs.js        dimensions et notice de chaque intérieur
 src/history.js               chronologie de chaque lieu
 src/life.js                  bateaux en route, bannières, roues des moulins, oiseaux
 src/props.js                 étals, puits, échafaudages, grues, marchés, chantiers, villages, Vincennes, chartreuse
-src/places.js, sources.js    fiches des lieux, visite guidée, catalogue des sources
+src/places.js, sources.js    fiches des lieux, catalogue des sources
+src/tours.js                 parcours commentés
+src/certainty.js             calque « degré de certitude »
+src/where.js                 rives, îles et rues nommées du plan (« où suis-je »)
+src/minimap.js               mini-plan
+src/state.js                 carnet de visite, réglages mémorisés, lien partageable
 src/ui.js, controls.js       interface et caméra
 ```
 
@@ -92,7 +134,7 @@ src/ui.js, controls.js       interface et caméra
 npm install
 npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
 npm run build     # produit dist/index.html
-npm test          # 38 vérifications automatisées dans Chromium (Playwright requis)
+npm test          # 86 vérifications automatisées dans Chromium (Playwright requis)
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),

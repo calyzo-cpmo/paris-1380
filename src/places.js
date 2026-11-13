@@ -1,4 +1,4 @@
-// Lieux remarquables : fiches historiques, positions (calées sur les emprises du plan) et étapes de la visite guidée.
+// Lieux remarquables : fiches historiques et positions (calées sur les emprises du plan). Les parcours commentés sont dans tours.js.
 import { layer, LABELS } from './data.js';
 import { centroid, polyArea } from './geom.js';
 import { CHRONO, GATE_CHRONO, RADIUS } from './history.js';
@@ -91,20 +91,3 @@ export function buildPlaces(app) {
 }
 
 export const CATS = ['Cité', 'Pouvoir royal', 'Fortifications', 'Églises et abbayes', 'Université', 'Vie urbaine', 'Ponts', 'Hors les murs'];
-
-// Visite guidée : [lieu ou null, x, z, distance, azimut (rad), élévation (rad), heure, texte]
-export const TOUR = [
-  [null, -60, -250, 2900, -0.5, 0.7, 10.5, 'Paris vers 1380 : la plus grande ville d’Occident, qui comptait quelque deux cent mille habitants avant la Peste noire. La Seine, ses îles, et deux enceintes emboîtées sur la rive droite.'],
-  ['notre-dame', 0, 0, 300, -1.35, 0.32, 10.5, 'L’île de la Cité, berceau de la ville. À l’est la cathédrale et le cloître des chanoines ; à l’ouest le palais du roi.'],
-  ['palais', 0, 0, 330, 0.5, 0.42, 11.5, 'Le Palais : la Grand’Salle de Philippe le Bel, la Sainte-Chapelle, les tours du quai et la première horloge publique de la ville.'],
-  ['pont-changeurs', 0, 0, 240, 2.5, 0.38, 12, 'Le Grand-Pont et ses maisons de changeurs, gardé par le Grand Châtelet. En aval, les moulins du pont aux Meuniers.'],
-  ['greve', 0, 0, 300, 3.3, 0.36, 13, 'La place de Grève, port aux blés et aux vins, et la Maison aux Piliers où siège la municipalité.'],
-  ['halles', 0, 0, 330, 0.3, 0.55, 14, 'Les Halles et le cimetière des Innocents, au cœur de la ville marchande de la rive droite.'],
-  ['louvre', 0, 0, 300, 2.3, 0.3, 15, 'Le Louvre de Charles V : la vieille forteresse devenue résidence, avec la « grosse tour » de Philippe Auguste au centre de la cour.'],
-  ['porte-2', 0, 0, 290, 2.65, 0.24, 16, 'La porte Saint-Denis, entrée solennelle des rois. L’enceinte de Charles V, ses fossés en eau, et les faubourgs le long de la route.'],
-  ['temple', 0, 0, 330, 2.2, 0.36, 16.5, 'L’enclos du Temple et son donjon. Autour, des « cultures » : jardins et marais maraîchers enfermés depuis peu dans la ville.'],
-  ['bastille', 0, 0, 300, -1.95, 0.3, 17.5, 'La Bastille Saint-Antoine, en chantier depuis 1370, protège la porte et le quartier royal de l’hôtel Saint-Pol.'],
-  ['sainte-genevieve', 0, 0, 420, -2.6, 0.4, 18.2, 'La rive gauche, pays de l’Université : collèges, couvents et abbayes étagés sur la montagne Sainte-Geneviève, à l’abri du vieux mur de Philippe Auguste.'],
-  ['saint-germain-des-pres', 0, 0, 340, -1.2, 0.34, 18.8, 'Hors les murs, le bourg fortifié de l’abbaye Saint-Germain-des-Prés, entre ses prés et ses fossés.'],
-  [null, -60, -350, 1700, 0.9, 0.36, 20.4, 'Le soir tombe ; les fenêtres s’éclairent. Vous pouvez maintenant survoler librement la ville ou descendre dans ses rues.'],
-];

@@ -5,11 +5,14 @@ import { DistanceField } from './raster.js';
 import { clamp, lerp, smoothstep, fbm, distPolyline } from './geom.js';
 
 export const WORLD = 9000; // demi-côté du paysage modélisé (m)
+export const FAR = 27000;  // demi-côté du lointain : un sol grossier qui se perd dans la brume, pour que l'horizon ne soit pas un bord de plateau
 
 // Prolongements de la Seine hors du cadre du plan (repères actuels approximatifs : Concorde, Alma, Grenelle ; Bercy, Charenton).
-const SEINE_WEST = [[-1250, -760], [-1408, -766], [-2212, -1168], [-2900, -1290], [-3560, -1200], [-4204, -800], [-5120, 300], [-6000, 1700], [-6700, 3300], [-7600, 5200], [-9500, 7500]];
-const SEINE_EAST = [[1180, 1230], [1305, 1370], [1900, 2100], [2500, 2900], [3300, 3550], [4400, 4100], [5600, 5200], [7400, 6400], [9800, 7600]];
-const MARNE = [[4400, 4100], [5300, 3900], [6300, 4300], [7300, 3900], [8400, 4300], [9800, 4000]];
+const SEINE_WEST = [[-1250, -760], [-1408, -766], [-2212, -1168], [-2900, -1290], [-3560, -1200], [-4204, -800], [-5120, 300], [-6000, 1700], [-6700, 3300], [-7600, 5200], [-9500, 7500], [-13000, 9300], [-18500, 9900], [-27500, 9200]];
+const SEINE_EAST = [[1180, 1230], [1305, 1370], [1900, 2100], [2500, 2900], [3300, 3550], [4400, 4100], [5600, 5200], [7400, 6400], [9800, 7600], [14000, 9600], [20000, 11400], [27500, 12600]];
+const MARNE = [[4400, 4100], [5300, 3900], [6300, 4300], [7300, 3900], [8400, 4300], [9800, 4000], [14000, 4700], [20000, 4300], [27500, 5300]];
+
+export const RIVERS = [[SEINE_WEST, 66], [SEINE_EAST, 78], [MARNE, 45]];      // [tracé, demi-largeur du lit]
 
 export class Terrain {
   constructor(lu) {
@@ -18,8 +21,11 @@ export class Terrain {
   }
 
   // Distance signée à l'eau (positive dans l'eau).
+  // Seine et Marne hors du cadre du plan : distance signée à leur lit (positive dans l'eau).
+  riverSd(x, z) { return Math.max(66 - distPolyline(x, z, SEINE_WEST), 78 - distPolyline(x, z, SEINE_EAST), 45 - distPolyline(x, z, MARNE)); }
+
   sdWater(x, z) {
-    let a = Math.max(66 - distPolyline(x, z, SEINE_WEST), 78 - distPolyline(x, z, SEINE_EAST), 45 - distPolyline(x, z, MARNE));
+    let a = this.riverSd(x, z);
     const e = Math.min(x - FRAME.x0, FRAME.x1 - x, z - FRAME.z0, FRAME.z1 - z);
     if (e <= 0) return a;
     const r = this.df.at(x, z);
@@ -42,6 +48,9 @@ export class Terrain {
     const B = smoothstep(140, 880, z);
     h += 30 * A * B;
     h += (fbm(x * 0.004 + 31.7, z * 0.004 + 12.3, 3) - 0.5) * 1.6 * smoothstep(1200, 2600, Math.hypot(x, z));
+    // Couronne de plateaux qui ferme l'horizon de la cuvette parisienne ; les vallées de la Seine et de la Marne restent ouvertes.
+    const rr = Math.hypot(x, z + 300);
+    if (rr > 6900) h += smoothstep(6900, 10500, rr) * smoothstep(150, 2100, -this.riverSd(x, z)) * (30 + 95 * fbm(x * 0.00042 + 7.1, z * 0.00042 + 3.3, 3));
     return h;
   }
 
@@ -132,9 +141,16 @@ export function buildTerrainGeometries(terrain) {
     fine: (cx, cz) => Math.abs(terrain.sdWater(cx, cz)) < 160 && inside(cx, cz) < 150,
     skip: (cx, cz) => inside(cx, cz) > 160,
     lower: (x, z) => 9 * smoothstep(0, 60, inside(x, z)),
+    uv: (x, z) => [(x + WORLD) / (2 * WORLD), 1 - (z + WORLD) / (2 * WORLD)], skirt: 90,
+  });
+  // Lointain : mêmes coordonnées de texture, prolongées au-delà de [0, 1] (la texture de la campagne s'y répète en miroir).
+  const far = buildGrid({
+    x0: -FAR, z0: -FAR, x1: FAR, z1: FAR, cell: 1000, sub: 1, terrain,
+    fine: () => false, skip: (cx, cz) => Math.max(Math.abs(cx), Math.abs(cz)) < WORLD,
+    lower: () => 5,
     uv: (x, z) => [(x + WORLD) / (2 * WORLD), 1 - (z + WORLD) / (2 * WORLD)],
   });
-  return { core, outer };
+  return { core, outer, far };
 }
 
 export { clamp };
