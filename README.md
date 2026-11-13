@@ -4,7 +4,8 @@ Restitution en trois dimensions de Paris à la fin du règne de Charles V (vers 
 survol libre, visite guidée en treize étapes, promenade à pied dans des rues peuplées, histoire de chaque monument,
 visite de leurs intérieurs et heure du jour réglable.
 
-**Ouvrir la maquette :** `dist/index.html` (fichier autonome, aucun serveur nécessaire).
+**Voir la maquette en ligne :** <https://calyzo-cpmo.github.io/paris-1380/> (GitHub Pages, une fois activé dans les réglages du dépôt).
+**L'ouvrir sur son ordinateur :** `dist/index.html` (fichier autonome, aucun serveur nécessaire).
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
 
 ## Ce que montre la maquette

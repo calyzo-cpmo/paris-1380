@@ -29,6 +29,13 @@ seulement la compression gzip, le point `/healthz` et trois en-têtes.
 Le Dockerfile ne reconstruit pas la page : il copie `dist/index.html` tel qu'il est versionné. Après une modification des
 sources, lancer `npm install && npm run build && npm test` puis committer `dist/index.html`.
 
+## GitHub Pages (gratuit)
+
+Le dépôt est prêt à être servi tel quel : `index.html`, à la racine, renvoie vers `dist/index.html`, et `.nojekyll` évite
+toute transformation des fichiers. Pour l'activer : dans le dépôt, *Settings* → *Pages* → *Build and deployment* →
+*Source* : « Deploy from a branch », branche `main`, dossier `/ (root)`, puis *Save*. Le site répond au bout d'une minute
+ou deux à l'adresse <https://calyzo-cpmo.github.io/paris-1380/> ; chaque envoi sur `main` le met à jour.
+
 ## À savoir avant d'ouvrir au public
 
 - **Navigateur** : WebGL 2 requis (tout navigateur récent, ordinateur ou téléphone). Le chargement calcule la ville pendant

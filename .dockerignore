@@ -6,3 +6,5 @@ tools
 dist/paris-1380.artifact.html
 *.md
 LICENSE
+/index.html
+.nojekyll
