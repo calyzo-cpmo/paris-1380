@@ -1,12 +1,16 @@
-# Paris 1380 — maquette 3D interactive
+# Paris 1380 et Paris 1789 — maquettes 3D interactives
 
 Restitution en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
 survol libre, cinq parcours commentés, promenade à pied dans des rues peuplées et jusque dans la campagne, histoire de
 chaque monument, visite de leurs intérieurs, mini-plan et boussole, heure du jour réglable, calque montrant ce qui est
 attesté, restitué ou conjectural, et frise des époques qui superpose à la maquette le Paris d'autres dates, de Lutèce à 1836.
 
-**Voir la maquette en ligne :** <https://calyzo-cpmo.github.io/paris-1380/> (GitHub Pages, une fois activé dans les réglages du dépôt).
-**L'ouvrir sur son ordinateur :** `dist/index.html` (fichier autonome, aucun serveur nécessaire).
+Une seconde page, **Paris 1789**, montre la ville à la veille de la Révolution, dans le mur des Fermiers généraux :
+plus de vingt mille bâtiments dressés d'après leur emprise réelle, la Seine, le relief, une cinquantaine de repères,
+le survol et la promenade à pied. On y accède par la frise des époques (date 1791) ; elle renvoie à la maquette de 1380.
+
+**Voir les maquettes en ligne :** <https://calyzo-cpmo.github.io/paris-1380/> (GitHub Pages) ; Paris 1789 : `dist/1789.html`.
+**Les ouvrir sur son ordinateur :** `dist/index.html` et `dist/1789.html` (fichiers autonomes, aucun serveur nécessaire).
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
 
 ## Ce que montre la maquette
@@ -69,6 +73,38 @@ attesté, restitué ou conjectural, et frise des époques qui superpose à la ma
 
 Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` mini-plan, `T` frise des époques ; à pied, `E` entrer, `F` fiche,
 `V` regard à la souris, `Échap` pour remonter.
+
+## Paris 1789 — la seconde maquette
+
+- **Ce qu'elle montre** : Paris dans le mur des Fermiers généraux (9,8 × 7,5 km de terrain modelé) ; 20 334 corps de
+  bâtiment posés sur leur emprise réelle, façades enduites à hautes fenêtres, combles brisés d'ardoise au centre et
+  toits de tuile vers les faubourgs ; la Seine, ses îles et ses ponts ; le relief ; les jardins ; 53 repères avec une
+  courte notice (palais, places, ponts, églises, barrières) ; le nom de la rue où l'on se trouve, tiré du plan de
+  Verniquet (1 194 noms, dans leur graphie d'époque).
+- **Ce qu'on y fait** : survoler, descendre à pied par un double-clic ou depuis une fiche, régler l'heure (les
+  fenêtres s'éclairent la nuit), se repérer au mini-plan et à la boussole, partager une vue par son adresse.
+- **D'où viennent les données** (toutes du SIG ALPAGE, licence ODbL 1.0) :
+
+| Élément | Couche et crédit | Date du relevé |
+| --- | --- | --- |
+| Îlots, Seine | plan de Verniquet — © ALPAGE : P. Rouet | 1782-1790 |
+| Rues nommées | plan de Verniquet — © ALPAGE : L. Hermenault | 1782-1790 |
+| Emprise des bâtiments | Atlas par îlots de Vasserot — Arch. nat. F31 73-96 – Arch. Paris © ALPAGE : A.-L. Bethe | 1810-1836 |
+| Mur des Fermiers généraux | © ALPAGE : P. Rouet, d'après Verniquet | 1784-1790 |
+| Relief | nivellement de P.-S. Girard — © ALPAGE : M. Fernandez | 1805-1807 |
+| Établissements religieux | © ALPAGE : É. Lallau | état de 1789 |
+
+- **Ce qu'il faut savoir** :
+  - aucune couche ne date exactement de 1789. L'emprise des bâtiments vient de Vasserot, postérieur d'une génération :
+    c'est la source la plus proche qui donne chaque bâtiment, et quelques édifices qu'elle montre sont postérieurs à
+    la Révolution ;
+  - la hauteur des maisons, leurs façades et leurs toits sont conventionnels (cinq étages au centre, deux vers le mur) ;
+  - 550 îlots, surtout dans les faubourgs, ne sont pas couverts par l'atlas : leur bâti est évoqué par un front de
+    maisons le long des rues. Dix édifices attendus là (Invalides, École militaire, Luxembourg, Saint-Sulpice…) ne
+    sont pas encore modelés, et leur fiche le dit ;
+  - les monuments sont pour l'instant rendus comme les autres bâtiments, d'après leur emprise ; les ponts sont des
+    chaussées pleines, sans arches ; il n'y a pas encore d'habitants, de parcours ni d'intérieurs ;
+  - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
 
 ## Sources
 
@@ -133,19 +169,23 @@ data/source/Paris_1380.svg   plan ALPAGE d'origine (CC BY-SA 2.0 FR)
 data/paris1380.json          géométrie extraite, en mètres (origine : parvis Notre-Dame)
 data/thumbs.json             vignettes des sources (domaine public)
 data/epoques.json            calque des époques : enceintes, îlots de six dates, Lutèce, églises, Seine (ODbL 1.0)
+data/paris1789.json          Paris 1789 : bâti, îlots, rues nommées, Seine, mur, relief, repères (ODbL 1.0)
 data/source/alpage/          couches ALPAGE d'origine, non versionnées (npm run fetch:alpage)
 tools/extract_alpage.py      SVG → JSON (calques, courbes aplanies, libellés)
-tools/fetch_alpage.py        télécharge les seize couches GeoPackage du SIG ALPAGE
+tools/fetch_alpage.py        télécharge les dix-neuf couches GeoPackage du SIG ALPAGE
 tools/extract_epochs.py      GeoPackage → data/epoques.json (recalage sur la maquette, simplification, codage compact)
+tools/extract_1789.py        GeoPackage → data/paris1789.json (même recalage, relief en grille, repères projetés en Lambert-93)
 tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, géométries WKB)
-tools/build.mjs              assemble la page autonome dans dist/
+tools/build.mjs              assemble les deux pages autonomes dans dist/ (index.html, 1789.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
+tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/inshot.mjs, uishot.mjs captures des intérieurs et de l'interface
 tools/make_thumbs.py         vignettes des sources (réduction locale des images du domaine public)
 src/terrain.js, raster.js    relief, berges, plateaux de l'horizon, occupation du sol, trame d'obstacles
+src/grid.js, groundmat.js    maillage de terrain et matériau du sol, communs aux deux pages
 src/ground.js                peinture du sol : plan de 1380, campagne proche et lointaine
 src/country.js               campagne : villages, chemins, bois, parcellaire en lanières, nature des cultures
 src/houses.js                lotissement des îlots et maisons
@@ -169,6 +209,13 @@ src/where.js                 rives, îles et rues nommées du plan (« où suis-
 src/minimap.js               mini-plan
 src/state.js                 carnet de visite, réglages mémorisés, lien partageable
 src/ui.js, controls.js       interface et caméra
+src/body1789.html            page Paris 1789 (mêmes styles que la première)
+src/p1789/data.js            accès aux données de 1789
+src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan
+src/p1789/textures.js        façades de la fin du XVIIIe siècle
+src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots évoqués, mur, arbres, collisions, rues
+src/p1789/places.js          repères de 1789 et leurs notices
+src/p1789/app.js, ui.js      application et interface de la seconde page
 ```
 
 ## Reconstruire
@@ -176,10 +223,11 @@ src/ui.js, controls.js       interface et caméra
 ```
 npm install
 npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
-npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (7 Mo)
+npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (30 Mo)
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
-npm run build     # produit dist/index.html
-npm test          # 112 vérifications automatisées dans Chromium (Playwright requis)
+npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
+npm run build     # produit dist/index.html et dist/1789.html
+npm test          # 113 vérifications pour Paris 1380, puis 36 pour Paris 1789, dans Chromium (Playwright requis)
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),
@@ -192,10 +240,11 @@ esbuild (outil de build). Toute la géométrie et toutes les textures sont gén�
 - **Plan de 1380** (`data/source/Paris_1380.svg`, `data/paris1380.json`) : [CC BY-SA 2.0 FR](https://creativecommons.org/licenses/by-sa/2.0/fr/),
   d'après J. Leuridan et J.-A. Mallet (CNRS Éditions), infographie C. Roms (LAMOP), projet ALPAGE. Toute réutilisation doit
   citer ces auteurs et partager les versions modifiées du plan sous la même licence.
-- **Calque des époques** (`data/epoques.json`) : [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), base dérivée des
+- **Calque des époques et Paris 1789** (`data/epoques.json`, `data/paris1789.json`) : [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), base dérivée des
   couches du SIG ALPAGE. Toute réutilisation doit créditer « © ALPAGE » suivi des auteurs de chaque couche (tableau
   ci-dessus ; les données de C. Bourlet se citent « © ALPAGE : IRHT (C. Bourlet) »), et toute base dérivée rendue
   publique doit l'être sous la même licence.
-- **Page construite** (`dist/index.html`) : elle réunit le code, le plan et le calque. Elle se redistribue librement à
-  condition de laisser visibles les attributions du plan et des couches ALPAGE, qui figurent dans son panneau « Sources ».
+- **Pages construites** (`dist/index.html`, `dist/1789.html`) : elles réunissent le code et les données. Elles se
+  redistribuent librement à condition de laisser visibles les attributions du plan et des couches ALPAGE, qui figurent
+  dans leur panneau « Sources ».
 - **Vignettes des sources** (`data/thumbs.json`) : reproductions d'œuvres du domaine public.

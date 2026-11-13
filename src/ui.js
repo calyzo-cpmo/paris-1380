@@ -582,6 +582,7 @@ export function initUI(app) {
     bits.forEach(([n, t], i) => { if (i) st.append(' · '); if (n) st.append(el('b', null, n)); st.append(i === 0 && !n ? t.charAt(0).toUpperCase() + t.slice(1) : t); });
     $('frise-credit').textContent = j.base ? '' : typo([s.source, s.credit, 'licence ODbL'].filter(Boolean).join(' — '));
     $('frise-wide').hidden = !!j.base; $('frise-src').hidden = !!j.base;
+    $('frise-1789').hidden = j.id !== '1791';               // la date la plus proche de la seconde maquette
     if (j.base) { const li = el('li'); li.textContent = 'Choisissez une date sur la frise : la maquette reste celle de 1380, l’autre époque vient s’y superposer.'; leg.appendChild(li); }
     mini.setEpoch(j.base ? null : { id: j.id, city: epochs.city, wide: epochs.wide, rectCity: epochs.rectCity, rectWide: epochs.rectWide }, !!j.ilots && !j.passe);
     $('map-zoom').textContent = zoomLabel();

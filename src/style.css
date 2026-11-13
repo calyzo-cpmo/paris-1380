@@ -188,6 +188,9 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #frise-jalons button.base:not([aria-pressed="true"]) { color: var(--gold); }
 #frise-more { flex: none; padding: 5px 10px; }
 #frise-info { position: fixed; left: var(--gutter-l); top: calc(84px + env(safe-area-inset-top, 0px)); width: min(330px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 76px); overflow: auto; padding: 12px 14px 12px; z-index: 4; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
+#frise-1789 { margin: 12px 0 2px; display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
+a.cta { display: inline-block; justify-self: start; padding: 7px 13px; background: var(--gold); color: #1b1606; font-weight: 700; text-decoration: none; border-radius: 2px; }
+a.cta:hover, a.cta:focus-visible { filter: brightness(1.08); outline: 2px solid var(--gold); outline-offset: 2px; }
 #card:not([hidden]) ~ #frise-info { display: none; }
 #frise-info .panel-head h2 { font-family: var(--serif); font-size: 21px; }
 #frise-text { font-family: var(--serif); font-size: 15.5px; line-height: 1.45; margin: 6px 0 9px; }

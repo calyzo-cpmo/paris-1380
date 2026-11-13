@@ -4,8 +4,10 @@ Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dépôt.
 
 ## Ce qui est à déployer
 
-Un seul fichier : `dist/index.html` (environ 1,8 Mo, 720 Ko une fois compressé). Il contient le code, le plan de 1380, le
-calque des époques et les vignettes ; toutes les textures et la géométrie sont calculées dans le navigateur. Pas de base de données, pas de
+Deux fichiers autonomes, à servir côte à côte car ils se renvoient l'un à l'autre par des liens relatifs :
+`dist/index.html` (Paris 1380, environ 1,8 Mo, 720 Ko une fois compressé) et `dist/1789.html` (Paris 1789, environ
+1,4 Mo, 640 Ko compressé). Chacun contient son code et ses données ; toutes les textures et la géométrie sont
+calculées dans le navigateur. Pas de base de données, pas de
 variables d'environnement, pas de secret, pas de volume.
 
 ## Réglages
@@ -26,8 +28,8 @@ En local : `docker build -t paris-1380 . && docker run --rm -p 8080:80 paris-138
 Variante sans Docker : n'importe quel hébergement statique, en publiant le répertoire `dist`. Le Dockerfile ajoute
 seulement la compression gzip, le point `/healthz` et trois en-têtes.
 
-Le Dockerfile ne reconstruit pas la page : il copie `dist/index.html` tel qu'il est versionné. Après une modification des
-sources, lancer `npm install && npm run build && npm test` puis committer `dist/index.html`.
+Le Dockerfile ne reconstruit pas les pages : il copie `dist/index.html` et `dist/1789.html` tels qu'ils sont versionnés.
+Après une modification des sources, lancer `npm install && npm run build && npm test` puis committer les deux fichiers.
 
 ## GitHub Pages (gratuit)
 

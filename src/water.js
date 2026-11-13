@@ -1,6 +1,6 @@
 // Surface de la Seine et des fossés : reflets du ciel, clapot et éclat du soleil.
 import * as THREE from 'three';
-import { FAR } from './terrain.js';
+import { FAR } from './grid.js';
 
 const VERT = /* glsl */`
 varying vec3 vW;

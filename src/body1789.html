@@ -1,0 +1,123 @@
+<div id="scene" aria-label="Maquette 3D de Paris en 1789"></div>
+<div id="labels" aria-hidden="true"></div>
+
+<header id="top">
+  <div id="brand">
+    <h1>Paris <span>1789</span></h1>
+    <p id="brand-sub">D’après les plans de Verniquet et de Vasserot</p>
+    <p id="where" hidden></p>
+  </div>
+  <nav id="menu" aria-label="Panneaux">
+    <button type="button" id="btn-places" aria-controls="places" aria-expanded="false">Lieux</button>
+    <button type="button" id="btn-more" aria-controls="menu-more" aria-expanded="false" aria-label="Autres panneaux">Menu</button>
+    <div id="menu-more">
+      <button type="button" id="btn-1380" title="Ouvrir la maquette de Paris vers 1380">Paris 1380</button>
+      <button type="button" id="btn-sources">Sources</button>
+      <button type="button" id="btn-share">Partager</button>
+      <button type="button" id="btn-help">Aide</button>
+    </div>
+  </nav>
+</header>
+
+<aside id="places" hidden aria-label="Liste des lieux">
+  <div class="panel-head"><h2>Lieux</h2><button type="button" class="x" data-close="places" aria-label="Fermer">×</button></div>
+  <input id="place-search" type="search" placeholder="Chercher un lieu…" autocomplete="off" aria-label="Chercher un lieu">
+  <div id="place-list"></div>
+</aside>
+
+<section id="card" hidden aria-live="polite">
+  <button type="button" id="card-grip" aria-label="Agrandir ou réduire la fiche"></button>
+  <button type="button" class="x" data-close="card" aria-label="Fermer la fiche">×</button>
+  <p id="card-cat"></p>
+  <h2 id="card-name"></h2>
+  <p id="card-text"></p>
+  <div class="row" id="card-actions">
+    <button type="button" id="card-walk" class="primary">S’y promener à pied</button>
+    <button type="button" id="card-view" class="ghost">Recadrer</button>
+  </div>
+</section>
+
+<div id="walkhud" class="row" hidden>
+  <button type="button" id="walk-exit">Reprendre de la hauteur</button>
+</div>
+
+<aside id="nav" aria-label="Se repérer">
+  <div id="map-wrap">
+    <canvas id="minimap" role="img" aria-label="Plan de situation : cliquer pour s’y rendre"></canvas>
+    <button type="button" id="map-zoom" aria-label="Changer l’échelle du plan" title="Plan entier ou quartier">Quartier</button>
+  </div>
+  <div class="row" id="nav-row">
+    <button type="button" id="btn-home" title="Revenir à la vue d’ensemble (touche O)">Vue d’ensemble</button>
+    <button type="button" id="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut (touche N)">
+      <svg viewBox="-12 -12 24 24" width="26" height="26" aria-hidden="true"><g id="compass-rose"><path d="M0-10 3.2 0H-3.2Z" fill="currentColor"/><path d="M0 10 3.2 0H-3.2Z" fill="none" stroke="currentColor" stroke-width="1"/><text x="0" y="-3.2" text-anchor="middle" font-size="5.2" font-weight="700" fill="#101c44">N</text></g></svg>
+    </button>
+  </div>
+</aside>
+
+<div id="toast" hidden role="status"></div>
+
+<div id="stack">
+<div id="hint" hidden role="status"></div>
+</div>
+
+<footer id="dock">
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
+    <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
+  </div>
+  <div id="hour-wrap">
+    <button type="button" id="hour-btn" aria-controls="hour-pop" aria-expanded="false"><span id="hour-label">10 h 30</span></button>
+    <div id="hour-pop">
+      <button type="button" id="hour-play" aria-pressed="false" aria-label="Faire défiler la journée" title="Faire défiler la journée"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M3 1.5v9l7.5-4.5z" fill="currentColor"/><path class="ico-pause" d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg></button>
+      <input id="hour" type="range" min="4.5" max="22.5" step="0.25" value="10.5" aria-label="Heure du jour">
+      <div id="hour-presets" class="chips" role="group" aria-label="Moments de la journée">
+        <button type="button" data-hour="5.25">Aube</button>
+        <button type="button" data-hour="12">Midi</button>
+        <button type="button" data-hour="18.75">Soir</button>
+        <button type="button" data-hour="21.5">Nuit</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div id="sources" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="sources-title">
+  <div class="sheet">
+    <div class="panel-head"><h2 id="sources-title">D’où vient cette maquette</h2><button type="button" class="x" data-close="sources" aria-label="Fermer">×</button></div>
+    <p class="lede">Paris à la veille de la Révolution est ici reconstitué à partir des couches du SIG historique ALPAGE, produites par des chercheurs et diffusées sous licence <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>. Chaque couche date d’un relevé précis ; aucune ne date exactement de 1789.</p>
+    <ul class="method" id="sources-list"></ul>
+    <h3>Ce qui est attesté, ce qui est évoqué</h3>
+    <ul class="method">
+      <li><b>Attesté par les plans :</b> le tracé des rues et des îlots, le cours de la Seine et ses îles, le mur des Fermiers généraux, l’emprise au sol de plus de vingt mille bâtiments, le relief.</li>
+      <li><b>Décalage de date :</b> l’emprise des bâtiments vient de l’Atlas de Vasserot, dressé de 1810 à 1836. C’est la source la plus proche de 1789 qui donne chaque bâtiment ; quelques édifices qu’elle montre sont postérieurs à la Révolution.</li>
+      <li><b>Conventionnel :</b> la hauteur des maisons (plus hautes au centre, plus basses vers les faubourgs), leurs façades et leurs toits.</li>
+      <li><b>Évoqué :</b> le bâti des îlots que l’atlas ne couvre pas, surtout dans les faubourgs — une bordure de maisons le long des rues — et les arbres des jardins.</li>
+      <li><b>Pas encore modelé :</b> les monuments, pour l’instant rendus comme les autres bâtiments d’après leur emprise ; les arches des ponts ; les habitants.</li>
+    </ul>
+    <p class="group-note">Les couches ont été recalées sur le même repère que la maquette de 1380 (écart médian de 2 à 3 m). Les repères nommés sont placés d’après leurs coordonnées géographiques.</p>
+  </div>
+</div>
+
+<div id="help" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sheet narrow">
+    <div class="panel-head"><h2 id="help-title">Se déplacer</h2><button type="button" class="x" data-close="help" aria-label="Fermer">×</button></div>
+    <dl class="keys">
+      <dt>Glisser</dt><dd>déplacer la vue au-dessus de la ville</dd>
+      <dt>Clic droit ou Maj + glisser</dt><dd>pivoter et incliner</dd>
+      <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
+      <dt>Double-clic</dt><dd>descendre à pied à cet endroit</dd>
+      <dt>À pied</dt><dd>glisser pour regarder, cliquer le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir</dd>
+      <dt>Échap</dt><dd>reprendre de la hauteur, fermer un panneau</dd>
+      <dt>/</dt><dd>chercher un lieu</dd>
+      <dt>N, O</dt><dd>nord en haut, vue d’ensemble</dd>
+    </dl>
+  </div>
+</div>
+
+<div id="loading">
+  <div id="load-box">
+    <h1>Paris <span>1789</span></h1>
+    <p id="load-pitch">La ville à la veille de la Révolution, dans le mur des Fermiers généraux, d’après les plans de Verniquet et de Vasserot. Première version : la ville et ses rues sont en place, les monuments et les habitants viendront ensuite.</p>
+    <div id="load-label">Chargement…</div>
+    <div id="load-track"><div id="load-bar"></div></div>
+  </div>
+</div>
