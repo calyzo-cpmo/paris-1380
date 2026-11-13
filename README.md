@@ -78,8 +78,10 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
 
 - **Ce qu'elle montre** : Paris dans le mur des Fermiers généraux (9,8 × 7,5 km de terrain modelé) ; 20 334 corps de
   bâtiment posés sur leur emprise réelle, façades enduites à hautes fenêtres, combles brisés d'ardoise au centre et
-  toits de tuile vers les faubourgs ; la Seine, ses îles et ses ponts ; le relief ; les jardins ; 53 repères avec une
-  courte notice (palais, places, ponts, églises, barrières) ; le nom de la rue où l'on se trouve, tiré du plan de
+  toits de tuile vers les faubourgs ; la Seine, ses îles et ses ponts ; le relief ; les jardins et les places ;
+  21 monuments (tours de Notre-Dame, Bastille, Invalides et leur dôme, École militaire, Luxembourg, Saint-Sulpice,
+  Sainte-Geneviève, Val-de-Grâce, Observatoire, tour du Temple, portes Saint-Denis et Saint-Martin, barrières de
+  Ledoux…) et les clochers de 44 paroisses ; 53 repères avec une courte notice ; le nom de la rue où l'on se trouve, tiré du plan de
   Verniquet (1 194 noms, dans leur graphie d'époque).
 - **Ce qu'on y fait** : survoler, descendre à pied par un double-clic ou depuis une fiche, régler l'heure (les
   fenêtres s'éclairent la nuit), se repérer au mini-plan et à la boussole, partager une vue par son adresse.
@@ -93,6 +95,8 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
 | Mur des Fermiers généraux | © ALPAGE : P. Rouet, d'après Verniquet | 1784-1790 |
 | Relief | nivellement de P.-S. Girard — © ALPAGE : M. Fernandez | 1805-1807 |
 | Établissements religieux | © ALPAGE : É. Lallau | état de 1789 |
+| Enclos nommés (places, jardins, hôpitaux, palais) | parcelles de l'Atlas de Vasserot — © ALPAGE : A.-L. Bethe | 1810-1836 |
+| Emprise de la Bastille | © ALPAGE : N. Faucherre | restitution |
 
 - **Ce qu'il faut savoir** :
   - aucune couche ne date exactement de 1789. L'emprise des bâtiments vient de Vasserot, postérieur d'une génération :
@@ -100,10 +104,12 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
     la Révolution ;
   - la hauteur des maisons, leurs façades et leurs toits sont conventionnels (cinq étages au centre, deux vers le mur) ;
   - 550 îlots, surtout dans les faubourgs, ne sont pas couverts par l'atlas : leur bâti est évoqué par un front de
-    maisons le long des rues. Dix édifices attendus là (Invalides, École militaire, Luxembourg, Saint-Sulpice…) ne
-    sont pas encore modelés, et leur fiche le dit ;
-  - les monuments sont pour l'instant rendus comme les autres bâtiments, d'après leur emprise ; les ponts sont des
-    chaussées pleines, sans arches ; il n'y a pas encore d'habitants, de parcours ni d'intérieurs ;
+    maisons le long des rues ;
+  - les monuments sont placés et orientés d'après les données (emprise donnée par l'atlas, enclos qu'il nomme,
+    coordonnées géographiques) et dimensionnés d'après ce que l'on sait de chaque édifice ; leur détail est une
+    évocation, et la hauteur des clochers est conventionnelle. Trois édifices hors de l'atlas ne sont pas encore
+    modelés (Salpêtrière, Gobelins, Saint-Lazare) et leur fiche le dit ;
+  - les ponts sont des chaussées pleines, sans arches ; il n'y a pas encore d'habitants, de parcours ni d'intérieurs ;
   - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
 
 ## Sources
@@ -172,14 +178,14 @@ data/epoques.json            calque des époques : enceintes, îlots de six date
 data/paris1789.json          Paris 1789 : bâti, îlots, rues nommées, Seine, mur, relief, repères (ODbL 1.0)
 data/source/alpage/          couches ALPAGE d'origine, non versionnées (npm run fetch:alpage)
 tools/extract_alpage.py      SVG → JSON (calques, courbes aplanies, libellés)
-tools/fetch_alpage.py        télécharge les dix-neuf couches GeoPackage du SIG ALPAGE
+tools/fetch_alpage.py        télécharge les vingt et une couches GeoPackage du SIG ALPAGE
 tools/extract_epochs.py      GeoPackage → data/epoques.json (recalage sur la maquette, simplification, codage compact)
 tools/extract_1789.py        GeoPackage → data/paris1789.json (même recalage, relief en grille, repères projetés en Lambert-93)
 tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, géométries WKB)
 tools/build.mjs              assemble les deux pages autonomes dans dist/ (index.html, 1789.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
-tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
+tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/inshot.mjs, uishot.mjs captures des intérieurs et de l'interface
@@ -213,7 +219,9 @@ src/body1789.html            page Paris 1789 (mêmes styles que la première)
 src/p1789/data.js            accès aux données de 1789
 src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan
 src/p1789/textures.js        façades de la fin du XVIIIe siècle
+src/p1789/blocks.js          teintes, façades à travées, corps de bâtiment (commun aux maisons et aux monuments)
 src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots évoqués, mur, arbres, collisions, rues
+src/p1789/monuments.js       tours, dômes, clochers et grands ensembles posés sur les emprises et les enclos de l'atlas
 src/p1789/places.js          repères de 1789 et leurs notices
 src/p1789/app.js, ui.js      application et interface de la seconde page
 ```
@@ -223,11 +231,11 @@ src/p1789/app.js, ui.js      application et interface de la seconde page
 ```
 npm install
 npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
-npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (30 Mo)
+npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (40 Mo)
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
 npm run build     # produit dist/index.html et dist/1789.html
-npm test          # 113 vérifications pour Paris 1380, puis 36 pour Paris 1789, dans Chromium (Playwright requis)
+npm test          # 113 vérifications pour Paris 1380, puis 38 pour Paris 1789, dans Chromium (Playwright requis)
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),

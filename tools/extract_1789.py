@@ -8,6 +8,8 @@ Ce que la ville de la fin du XVIIIe siècle doit à chaque couche (toutes sous l
     la plus proche de 1789 qui donne l'emprise de chaque bâtiment ; elle est postérieure d'une génération. Les espaces
     non bâtis de plus de 1 200 m² y sont retenus comme jardins ;
   - mur des Fermiers généraux (Enceintes), établissements religieux en activité en 1789 (Eglises) ;
+  - enclos nommés par l'atlas de Vasserot (Vasserot_1_Parcelles) : places, jardins, hôpitaux, palais ; emprise de la
+    Bastille (Bastille) ;
   - relief : nivellement de P.-S. Girard, 1805-1807 (Relief_Girard_Point), ramené à une grille ; hors de la zone
     nivelée, les nœuds valent −1 et la page raccorde le relief à celui de la maquette.
 
@@ -158,6 +160,23 @@ def main():
         x, z = T(*g[1]); egl.append([round(x), round(z), (d['Statut'] or '').replace('Eglise', 'Église'), (d['Nom_court'] or d['Titulature'] or '').strip()])
     data['eglises'] = {'objets': egl, 'credit': '© ALPAGE : É. Lallau'}
     print('établissements religieux en 1789', len(egl))
+
+    # ---- enclos nommés par l'atlas de Vasserot (parcelles) : places, jardins, hôpitaux, palais — ils situent les
+    # grands édifices que la couche du bâti ne couvre pas, et donnent leur orientation
+    enclos, noms_enclos = [], []
+    for d, g in X.layer('Vasserot_1_Parcelles'):
+        nom = (d.get('NOM_CODE2') or '').strip()
+        if not nom: continue
+        for rings in polys_of(g, 1.5, 5000.0, 400.0):
+            enclos.append(rings); noms_enclos.append(nom)
+    data['enclos'] = {'q': 1, 'g': X.enc_polys(enclos, 1), 'n': len(enclos), 'noms': noms_enclos,
+                      'credit': 'Parcelles de l’Atlas par îlots de Vasserot (1810-1836) — Arch. nat. F31 73-96 – Arch. Paris © ALPAGE : A.-L. Bethe'}
+    print('enclos nommés', len(enclos), sorted(set(noms_enclos))[:8], '…')
+
+    # ---- la Bastille : emprise restituée de la forteresse (tours et courtines)
+    bast = [p for d, g in X.layer('Bastille') for p in polys_of(g, 0.3, 4.0, 4.0)]
+    data['bastille'] = {'q': 2, 'g': X.enc_polys(bast, 2), 'n': len(bast), 'credit': '© ALPAGE : N. Faucherre'}
+    print('Bastille', len(bast), 'polygones,', [round(X.area_centroid(p[0])[0]) for p in bast], 'm²')
 
     # ---- repères situés par leurs coordonnées géographiques
     rep = []

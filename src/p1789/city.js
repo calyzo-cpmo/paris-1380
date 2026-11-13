@@ -1,17 +1,15 @@
 // Construction de Paris à la veille de la Révolution : sol peint d'après le plan, bâti de l'Atlas de Vasserot dressé
 // en volumes, îlots non couverts par l'atlas évoqués par un bâti de bordure, mur des Fermiers généraux, arbres.
 import * as THREE from 'three';
-import { CADRE, bati, batiNom, batiEnclos, ilots, ilotDocumente, eau, mur, jardins, rues, eglises } from './data.js';
-import { BAY, ETAGE, RDC, makeMaterials89 } from './textures.js';
-import { Builder, ccw, cap, skeletonRoof } from '../builder.js';
+import { buildMonuments } from './monuments.js';
+import { CADRE, bati, batiNom, batiEnclos, enclos, ilots, ilotDocumente, eau, mur, jardins, rues, eglises } from './data.js';
+import { makeMaterials89 } from './textures.js';
+import { hash, ENDUITS, ARDOISE, TUILES, PIERRE, building } from './blocks.js';
+import { Builder, ccw } from '../builder.js';
 import { polyArea, centroid, mulberry32, offsetEx, difference, pointInPoly, clamp } from '../geom.js';
 
 export const CENTRE = { x: -250, z: -500 };              // cœur dense de la ville (entre les Halles et le Châtelet)
 export const TUILE = 1600;                               // côté du motif de campagne (m)
-
-const hash = (i, s) => { let x = Math.imul(i + 1, 0x9e3779b1) ^ Math.imul(s + 7, 0x85ebca6b); x ^= x >>> 15; x = Math.imul(x, 0x2c1b3c6d); x ^= x >>> 12; return (x >>> 0) / 4294967296; };
-const ENDUITS = [0xefe4c8, 0xe2d2ae, 0xece6d6, 0xdccdb4, 0xd6c4a6, 0xe8d8c6, 0xf0ead8, 0xd9d2c0];
-const ARDOISE = 0x687480, TUILES = 0xb4744e, PLOMB = 0x8a9498, PIERRE = 0xe6dcc4;
 
 // ---------------------------------------------------------------- peinture du sol
 // Motif de campagne répétable : lanières de cultures, prés, jachères.
@@ -36,6 +34,9 @@ export function ilotClasses() {
   return ilots().map((rings, i) => { const a = Math.abs(polyArea(rings[0])); return ilotDocumente(i) ? (a < 40000 ? 'c' : 'j') : a < 15000 ? 'c' : a < 60000 ? 'j' : 'r'; });
 }
 
+// Enclos nommés par l'atlas : jardins et promenades plantées d'un côté, places et terrains sablés de l'autre.
+export const ENC_JARDIN = /^(Jardin|Parc|Les Champs Elys|Clos|Esplanade|Palais de la Chambre des Pairs)/, ENC_SABLE = /^(Place|Champ de Mars|Marché)/;
+
 // T : { s (pixels par mètre), x(xMonde), y(zMonde) }.
 export function paintPlan(x, T, tile, cls, ext = []) {
   const s = T.s, pat = x.createPattern(tile, 'repeat'), k = (TUILE * s) / tile.width;
@@ -47,54 +48,13 @@ export function paintPlan(x, T, tile, cls, ext = []) {
   fill(x, T, by.j, 'rgb(134,148,96)'); stroke(x, T, by.j, 'rgba(96,104,70,0.6)', Math.max(0.6, 1.2 * s));
   fill(x, T, by.c, 'rgb(176,166,146)');
   fill(x, T, jardins(), 'rgb(104,134,78)');
+  fill(x, T, enclos().filter((e) => ENC_JARDIN.test(e.nom)).map((e) => e.rings), 'rgb(108,138,80)');
+  fill(x, T, enclos().filter((e) => ENC_SABLE.test(e.nom)).map((e) => e.rings), 'rgb(200,188,160)');
   // prolongements du fleuve au-delà de ce que dessine le plan
   const reach = ext.map((e) => { const q = (t, d) => [e.x + e.dx * t - e.dz * d, e.z + e.dz * t + e.dx * d]; return [[q(-140, -e.half), q(4000, -e.half), q(4000, e.half), q(-140, e.half)]]; });
   stroke(x, T, eau().concat(reach), 'rgb(186,176,150)', Math.max(2, 12 * s)); fill(x, T, eau().concat(reach), 'rgb(84,104,110)');   // grèves et lit du fleuve
   fill(x, T, bati(), 'rgb(116,112,112)');
   fill(x, T, mur(), 'rgb(214,196,150)'); stroke(x, T, mur(), 'rgb(214,196,150)', Math.max(1, 2.5 * s));
-}
-
-// ---------------------------------------------------------------- volumes
-// Façade le long d'un anneau (aire positive) : u compté en travées (4 par motif), v en étages.
-// inward : paroi tournée vers l'intérieur de l'anneau (cours).
-function facade(b, r, inward, yb, yt, vBot, vTop, col, u0, s0, s1) {
-  let u = u0;
-  for (let i = 0; i < r.length; i++) {
-    const a = r[i], c = r[(i + 1) % r.length], L = Math.hypot(c[0] - a[0], c[1] - a[1]);
-    if (L < 0.4) continue;
-    const uu = Math.max(1, Math.round(L / BAY)) * 0.25;
-    if (!inward) b.quad(c[0], yb, c[1], a[0], yb, a[1], a[0], yt, a[1], c[0], yt, c[1], u + uu, vBot, u, vTop, col, s0, s1);
-    else b.quad(a[0], yb, a[1], c[0], yb, c[1], c[0], yt, c[1], a[0], yt, a[1], u, vBot, u + uu, vTop, col, s0, s1);
-    u += uu;
-  }
-}
-
-// Un corps de bâtiment : rez-de-chaussée, étages, comble. kind : 'maison', 'eglise', 'public', 'annexe'.
-function building(app, B, ex, id, o) {
-  const T = app.terrain, outer = ccw(ex.outer), holes = ex.holes.map(ccw), c = centroid(outer);
-  let lo = 1e9, hi = -1e9; for (const p of outer) { const h = T.height(p[0], p[1]); if (h < lo) lo = h; if (h > hi) hi = h; }
-  const y0 = Math.max(lo, 0.3), yb = lo - 0.8, col = o.col, exN = { outer, holes };
-  let top;
-  if (o.kind === 'eglise') {
-    const eave = y0 + o.h, b = B.at('stone', c[0], c[1]);
-    facade(b, outer, false, yb, eave, 0, (eave - yb) * 0.25, col, 0, 0.78, 1); for (const h of holes) facade(b, h, true, yb, eave, 0, (eave - yb) * 0.25, col, 0, 0.7, 0.95);
-    top = skeletonRoof(B.at('roof', c[0], c[1]), exN, eave, { pitch: 1.25, step: 1.4, maxH: 9, col: PLOMB });
-  } else {
-    const rdcTop = y0 + (o.kind === 'public' ? RDC + 0.9 : RDC), eave = rdcTop + (o.floors - 1) * (o.kind === 'public' ? ETAGE + 0.7 : ETAGE), u0 = Math.floor(hash(id, 5) * 4) * 0.25;
-    if (o.floors > 1) {
-      facade(B.at('rdc', c[0], c[1]), outer, false, yb, rdcTop, -(y0 - yb) / RDC, 1, col, u0, 0.72, 0.95);
-      facade(B.at('facade', c[0], c[1]), outer, false, rdcTop, eave, 0, (o.floors - 1) / 2, col, u0, 0.95, 1);
-      for (const h of holes) facade(B.at('facade', c[0], c[1]), h, true, yb, eave, -0.5, (o.floors - 1) / 2, col, u0, 0.62, 0.9);
-    } else {
-      facade(B.at('rdc', c[0], c[1]), outer, false, yb, eave, -(y0 - yb) / RDC, 1, col, u0, 0.72, 0.95);
-      for (const h of holes) facade(B.at('rdc', c[0], c[1]), h, true, yb, eave, -(y0 - yb) / RDC, 1, col, u0, 0.62, 0.9);
-    }
-    const br = B.at('roof', c[0], c[1]);
-    if (o.area < 28) { cap(br, outer, holes, eave + 0.25, { col: o.roof, s: 0.92 }); facade(B.at('plain', c[0], c[1]), outer, false, eave, eave + 0.25, 0, 0, col, 0, 0.9, 0.9); top = eave + 0.25; }
-    else top = skeletonRoof(br, exN, eave, o.mansard ? { pitch: 1.55, step: 1.5, maxH: 2.4, col: o.roof } : { pitch: 0.75, step: 1.6, maxH: 4.2, col: o.roof });
-  }
-  app.foot.push({ ring: outer, top, reel: !!o.reel });
-  return top;
 }
 
 // Nombre d'étages selon la distance au centre : la ville s'abaisse vers les faubourgs.
@@ -107,6 +67,16 @@ function floorsAt(x, z, id, area) {
 }
 
 const EGLISE = /^(eglise|église|notre dame|temple protestant|saint denis du)|eglise saint paul/i;
+
+// Emprises infranchissables, rangées par cases de 48 m : app.footAt(x, z) rend l'emprise qui couvre le point.
+function indexFoot(app) {
+  const CELL = 48, cells = new Map();
+  for (const f of app.foot) {
+    if (f.x0 == null) { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of f.ring) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1]; } f.x0 = x0; f.z0 = z0; f.x1 = x1; f.z1 = z1; }
+    for (let i = Math.floor(f.x0 / CELL); i <= Math.floor(f.x1 / CELL); i++) for (let k = Math.floor(f.z0 / CELL); k <= Math.floor(f.z1 / CELL); k++) { const key = (i + 2048) * 4096 + k + 2048; let l = cells.get(key); if (!l) cells.set(key, (l = [])); l.push(f); }
+  }
+  app.footAt = (x, z) => { const l = cells.get((Math.floor(x / CELL) + 2048) * 4096 + Math.floor(z / CELL) + 2048); if (l) for (const f of l) if (x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pointInPoly(x, z, f.ring)) return f; return null; };
+}
 
 export async function buildCity89(app, step) {
   const T = app.terrain, B = new Builder(), mats = (app.materials = makeMaterials89(app.mobile ? 0.5 : 1));
@@ -131,10 +101,16 @@ export async function buildCity89(app, step) {
   }
   app.stats = { bati: polys.length };
 
+  await step('Dômes, tours et clochers…', 0.62);
+  indexFoot(app);                                        // les monuments se calent sur les emprises de l'atlas
+  buildMonuments(app, B);
+  const taken = (ring) => app.reserve.some((p) => pointInPoly(p[0], p[1], ring));
+
   await step('Faubourgs et îlots que l’atlas ne couvre pas…', 0.64);
   const cls = app.ilotCls, all = ilots(); let evoques = 0; app.gardens = [];
   for (let i = 0; i < all.length; i++) {
     if (ilotDocumente(i)) { if (cls[i] === 'j') app.gardens.push({ ring: all[i][0], dens: 0.16 }); continue; }
+    if (taken(all[i][0])) continue;                        // îlot d'un monument ou d'un enclos nommé : pas de bâti évoqué par-dessus
     const rings = all[i], outer = rings[0], area = Math.abs(polyArea(outer)), c = centroid(outer), r = Math.hypot(c[0] - CENTRE.x, c[1] - CENTRE.z);
     if (cls[i] === 'c') {                                  // îlot bâti : une bordure de maisons autour d'une cour
       const depth = r < 2000 ? 11 : 9, inner = offsetEx([{ outer, holes: rings.slice(1) }], -depth), po = ccw(outer);
@@ -184,19 +160,13 @@ export async function buildCity89(app, step) {
     app.foot.push({ ring: r, top: T.height(c[0], c[1]) + 3.3, wall: true });
   }
   for (const g of jardins()) app.gardens.push({ ring: g[0], dens: Math.abs(polyArea(g[0])) > 20000 ? 0.5 : 0.3 });
+  for (const e of enclos()) { const m = ENC_JARDIN.exec(e.nom); if (m) app.gardens.push({ ring: e.rings[0], dens: /Champs/.test(e.nom) ? 0.55 : /Esplanade/.test(e.nom) ? 0.12 : 0.3 }); }
 
   await step('Assemblage de la ville…', 0.78);
   app.cityMeshes = B.finish(app.scene, mats);
   app.stats.tris = Math.round(B.tris);
 
-  // emprises infranchissables, rangées par cases
-  const CELL = 48, cells = new Map();
-  for (const f of app.foot) {
-    let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of f.ring) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1]; }
-    f.x0 = x0; f.z0 = z0; f.x1 = x1; f.z1 = z1;
-    for (let i = Math.floor(x0 / CELL); i <= Math.floor(x1 / CELL); i++) for (let k = Math.floor(z0 / CELL); k <= Math.floor(z1 / CELL); k++) { const key = (i + 2048) * 4096 + k + 2048; let l = cells.get(key); if (!l) cells.set(key, (l = [])); l.push(f); }
-  }
-  app.footAt = (x, z) => { const l = cells.get((Math.floor(x / CELL) + 2048) * 4096 + Math.floor(z / CELL) + 2048); if (l) for (const f of l) if (x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pointInPoly(x, z, f.ring)) return f; return null; };
+  indexFoot(app);
 
   await step('Jardins et vergers…', 0.86);
   app.trees = buildTrees(app);

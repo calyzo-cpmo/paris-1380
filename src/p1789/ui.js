@@ -102,6 +102,8 @@ export function initUI89(app) {
     row('Îlots, rues nommées et Seine', 'plan de Verniquet, levé de 1782 à 1790 — © ALPAGE : P. Rouet ; rues © ALPAGE : L. Hermenault');
     row('Emprise des bâtiments', RAW.bati.credit);
     row('Mur des Fermiers généraux', RAW.mur.credit);
+    row('Enclos nommés : places, jardins, hôpitaux, palais', RAW.enclos.credit);
+    row('Emprise de la Bastille', RAW.bastille.credit);
     row('Relief', RAW.relief.credit);
     row('Établissements religieux en 1789', RAW.eglises.credit); }
 

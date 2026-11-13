@@ -68,7 +68,8 @@ export function makePlaces(app) {
   return RAW.reperes.filter((r) => NOTES[r[2]]).map(([x, z, nom]) => {
     const [cat, note, vass, rang] = NOTES[nom];
     let px = x, pz = z, top = null;
-    if (vass) { const l = app.landmarks.filter((m) => m.nom === vass).sort((a, b) => b.area - a.area)[0]; if (l && Math.hypot(l.x - x, l.z - z) < 260) { px = l.x; pz = l.z; top = l.top; } }
+    const mo = app.monuments && app.monuments[nom]; if (mo) { px = mo.x; pz = mo.z; top = mo.top; }
+    if (vass && !mo) { const l = app.landmarks.filter((m) => m.nom === vass).sort((a, b) => b.area - a.area)[0]; if (l && Math.hypot(l.x - x, l.z - z) < 260) { px = l.x; pz = l.z; top = l.top; } }
     // édifice attendu là où l'atlas ne montre aucun bâtiment : la fiche le dira
     let reel = 0; for (let a = 0; a < 12 && !reel; a++) for (const d of [0, 25, 55, 90]) { const f = app.footAt(px + Math.cos(a * 0.5236) * d, pz + Math.sin(a * 0.5236) * d); if (f && f.reel) { reel = 1; break; } }
     const absent = !reel && ['pouvoir', 'eglise', 'savoir', 'marche'].includes(cat);
