@@ -6,7 +6,7 @@ Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dépôt.
 
 Deux fichiers autonomes, à servir côte à côte car ils se renvoient l'un à l'autre par des liens relatifs :
 `dist/index.html` (Paris 1380, environ 1,8 Mo, 720 Ko une fois compressé) et `dist/1789.html` (Paris 1789, environ
-1,4 Mo, 640 Ko compressé). Chacun contient son code et ses données ; toutes les textures et la géométrie sont
+1,4 Mo, 660 Ko compressé). Chacun contient son code et ses données ; toutes les textures et la géométrie sont
 calculées dans le navigateur. Pas de base de données, pas de
 variables d'environnement, pas de secret, pas de volume.
 

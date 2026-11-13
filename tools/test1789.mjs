@@ -39,6 +39,19 @@ const rel = await page.evaluate(() => { const a = window.__app, T = a.terrain, P
 check('relief de Girard : la Cité au bord de l’eau, la montagne Sainte-Geneviève et l’Étoile en hauteur', rel.cite > 3 && rel.cite < 12 && rel.genevieve > rel.cite + 15 && rel.etoile > rel.cite + 15, JSON.stringify(rel));
 check('la Seine : lit creusé, prolongée au-delà du plan vers l’aval et vers l’amont', rel.eau && rel.fond < -2 && rel.aval.length === 2 && rel.aval[0][0] < -4000 && rel.aval[1][0] > 2000 && rel.auLoin.every((h) => h < -2) && rel.rive.every((h) => h > 1), JSON.stringify(rel));
 
+// ---------- habitants : la foule se forme près des rues, marche, reste sur la voie et hors des murs
+await page.evaluate(() => { const a = window.__app; a.rig.goal = { x: -330, z: -260, dist: 170, az: -0.6, el: 0.45 }; a.rig.cur = { ...a.rig.goal }; }); await frames(30);
+const c0 = await page.evaluate(() => { const a = window.__app, p = a.people.pools[0]; return { total: a.people.total, n: a.people.count, xs: Array.from(p.x.slice(0, 20)), zs: Array.from(p.z.slice(0, 20)), voies: +(a.nav.data.reduce((s, v) => s + v, 0) / a.nav.data.length).toFixed(2) }; });
+await frames(60);
+const c1 = await page.evaluate(([xs, zs]) => { const a = window.__app, P = a.people; let off = 0, mur = 0, n = 0, d = 0; for (const p of P.pools) for (let i = 0; i < p.active; i++) { if (!p.ok[i]) continue; n++; if (!P.nav(p.x[i], p.z[i])) off++; if (a.footAt(p.x[i], p.z[i])) mur++; } const p = P.pools[0]; for (let i = 0; i < xs.length; i++) d = Math.max(d, Math.hypot(p.x[i] - xs[i], p.z[i] - zs[i])); return { n, off, mur, d: +d.toFixed(1), atlas: P.atlas.texture.image.width }; }, [c0.xs, c0.zs]);
+check('habitants : la foule se forme près des rues', c0.total > 3000 && c0.n > 250 && c0.voies > 0.08 && c0.voies < 0.4, JSON.stringify({ total: c0.total, n: c0.n, voies: c0.voies }));
+check('habitants : ils marchent, restent sur la voie et hors des murs', c1.d > 0.5 && c1.off === 0 && c1.mur === 0 && c1.n > 250 && c1.atlas >= 1024, JSON.stringify(c1));
+await page.evaluate(() => window.__app.ui.setHour(22)); await frames(20);
+const c2 = await page.evaluate(() => window.__app.people.count);
+check('habitants : moins nombreux la nuit', c2 < c1.n * 0.6, c2 + ' contre ' + c1.n);
+await page.evaluate(() => { const a = window.__app; a.ui.setHour(10.5); a.ui.goHome(); }); await frames(70);
+check('habitants : la foule se retire quand on prend de la hauteur', await page.evaluate(() => window.__app.people.group.visible === false));
+
 // ---------- repères : recalage, fiches, édifices pas encore modelés
 const rp = await page.evaluate(() => { const a = window.__app, P = (id) => a.ui.byId.get(id), nd = P('notre-dame'), f = a.footAt(nd.x, nd.z); return { nd: [Math.round(nd.x), Math.round(nd.z)], surEmprise: !!(f && f.reel), haut: f ? Math.round(f.top) : 0, absents: a.places.filter((p) => p.absent).map((p) => p.id), hv: !!P('hotel-de-ville') && !P('hotel-de-ville').absent, louvre: !P('louvre').absent, cats: [...new Set(a.places.map((p) => p.cat))].length }; });
 check('recalage : Notre-Dame, placée par ses coordonnées géographiques, tombe sur son emprise', Math.hypot(rp.nd[0] + 36, rp.nd[1] + 12) < 25 && rp.surEmprise && rp.haut > 25, JSON.stringify(rp));

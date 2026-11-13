@@ -81,7 +81,9 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   toits de tuile vers les faubourgs ; la Seine, ses îles et ses ponts ; le relief ; les jardins et les places ;
   21 monuments (tours de Notre-Dame, Bastille, Invalides et leur dôme, École militaire, Luxembourg, Saint-Sulpice,
   Sainte-Geneviève, Val-de-Grâce, Observatoire, tour du Temple, portes Saint-Denis et Saint-Martin, barrières de
-  Ledoux…) et les clochers de 44 paroisses ; 53 repères avec une courte notice ; le nom de la rue où l'on se trouve, tiré du plan de
+  Ledoux…) et les clochers de 44 paroisses ; jusqu'à 4 400 habitants en costumes de la fin du XVIIIe siècle (veste et
+  gilet, habit et tricorne, tablier d'artisan, gardes-françaises, abbés, robes à l'anglaise, fichus et bonnets),
+  cavaliers et charrettes dans les rues de la ville dense ; 53 repères avec une courte notice ; le nom de la rue où l'on se trouve, tiré du plan de
   Verniquet (1 194 noms, dans leur graphie d'époque).
 - **Ce qu'on y fait** : survoler, descendre à pied par un double-clic ou depuis une fiche, régler l'heure (les
   fenêtres s'éclairent la nuit), se repérer au mini-plan et à la boussole, partager une vue par son adresse.
@@ -109,7 +111,8 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
     coordonnées géographiques) et dimensionnés d'après ce que l'on sait de chaque édifice ; leur détail est une
     évocation, et la hauteur des clochers est conventionnelle. Trois édifices hors de l'atlas ne sont pas encore
     modelés (Salpêtrière, Gobelins, Saint-Lazare) et leur fiche le dit ;
-  - les ponts sont des chaussées pleines, sans arches ; il n'y a pas encore d'habitants, de parcours ni d'intérieurs ;
+  - les habitants sont une évocation ; ils ne circulent que dans la ville dense (5 × 4,2 km autour du centre) ;
+  - les ponts sont des chaussées pleines, sans arches ; il n'y a pas encore de parcours commentés ni d'intérieurs ;
   - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
 
 ## Sources
@@ -185,7 +188,7 @@ tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, g
 tools/build.mjs              assemble les deux pages autonomes dans dist/ (index.html, 1789.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
-tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
+tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/inshot.mjs, uishot.mjs captures des intérieurs et de l'interface
@@ -198,7 +201,7 @@ src/houses.js                lotissement des îlots et maisons
 src/special.js               églises, couvents, hôtels, collèges, halles, enclos
 src/walls.js, monuments.js   enceintes, portes, Bastille, Louvre, Notre-Dame, Palais, ponts…
 src/landscape.js             arbres, haies, bosquets, vergers, croix de chemin, bateaux à quai, fumées, moulins à vent
-src/people.js                personnages articulés instanciés : foule mobile, cavaliers, charrettes, bêtes, figurants ; deux niveaux de détail
+src/people.js                personnages articulés instanciés : foule mobile, cavaliers, charrettes, bêtes, figurants ; deux niveaux de détail (commun aux deux pages)
 src/figures.js               atlas peint des visages et des costumes
 src/interiors.js             générateurs d'intérieurs (nef, grande salle, tour) et conduite de la visite
 src/interior_kit.js          matières, vitraux, voûtes d'ogives, arcades et mobilier des intérieurs
@@ -222,6 +225,7 @@ src/p1789/textures.js        façades de la fin du XVIIIe siècle
 src/p1789/blocks.js          teintes, façades à travées, corps de bâtiment (commun aux maisons et aux monuments)
 src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots évoqués, mur, arbres, collisions, rues
 src/p1789/monuments.js       tours, dômes, clochers et grands ensembles posés sur les emprises et les enclos de l'atlas
+src/p1789/figures.js         visages et costumes de 1789, choix du costume de chaque passant
 src/p1789/places.js          repères de 1789 et leurs notices
 src/p1789/app.js, ui.js      application et interface de la seconde page
 ```
@@ -235,7 +239,7 @@ npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans dat
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
 npm run build     # produit dist/index.html et dist/1789.html
-npm test          # 113 vérifications pour Paris 1380, puis 38 pour Paris 1789, dans Chromium (Playwright requis)
+npm test          # 113 vérifications pour Paris 1380, puis 42 pour Paris 1789, dans Chromium (Playwright requis)
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),

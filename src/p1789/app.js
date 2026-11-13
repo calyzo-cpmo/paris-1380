@@ -9,6 +9,8 @@ import { Sky } from '../sky.js';
 import { makeWater } from '../water.js';
 import { makeDetailTexture, makeGroundMaterial } from '../groundmat.js';
 import { CameraRig } from '../controls.js';
+import { People } from '../people.js';
+import { makeFigureAtlas89, outfit89 } from './figures.js';
 import { clamp, smoothstep } from '../geom.js';
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -85,8 +87,11 @@ export class App89 {
 
     this.rig = new CameraRig(camera, renderer.domElement, this);
     this.rig.goal = { x: -350, z: -420, dist: 3600, az: -0.45, el: 0.66 }; this.rig.cur = { ...this.rig.goal };
+    this.navRect = CENTRE_RECT;
     await buildCity89(this, step);
-    this.log(`${this.stats.bati} corps de bâtiment, ${this.stats.evoques} évoqués, ${this.stats.tris} triangles, ${this.treeCount} arbres`);
+    this.people = new People(this, { nav: this.nav, atlas: makeFigureAtlas89(mobile ? 0.5 : 1), outfit: outfit89, noBeasts: true, groundCell: 3 });
+    this.on('frame', (dt) => this.people.update(dt));
+    this.log(`${this.stats.bati} corps de bâtiment, ${this.stats.evoques} évoqués, ${this.stats.tris} triangles, ${this.treeCount} arbres, ${this.people.total} passants possibles`);
     this.on('hour', () => { const e = (1 - this.sky.day) * 1.5; this.materials.facade.emissiveIntensity = e; this.materials.rdc.emissiveIntensity = e; });
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -135,7 +140,7 @@ export class App89 {
     q.n++; q.sum += ms;
     if (q.n < 50) return;
     const avg = q.sum / q.n; q.n = 0; q.sum = 0;
-    if (avg > 45 && q.level < 3) { q.level++; q.skip = 30; this.quality = [1, 0.8, 0.65, 0.55][q.level]; if (q.level >= 2 && this.trees) this.trees.castShadow = false; this.shadowState.hour = -1; this.resize(); }
+    if (avg > 45 && q.level < 3) { q.level++; q.skip = 30; this.quality = [1, 0.8, 0.65, 0.55][q.level]; this.crowdScale = [1, 0.8, 0.55, 0.35][q.level]; if (q.level >= 2 && this.trees) this.trees.castShadow = false; this.shadowState.hour = -1; this.resize(); }
   }
 
   updateShadow() {
