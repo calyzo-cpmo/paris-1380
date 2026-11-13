@@ -104,12 +104,14 @@ export class Sky {
     u.uSunCol.value.copy(sunCol).multiplyScalar(smoothstep(-2, 2, elDeg)); u.uGlow.value.copy(glow); u.uDay.value = day;
     this.horizon.copy(hor);
     // lumière directe : soleil le jour, lune la nuit
-    const sunI = 3.4 * smoothstep(-1, 14, elDeg);
+    const sunI = 3.4 * smoothstep(-2, 11, elDeg);
     if (sunI > 0.08) { this.sun.color.copy(sunCol); this.sun.intensity = sunI; this.lightDir = dir.clone(); }
-    else { this.sun.color.setRGB(0.55, 0.65, 0.95); this.sun.intensity = 0.5; this.lightDir = moon.clone(); }
-    this.hemi.color.copy(mix3(C(0.1, 0.14, 0.28), mix3(C(0.62, 0.76, 1.0), C(0.75, 0.62, 0.6), golden), day));
-    this.hemi.groundColor.copy(mix3(C(0.03, 0.035, 0.05), C(0.42, 0.37, 0.28), day));
-    this.hemi.intensity = lerp(1.25, 1.15, day);
+    else { this.sun.color.setRGB(0.55, 0.65, 0.95); this.sun.intensity = 0.65; this.lightDir = moon.clone(); }
+    const amb = smoothstep(-11, 1.5, elDeg);       // la lumière du ciel survit au coucher du soleil
+    this.hemi.color.copy(mix3(C(0.17, 0.22, 0.4), mix3(C(0.62, 0.76, 1.0), C(0.78, 0.66, 0.66), golden), amb));
+    this.hemi.groundColor.copy(mix3(C(0.05, 0.06, 0.09), C(0.42, 0.37, 0.28), amb));
+    this.hemi.intensity = lerp(1.2, 1.15, amb);
+    this.exposure = lerp(1.5, 0.92, smoothstep(-9, 8, elDeg));
     this.day = day; this.golden = golden;
   }
 

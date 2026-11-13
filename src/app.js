@@ -98,6 +98,7 @@ export class App {
   setHour(h) {
     this.sky.setHour(h);
     this.scene.fog.color.copy(this.sky.horizon);
+    this.renderer.toneMappingExposure = this.sky.exposure;
     this.scene.fog.density = 0.00009 + 0.00007 * this.sky.golden * this.sky.day;
     this.shadowState.hour = -1;
     if (this.onHour) this.onHour(h);
