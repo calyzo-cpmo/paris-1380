@@ -7,7 +7,9 @@
   "scripts": {
     "extract": "python3 tools/extract_alpage.py",
     "build": "node tools/build.mjs",
-    "shot": "node tools/shot.mjs"
+    "shot": "node tools/shot.mjs",
+    "test": "node tools/test.mjs",
+    "thumbs": "python3 tools/make_thumbs.py"
   },
   "license": "SEE LICENSE IN README.md",
   "devDependencies": {

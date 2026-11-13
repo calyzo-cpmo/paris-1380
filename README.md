@@ -46,6 +46,8 @@ data/thumbs.json             vignettes des sources (domaine public)
 tools/extract_alpage.py      SVG → JSON (calques, courbes aplanies, libellés)
 tools/build.mjs              assemble la page autonome dans dist/
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
+tools/test.mjs               test fonctionnel : visite, marche, heure, sources, mobile, console sans erreur
+tools/make_thumbs.py         vignettes des sources (réduction locale des images du domaine public)
 src/terrain.js, raster.js    relief, berges, occupation du sol
 src/houses.js                lotissement des îlots et maisons
 src/special.js               églises, couvents, hôtels, collèges, halles, enclos
@@ -61,6 +63,7 @@ src/ui.js, controls.js       interface et caméra
 npm install
 npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
 npm run build     # produit dist/index.html
+npm test          # 19 vérifications automatisées dans Chromium (Playwright requis)
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),

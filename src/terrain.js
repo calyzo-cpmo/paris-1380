@@ -123,7 +123,7 @@ export function buildTerrainGeometries(terrain) {
   const fw = FRAME.x1 - FRAME.x0, fh = FRAME.z1 - FRAME.z0;
   const core = buildGrid({
     x0: FRAME.x0, z0: FRAME.z0, x1: FRAME.x1, z1: FRAME.z1, cell: 12, sub: 4, terrain, skirt: 14,
-    fine: (cx, cz) => Math.abs(terrain.sdWater(cx, cz)) < 44,
+    fine: (cx, cz) => Math.abs(terrain.sdWater(cx, cz)) < 34,
     uv: (x, z) => [(x - FRAME.x0) / fw, 1 - (z - FRAME.z0) / fh],
   });
   const inside = (x, z) => Math.min(x - FRAME.x0, FRAME.x1 - x, z - FRAME.z0, FRAME.z1 - z);

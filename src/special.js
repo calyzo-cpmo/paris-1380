@@ -244,6 +244,19 @@ export function halle(app, B, pts, r) {
   }
 }
 
+// Emprise trop vaste pour une seule nef (église et bâtiments réguliers confondus sur le plan) :
+// bâtiments conventuels sur l'emprise, et une abbatiale de dimensions plausibles le long de son côté nord.
+export function abbey(app, B, pts, r, o = {}) {
+  const R = minAreaRect(pts);
+  if (R.ux < 0) { R.ux = -R.ux; R.uz = -R.uz; }
+  stoneBuilding(app, B, pts, { floors: 2, roofCol: o.roofCol ?? COL.tileDark, maxRoof: 6.5, pitch: 1.2, col: o.col });
+  const hl = Math.min(R.hl * 0.96, o.len ?? 31), hw = Math.min(R.hw * 0.9, o.wid ?? 11.5);
+  const sgn = R.ux > 0 ? -1 : 1;                                  // côté nord de l'axe (z décroissant)
+  const off = Math.max(0, R.hw - hw - 1) * sgn;
+  const C = { cx: R.cx - R.uz * off, cz: R.cz + R.ux * off, ux: R.ux, uz: R.uz, hl, hw };
+  return church(app, B, rectCorners(C), r, o);
+}
+
 // Passe générique sur les calques du plan.
 export function buildSpecials(app, B) {
   const r = mulberry32(4242), claimed = app.claimed;
@@ -256,6 +269,7 @@ export function buildSpecials(app, B) {
         // une emprise très découpée (palais épiscopal, bâtiments conventuels accolés) n'est pas un simple vaisseau d'église
         const R = minAreaRect(s.pts), rect = Math.abs(polyArea(s.pts)) / (4 * R.hl * R.hw);
         if (rect < 0.5) stoneBuilding(app, B, s.pts, { floors: 2, roofCol: COL.slate, maxRoof: 8, pitch: 1.3 });
+        else if (R.hw * 2 > 30 || Math.abs(polyArea(s.pts)) > 2600) abbey(app, B, s.pts, r);
         else church(app, B, s.pts, r);
       }
       else if (s.fill === '#C92548') stoneBuilding(app, B, s.pts, { floors: 2, roofCol: r() < 0.5 ? COL.tileDark : COL.slate, col: COL.stone, maxRoof: 7 });

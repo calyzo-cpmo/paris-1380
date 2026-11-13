@@ -36,7 +36,7 @@ export async function buildCity(app, step) {
   app.cityMeshes = B.finish(app.scene, mats);
   app.log(`${Math.round(B.tris)} triangles de bâti, ${nb} bateaux`);
   await step('Vergers, jardins et fumées des cheminées…', 0.9);
-  buildTrees(app);
+  app.trees = buildTrees(app);
   app.log(`${app.treeCount} arbres`);
   const smoke = buildSmoke(app), sails = buildMillSails(app);
   app.smoke = smoke;

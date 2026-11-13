@@ -2,7 +2,7 @@
 import { layer, polys, circles } from './data.js';
 import { polyArea, centroid, minAreaRect, dpRing, mulberry32, offsetEx, pointInPoly } from './geom.js';
 import { rgb, tint, walls, cap, box, cyl, cone, disc, crenels, rectCorners, skeletonRoof, gableRoof, ccw } from './builder.js';
-import { COL, roundTower, squareTower, fxWalls, fxPanel, wallLine, markSolid, stoneBuilding, church } from './special.js';
+import { COL, roundTower, squareTower, fxWalls, fxPanel, wallLine, markSolid, stoneBuilding, church, abbey } from './special.js';
 import { gate } from './walls.js';
 import { placeHouse, PLASTERS, TILES } from './houses.js';
 import { cellUV } from './textures.js';
@@ -236,6 +236,16 @@ export function buildFortresses(app, B) {
     const c1 = centroid(p1.pts), c2 = centroid(p2.pts), mx = (c1[0] + c2[0]) / 2, mz = (c1[1] + c2[1]) / 2, d = Math.hypot(c2[0] - c1[0], c2[1] - c1[1]) || 1;
     gate(app, B, mx, mz, (c2[0] - c1[0]) / d, (c2[1] - c1[1]) / d, { width: 24, depth: 16, height: 15, pass: 4.4, passH: 5.5, col, roof: 'hip', roofCol: COL.slate, turrets: 2.1 });
     out.petitChatelet = { x: mx, z: mz };
+  }
+  // Saint-Germain-des-Prés : abbatiale à trois clochers (tour-porche et deux tours encadrant le chœur)
+  const sg = claim(app, 'StGermain', -1205, -110, (q) => q.fill === '#F3102B' || q.fill === '#FF0000');
+  if (sg) {
+    const res = abbey(app, B, sg.pts, mulberry32(558), { len: 33, wid: 10.5, towerSide: 1, towerAt: -0.86, towerRoof: 'spire', roofCol: COL.slate, col: rgb(232, 222, 198) });
+    if (res && res.nave) {
+      const R = res.R, tw = 3.4, th = res.hN + 13;
+      for (const sgn of [-1, 1]) squareTower(app, B, { cx: R.cx + R.ux * R.hl * 0.42 - R.uz * sgn * (res.nave.hw + tw), cz: R.cz + R.uz * R.hl * 0.42 + R.ux * sgn * (res.nave.hw + tw), ux: R.ux, uz: R.uz, hl: tw, hw: tw }, th, { base: res.g.yF, col: rgb(232, 222, 198), belfry: 5.5, roof: 'spire', roofCol: COL.slate, roofH: 11 });
+      out.saintGermain = { x: R.cx, z: R.cz };
+    }
   }
   // tour de Nesle et tour du Coin : la chaîne barre la Seine entre elles
   const nesle = polys('EnceintePA', '#000000').find((s) => { const c = centroid(s.pts); return Math.hypot(c[0] + 914, c[1] + 494) < 20; });

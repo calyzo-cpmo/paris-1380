@@ -110,9 +110,29 @@ export class App {
 
   resize() {
     const w = this.container.clientWidth || window.innerWidth, h = this.container.clientHeight || window.innerHeight;
+    // densité de pixels plafonnée : au plus ~3,6 millions de pixels calculés, puis réduite si la machine peine
+    const cap = this.shot ? 1 : Math.min(window.devicePixelRatio || 1, this.mobile ? 1.5 : 2, Math.sqrt(3.6e6 / (w * h)));
+    this.renderer.setPixelRatio(Math.max(0.6, cap * (this.quality || 1)));
     this.renderer.setSize(w, h, false);
     this.renderer.domElement.style.width = '100%'; this.renderer.domElement.style.height = '100%';
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+  }
+
+  // Si l'image met durablement plus de 45 ms à se calculer, on allège : résolution, puis ombres des arbres et fumées.
+  autoQuality(ms) {
+    const q = (this.qStat ||= { n: 0, sum: 0, level: 0, skip: 40 });
+    if (q.skip > 0) { q.skip--; return; }
+    q.n++; q.sum += ms;
+    if (q.n < 50) return;
+    const avg = q.sum / q.n; q.n = 0; q.sum = 0;
+    if (avg > 45 && q.level < 3) {
+      q.level++; q.skip = 30;
+      this.quality = [1, 0.8, 0.65, 0.55][q.level];
+      if (q.level >= 2 && this.trees) this.trees.traverse((o) => { o.castShadow = false; });
+      if (q.level >= 3 && this.smoke) this.smoke.visible = false;
+      this.shadowState.hour = -1;
+      this.resize();
+    }
   }
 
   updateShadow() {
@@ -135,7 +155,9 @@ export class App {
   }
 
   frame() {
-    const dt = Math.min(0.1, this.clock.getDelta());
+    const raw = this.clock.getDelta();
+    this.autoQuality(raw * 1000);
+    const dt = Math.min(0.1, raw);
     this.time += dt;
     this.rig.update(dt);
     this.emit('frame', dt);
