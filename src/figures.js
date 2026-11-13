@@ -208,12 +208,13 @@ function garment(P, r, X, Y, row, v) {
   P.c.fillStyle = 'rgba(0,0,0,0.16)'; for (let x = X + 10; x < X + S; x += 26) P.c.fillRect(x, H0, 5, 96);
 }
 
-export function makeFigureAtlas(scale = 1) {
+// Atlas des personnages : deux rangées de huit visages, puis deux rangées de huit costumes (courts, longs).
+export function makeAtlas(scale, men, women, garmentFn, seed) {
   const N = 2048, mk = () => { const cv = document.createElement('canvas'); cv.width = cv.height = N * scale; const x = cv.getContext('2d', { willReadFrequently: true }); x.setTransform(scale, 0, 0, scale, 0, 0); return x; };
-  const P = { c: mk(), k: mk() }, r = mulberry32(1389);
+  const P = { c: mk(), k: mk() }, r = mulberry32(seed);
   P.c.fillStyle = '#d8c8b0'; P.c.fillRect(0, 0, N, N); P.k.fillStyle = '#000'; P.k.fillRect(0, 0, N, N);
-  for (let i = 0; i < 8; i++) { face(P.c, i * S, 0, r, MEN[i]); face(P.c, i * S, S, r, WOMEN[i]); }
-  for (let i = 0; i < 8; i++) { garment(P, r, i * S, 512, 0, i); garment(P, r, i * S, 1152, 1, i); }
+  for (let i = 0; i < 8; i++) { face(P.c, i * S, 0, r, men[i]); face(P.c, i * S, S, r, women[i]); }
+  for (let i = 0; i < 8; i++) { garmentFn(P, r, i * S, 512, 0, i); garmentFn(P, r, i * S, 1152, 1, i); }
   // grain du tissu sur les deux rangées de vêtements
   const W = N * scale, im = P.c.getImageData(0, 0, W, W), d = im.data, km = P.k.getImageData(0, 0, W, W).data, out = new Uint8Array(W * W * 4), gy = 512 * scale;
   for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
@@ -225,3 +226,8 @@ export function makeFigureAtlas(scale = 1) {
   tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true; tex.anisotropy = 4; tex.needsUpdate = true;
   return { texture: tex, canvas: P.c.canvas };
 }
+
+export function makeFigureAtlas(scale = 1) { return makeAtlas(scale, MEN, WOMEN, garment, 1389); }
+
+// Outils de peinture des costumes, pour les habitants d'une autre époque (src/p1789/figures.js).
+export const KIT = { S, css, mul, mix, fixed, tinted, rectFn, folds, speckle, belt, neck, buttons, FABRIC, LEATHER, LINEN, GOLDC };

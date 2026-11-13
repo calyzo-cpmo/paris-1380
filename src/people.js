@@ -2,7 +2,6 @@
 // figurants fixes, cavaliers, charrettes, bêtes. Deux niveaux de détail : silhouettes simples au loin,
 // corps modelés, visages peints et costumes de 1380 à moins d'une centaine de mètres.
 import * as THREE from 'three';
-import { LU } from './raster.js';
 import { mulberry32, clamp } from './geom.js';
 import { makeFigureAtlas, ATLAS } from './figures.js';
 
@@ -296,6 +295,7 @@ const WOOL = [[226, 220, 204], [210, 202, 184], [236, 230, 216], [92, 80, 70]];
 const PIGS = [[196, 150, 136], [150, 118, 100], [96, 76, 60], [70, 58, 50], [176, 160, 140]];
 const CATTLE = [[120, 76, 48], [172, 130, 90], [60, 46, 38], [204, 190, 168], [140, 96, 60]];
 const pick = (r, a) => a[(r() * a.length) | 0];
+const LU_OPEN = 1;      // voie libre dans la trame d'occupation du sol (LU.OPEN de raster.js)
 
 // Costume d'un personnage : { col [r,g,b], v [colonne et rangée du vêtement, colonne et rangée du visage] }.
 export function outfit(r, kind, role) {
@@ -350,7 +350,7 @@ class Pool {
     this.col = new Float32Array(n * 3); this.colLo = new Float32Array(n * 3); this.vr = new Float32Array(n * 4);
     const r = sys.r;
     for (let i = 0; i < n; i++) {
-      const of = o.palette ? { col: pick(r, o.palette), v: [0, 0, 0, 0] } : outfit(r, kind), k = 0.95 + r() * 0.25, c = linCol(of.col, of.lo ? 1 : k);
+      const of = o.palette ? { col: pick(r, o.palette), v: [0, 0, 0, 0] } : sys.outfit(r, kind), k = 0.95 + r() * 0.25, c = linCol(of.col, of.lo ? 1 : k);
       this.col.set(c, i * 3); this.colLo.set(of.lo ? linCol(of.lo, k) : c, i * 3); this.vr.set(of.v, i * 4);
       this.sc[i] = o.scale[0] + r() * (o.scale[1] - o.scale[0]); if (o.kids && r() < o.kids) this.sc[i] *= 0.66;
       this.sp[i] = o.speed[0] + r() * (o.speed[1] - o.speed[0]); this.bias[i] = r() < 0.5 ? 1 : -1; this.ph[i] = r() * 6.28; this.jt[i] = 2 + r() * 6;
@@ -435,7 +435,7 @@ class Statics {
     this.hi = sys.hiGeos[kind] ? instanced(sys.hiGeos[kind], sys.mat, Math.min(n, 460), true) : null;
     this.base = new Float32Array(n * 16); this.col = new Float32Array(n * 3); this.colLo = new Float32Array(n * 3); this.vr = new Float32Array(n * 4); this.hidden = new Set(); this.grid = new Map();
     items.forEach((f, i) => {
-      const of = outfit(r, kind, f[6]), c = linCol(f[4] && f[6] !== 'guard' ? f[4] : of.col), sc = (kind === 'beast' ? 0.82 : 0.95) + r() * 0.12;
+      const of = sys.outfit(r, kind, f[6]), c = linCol(f[4] && f[6] !== 'guard' ? f[4] : of.col), sc = (kind === 'beast' ? 0.82 : 0.95) + r() * 0.12;
       f[5] = f[5] != null ? f[5] : sys.groundY(f[0], f[1]);
       writeMat(this.base, i * 16, f[0], f[5], f[1], f[2], sc); this.col.set(c, i * 3); this.colLo.set(of.lo ? linCol(of.lo) : c, i * 3); this.vr.set(of.v, i * 4);
       const key = Math.floor(f[0] / 48) * 4096 + Math.floor(f[1] / 48); if (!this.grid.has(key)) this.grid.set(key, []); this.grid.get(key).push(i);
@@ -465,19 +465,26 @@ class Statics {
 }
 
 export class People {
-  constructor(app) {
+  // opts (facultatif, pour une autre ville que celle de 1380) : nav { data, w, h, x0, z0, cell } trame des voies ;
+  // atlas : visages et costumes ; outfit : choix du costume ; noBeasts : pas de bêtes en liberté ; groundCell : maille du sol.
+  constructor(app, opts = {}) {
     this.app = app; this.r = mulberry32(2024); this.enabled = true; this.first = true; this.frame = 0;
-    const lu = app.lu, solid = app.solid, w = lu.w, h = lu.h;
-    // trame de circulation : voies libres de tout obstacle, plus les tabliers de ponts
-    const nav = new Uint8Array(w * h);
-    for (let i = 0; i < w * h; i++) nav[i] = lu.data[i] === LU.OPEN && solid.data[i] === 0 ? 1 : 0;
-    for (const key of app.deck.keys()) {
-      const ix = ((key >> 13) - 4096) * 2 - lu.x0, iz = ((key & 8191) - 4096) * 2 - lu.z0;
-      for (let b = 0; b < 2; b++) for (let a = 0; a < 2; a++) { const i = Math.floor(ix) + a, j = Math.floor(iz) + b; if (i >= 0 && j >= 0 && i < w && j < h && solid.data[j * w + i] === 0) nav[j * w + i] = 1; }
+    this.outfit = opts.outfit || outfit;
+    if (opts.nav) { const n = opts.nav; this.navData = n.data; this.nw = n.w; this.nh = n.h; this.x0 = n.x0; this.z0 = n.z0; this.nc = n.cell || 1; }
+    else {
+      const lu = app.lu, solid = app.solid, w = lu.w, h = lu.h;
+      // trame de circulation : voies libres de tout obstacle, plus les tabliers de ponts
+      const nav = new Uint8Array(w * h);
+      for (let i = 0; i < w * h; i++) nav[i] = lu.data[i] === LU_OPEN && solid.data[i] === 0 ? 1 : 0;
+      for (const key of app.deck.keys()) {
+        const ix = ((key >> 13) - 4096) * 2 - lu.x0, iz = ((key & 8191) - 4096) * 2 - lu.z0;
+        for (let b = 0; b < 2; b++) for (let a = 0; a < 2; a++) { const i = Math.floor(ix) + a, j = Math.floor(iz) + b; if (i >= 0 && j >= 0 && i < w && j < h && solid.data[j * w + i] === 0) nav[j * w + i] = 1; }
+      }
+      this.navData = nav; this.nw = w; this.nh = h; this.x0 = lu.x0; this.z0 = lu.z0; this.nc = 1;
     }
-    this.navData = nav; this.nw = w; this.nh = h; this.x0 = lu.x0; this.z0 = lu.z0;
-    this.gw = Math.ceil(w / 2); this.gh = Math.ceil(h / 2); this.gcache = new Float32Array(this.gw * this.gh).fill(NaN);
-    this.atlas = makeFigureAtlas(app.mobile ? 0.5 : 1);
+    this.gc = opts.groundCell || 2;
+    this.gw = Math.ceil((this.nw * this.nc) / this.gc); this.gh = Math.ceil((this.nh * this.nc) / this.gc); this.gcache = new Float32Array(this.gw * this.gh).fill(NaN);
+    this.atlas = opts.atlas || makeFigureAtlas(app.mobile ? 0.5 : 1);
     this.mat = peopleMaterial(this.atlas.texture);
     this.blobMat = new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, color: 0x000000, opacity: 0.42, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     this.group = new THREE.Group(); app.scene.add(this.group);
@@ -490,21 +497,21 @@ export class People {
       new Pool(this, 'sheep', Math.round(420 * q), { palette: PIGS, scale: [0.62, 0.95], speed: [0.5, 1.1], probe: 1.4, side: 1.0, stride: 9, amp: 0.5, idle: 0.3, blob: [0.3, 0.5], share: 0.07 }),
       new Pool(this, 'rider', Math.round(190 * q), { scale: [0.96, 1.06], speed: [1.7, 2.6], probe: 4.2, side: 2.2, stride: 2.6, amp: 0.5, idle: 0.04, wide: true, turn: 1.6, blob: [0.5, 1.2], share: 0.04, hiCap: 60 }),
       new Pool(this, 'cart', Math.round(130 * q), { scale: [0.95, 1.05], speed: [1.0, 1.5], probe: 5.5, side: 2.4, stride: 2.8, amp: 0.45, idle: 0.08, wide: true, turn: 0.9, blob: [1.0, 2.6], share: 0.03, hiCap: 40 }),
-    ];
+    ].filter((p) => !(opts.noBeasts && p.kind === 'sheep'));
     this.statics = [];
     this.total = this.pools.reduce((s, p) => s + p.n, 0);
     this.count = 0; this.near = 0; this.lastX = 1e9; this.lastZ = 1e9;
   }
   nav(x, z) {
-    const i = Math.floor(x - this.x0), j = Math.floor(z - this.z0);
+    const i = Math.floor((x - this.x0) / this.nc), j = Math.floor((z - this.z0) / this.nc);
     return i >= 0 && j >= 0 && i < this.nw && j < this.nh ? this.navData[j * this.nw + i] : 0;
   }
   groundY(x, z) {
-    const app = this.app, d = app.deck.get(app.deckKey(x, z));
-    const i = Math.floor((x - this.x0) / 2), j = Math.floor((z - this.z0) / 2);
+    const app = this.app, d = app.deck ? app.deck.get(app.deckKey(x, z)) : undefined, gc = this.gc;
+    const i = Math.floor((x - this.x0) / gc), j = Math.floor((z - this.z0) / gc);
     if (i < 0 || j < 0 || i >= this.gw || j >= this.gh) return Math.max(0.2, app.terrain.height(x, z), d || 0);
     let v = this.gcache[j * this.gw + i];
-    if (v !== v) { v = Math.max(0.2, app.terrain.height(this.x0 + i * 2 + 1, this.z0 + j * 2 + 1)); this.gcache[j * this.gw + i] = v; }
+    if (v !== v) { v = Math.max(0.2, app.terrain.height(this.x0 + (i + 0.5) * gc, this.z0 + (j + 0.5) * gc)); this.gcache[j * this.gw + i] = v; }
     return d !== undefined ? Math.max(d, v) : v;
   }
   update(dt) {
@@ -537,7 +544,7 @@ export class People {
     for (const kind of ['man', 'robe']) {
       const items = list.filter((f) => f[4] === kind); if (!items.length) continue;
       const s = instanced(this.hiGeos[kind], this.mat, items.length, true), m = s.im.instanceMatrix.array, c = s.im.instanceColor.array, v = s.vr.array;
-      items.forEach((f, i) => { const of = outfit(r, kind, f[5]); writeMat(m, i * 16, f[0], f[1], f[2], f[3], f[7] || 0.96 + r() * 0.1); c.set(linCol(f[6] || of.col), i * 3); v.set(f[8] || of.v, i * 4); });
+      items.forEach((f, i) => { const of = this.outfit(r, kind, f[5]); writeMat(m, i * 16, f[0], f[1], f[2], f[3], f[7] || 0.96 + r() * 0.1); c.set(linCol(f[6] || of.col), i * 3); v.set(f[8] || of.v, i * 4); });
       s.im.count = items.length; s.im.instanceMatrix.needsUpdate = true; s.im.instanceColor.needsUpdate = true; s.vr.needsUpdate = true;
       group.add(s.im);
     }

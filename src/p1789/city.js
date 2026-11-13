@@ -180,6 +180,18 @@ export async function buildCity89(app, step) {
     return best;
   };
   app.eglises = eglises();
+
+  // trame des voies pour la foule : la ville dense, hors des îlots, du fleuve et des bâtiments ; places et promenades comprises
+  await step('Les Parisiens descendent dans la rue…', 0.93);
+  { const R = app.navRect, cell = app.mobile ? 2.5 : 1.5, w = Math.round(R.w / cell), h = Math.round(R.h / cell), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const x = cv.getContext('2d', { willReadFrequently: true }), TT = { s: 1 / cell, x: (v) => (v - R.x) / cell, y: (v) => (v - R.z) / cell };
+    x.fillStyle = '#fff'; x.fillRect(0, 0, w, h);
+    fill(x, TT, ilots(), '#000');
+    fill(x, TT, enclos().filter((e) => ENC_SABLE.test(e.nom) || /^(Jardin des Tuileries|Les Champs Elys|Esplanade)/.test(e.nom)).map((e) => e.rings), '#fff');
+    fill(x, TT, eau(), '#000');
+    x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; x.beginPath(); for (const f of app.foot) ring(x, TT, f.ring); x.fill(); x.stroke();
+    const im = x.getImageData(0, 0, w, h).data, data = new Uint8Array(w * h); for (let i = 0; i < data.length; i++) data[i] = im[i * 4] > 200 ? 1 : 0;
+    app.nav = { data, w, h, x0: R.x, z0: R.z, cell }; }
 }
 
 // Arbres des jardins : une seule géométrie (tronc et houppier), instanciée.

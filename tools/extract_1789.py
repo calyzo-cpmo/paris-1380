@@ -6,7 +6,7 @@ Ce que la ville de la fin du XVIIIe siècle doit à chaque couche (toutes sous l
   - rues nommées : même plan (Rues_1791) ;
   - bâti : espaces bâtis de l'Atlas par îlots de Vasserot, dressé de 1810 à 1836 (Vasserot_1_Bati). C'est la source
     la plus proche de 1789 qui donne l'emprise de chaque bâtiment ; elle est postérieure d'une génération. Les espaces
-    non bâtis de plus de 1 200 m² y sont retenus comme jardins ;
+    non bâtis de plus de 1 200 m², sans nom d'édifice et situés dans un îlot, y sont retenus comme jardins ;
   - mur des Fermiers généraux (Enceintes), établissements religieux en activité en 1789 (Eglises) ;
   - enclos nommés par l'atlas de Vasserot (Vasserot_1_Parcelles) : places, jardins, hôpitaux, palais ; emprise de la
     Bastille (Bastille) ;
@@ -110,12 +110,19 @@ def main():
         elif code == 3 and nom and not nom.lower().startswith(('redecouper', 'revoir', 'place', 'marché')):
             for rings in polys_of(g, 0.5, 1500.0):          # code 3 : ensemble non détaillé par l'atlas (le Palais de la Cité)
                 noms[len(bati)] = nom; enclos.append(len(bati)); bati.append(rings)
-        elif code == 2:                               # espaces non bâtis : au-delà d'une grande cour, ce sont des jardins
-            jardins += polys_of(g, 1.0, 1200.0, 200.0)
+        elif code == 2 and (not nom or nom.lower().startswith(('jardin', 'parc'))):
+            jardins += polys_of(g, 1.0, 1200.0, 200.0)    # grands espaces non bâtis : jardins, s'ils sont dans un îlot (tri plus bas)
     data['bati'] = {'q': 2, 'g': X.enc_polys(bati, 2), 'n': len(bati), 'noms': {str(k): v for k, v in noms.items()}, 'enclos': enclos,
                     'credit': 'Espaces bâtis de l’Atlas par îlots de Vasserot (1810-1836) — Arch. nat. F31 73-96 – Arch. Paris © ALPAGE : A.-L. Bethe'}
     data['jardins'] = {'q': 1, 'g': X.enc_polys(jardins, 1), 'n': len(jardins)}
     print('bâti', len(bati), 'corps de bâtiment,', sum(len(r) for rings in bati for r in rings), 'sommets,', len(noms), 'nommés,', len(data['bati']['g']) // 1024, 'Ko ; jardins', len(jardins))
+
+    # un espace non bâti hors de tout îlot est une place ou une rue, pas un jardin
+    boxes = [(min(p[0] for p in r[0]), min(p[1] for p in r[0]), max(p[0] for p in r[0]), max(p[1] for p in r[0]), r[0]) for r in ilots]
+    def dans_un_ilot(x, z): return any(b[0] <= x <= b[2] and b[1] <= z <= b[3] and in_ring(b[4], x, z) for b in boxes)
+    avant = len(jardins); jardins = [j for j in jardins if dans_un_ilot(*X.area_centroid(j[0])[1])]
+    data['jardins'] = {'q': 1, 'g': X.enc_polys(jardins, 1), 'n': len(jardins)}
+    print('jardins', len(jardins), 'sur', avant, 'grands espaces non bâtis (les autres sont des places ou des rues)')
 
     # un îlot est « documenté » si l'atlas de Vasserot y place au moins un bâtiment : ailleurs, le bâti sera évoqué
     cell = 80; grid = {}
