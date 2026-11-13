@@ -1,6 +1,6 @@
 {
   "name": "paris-1380",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "description": "Maquette 3D interactive de Paris vers 1380-1400, construite sur le plan restitué ALPAGE/CNRS",
   "type": "module",
@@ -9,6 +9,7 @@
     "build": "node tools/build.mjs",
     "shot": "node tools/shot.mjs",
     "test": "node tools/test.mjs",
+    "inshot": "node tools/inshot.mjs",
     "thumbs": "python3 tools/make_thumbs.py"
   },
   "license": "SEE LICENSE IN README.md",

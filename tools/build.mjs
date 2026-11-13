@@ -24,14 +24,27 @@ ${body}
 `;
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist/paris-1380.artifact.html'), fragment);
+// Document complet pour une mise en ligne : en-tête en règle (titre, description, aperçu de partage), corps et script.
+const desc = 'Maquette 3D interactive de Paris vers 1380 : survol, promenade dans les rues peuplées, histoire de chaque monument et visite de leurs intérieurs, d’après le plan restitué ALPAGE-CNRS.';
 writeFileSync(join(root, 'dist/index.html'), `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paris 1380 — maquette 3D interactive</title>
+<meta name="description" content="${desc}">
+<meta property="og:title" content="Paris 1380 — maquette 3D interactive">
+<meta property="og:description" content="${desc}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta name="theme-color" content="#0b1230">
+${fonts}
+<style>${css}</style>
 </head>
 <body>
-${fragment}</body>
+${body}
+<script>${js}</script>
+</body>
 </html>
 `);
 console.log('build ok', (fragment.length / 1024).toFixed(0) + ' Ko');

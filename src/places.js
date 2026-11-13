@@ -1,6 +1,7 @@
 // Lieux remarquables : fiches historiques, positions (calées sur les emprises du plan) et étapes de la visite guidée.
 import { layer, LABELS } from './data.js';
 import { centroid, polyArea } from './geom.js';
+import { CHRONO, GATE_CHRONO, RADIUS } from './history.js';
 
 // [id, nom, catégorie, x, z, calage, hauteur d'étiquette, priorité, date, texte, sources]
 const RAW = [
@@ -47,7 +48,7 @@ const RAW = [
   ['saint-severin', 'Saint-Séverin', 'Églises et abbayes', -395, 100, 'red', 26, 3, 'XIIIe – XVe siècle', 'Paroisse de la rive gauche près du Petit-Pont, dans le quartier des étudiants et des libraires.', ['alpage1380']],
   ['augustins', 'Les Grands-Augustins', 'Églises et abbayes', -704, -250, 'red', 26, 3, 'établis en 1293', 'Couvent des ermites de Saint-Augustin sur le quai de la rive gauche, dont l’église est rebâtie sous Charles V.', ['truschet']],
   ['tournelle', 'Château de la Tournelle', 'Fortifications', 392, 325, 'm:tournelle', 26, 3, 'XIVe siècle', 'Petit château terminant l’enceinte de Philippe Auguste en amont. Une chaîne portée par des bateaux rejoint l’île Notre-Dame puis la tour Barbeau, sur la rive droite.', ['alpage_pa']],
-  ['foire-saint-germain', 'Foire Saint-Germain', 'Hors les murs', -1170, 150, null, 18, 3, 'XIIe siècle', 'Halles de la foire annuelle tenue par l’abbaye dans son bourg, à côté du Pré-aux-Clercs où se promènent les étudiants.', ['alpage1380']],
+  ['foire-saint-germain', 'Foire Saint-Germain', 'Hors les murs', -1170, 150, null, 18, 3, '1176 – 1278, rétablie en 1482', 'Le champ de foire de l’abbaye, à côté du Pré-aux-Clercs où se promènent les étudiants. La foire, attestée dès 1176, a été supprimée en 1278 au profit des Halles : vers 1380 il n’en reste que le nom ; Louis XI la rétablira en 1482.', ['alpage1380']],
   ['montfaucon', 'Gibet de Montfaucon', 'Hors les murs', 1250, -2690, 'm:montfaucon', 24, 2, 'rebâti en pierre vers 1300', 'Le gibet des rois de France : seize piliers de pierre de dix mètres sur un soubassement, reliés par trois rangs de poutres. Il domine la route d’Allemagne, bien visible depuis la ville.', ['fouquet_amauriciens', 'truschet']],
   ['chartreux', 'Chartreuse de Vauvert', 'Hors les murs', -905, 985, 'm:chartreux', 26, 3, 'fondée en 1257', 'Monastère de chartreux établi par Louis IX au sud de la ville : une église, et autour du grand cloître les maisonnettes à jardin où chaque moine vit en ermite. Le plan de 1380 ne couvre pas ce secteur ; l’ensemble est restitué à son emplacement connu.', ['vestiges', 'truschet']],
   ['vincennes', 'Château de Vincennes', 'Hors les murs', 6280, 1146, 'm:vincennes', 62, 2, 'donjon v. 1337 – 1370 ; enceinte 1372 – 1380', 'À une lieue et demie à l’est, la résidence fortifiée que Charles V vient d’achever : un donjon de 50 m, le plus haut du royaume, et une vaste enceinte à neuf tours. Situé hors du plan de 1380, il est figuré à son emplacement réel.', ['vestiges']],
@@ -71,7 +72,7 @@ export function buildPlaces(app) {
     else if (snap === 'brown') { const c = near(browns, x, z, 220); if (c) { x = c[0]; z = c[1]; } }
     else if (snap && snap.startsWith('m:')) { const m = M[snap.slice(2)]; if (m) { if (m.c) { x = m.c[0]; z = m.c[1]; } else if (m.R) { x = m.R.cx; z = m.R.cz; } else if (m.x != null) { x = m.x; z = m.z; } } }
     else if (snap && snap.startsWith('b:')) { const m = M.bridges && M.bridges[snap.slice(2)]; if (m) { x = m.x; z = m.z; } }
-    out.push({ id, name, cat, x, z, y: Math.max(0, app.terrain.height(x, z)) + h, pri, date, text, src, dist: pri === 1 ? 330 : 240 });
+    out.push({ id, name, cat, x, z, y0: Math.max(0, app.terrain.height(x, z)), y: Math.max(0, app.terrain.height(x, z)) + h, pri, date, text, src, dist: pri === 1 ? 330 : 240, rad: RADIUS[id] || (pri === 1 ? 45 : 28), chrono: CHRONO[id] || null });
   }
   // portes
   const used = new Set();
@@ -82,7 +83,7 @@ export function buildPlaces(app) {
     if (b < 0) return;
     used.add(b);
     const g = app.gates[b], c5 = kind === 'C5';
-    out.push({ id: 'porte-' + i, name: GATE_NAMES[i] || l.t, cat: 'Fortifications', x: g.x, z: g.z, y: Math.max(0, app.terrain.height(g.x, g.z)) + (c5 ? 30 : 22), pri: c5 ? 2 : 3, date: c5 ? 'enceinte de Charles V, 1356 – 1383' : 'enceinte de Philippe Auguste, 1190 – 1215',
+    out.push({ id: 'porte-' + i, name: GATE_NAMES[i] || l.t, cat: 'Fortifications', x: g.x, z: g.z, y0: Math.max(0, app.terrain.height(g.x, g.z)), rad: 20, chrono: GATE_CHRONO[kind], y: Math.max(0, app.terrain.height(g.x, g.z)) + (c5 ? 30 : 22), pri: c5 ? 2 : 3, date: c5 ? 'enceinte de Charles V, 1356 – 1383' : 'enceinte de Philippe Auguste, 1190 – 1215',
       text: c5 ? 'Porte de la nouvelle enceinte de la rive droite, commencée par Étienne Marcel en 1356 et achevée sous Charles VI en 1383 : un châtelet à tourelles précédé d’un pont sur le double fossé. Six portes seulement percent ce rempart.' : 'Porte de l’enceinte élevée par Philippe Auguste avant son départ en croisade : une muraille de 8 m flanquée de tours rondes tous les soixante mètres. Sur la rive droite, la nouvelle enceinte l’a rendue inutile ; sur la rive gauche, elle défend toujours l’Université.',
       src: [c5 ? 'alpage_c5' : 'alpage_pa', 'truschet'], dist: 200 });
   });

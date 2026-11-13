@@ -13,7 +13,7 @@ export function initUI(app) {
   app.places = places;
   const byId = new Map(places.map((p) => [p.id, p]));
   const srcById = new Map(SOURCES.map((s) => [s.id, s]));
-  let selected = null, tourIdx = -1, tourTimer = 0, namesOn = true;
+  let selected = null, hovered = null, tourIdx = -1, tourTimer = 0, namesOn = true;
 
   // ---------- étiquettes
   const layerEl = $('labels');
@@ -29,9 +29,10 @@ export function initUI(app) {
     if (layerEl.style.display === 'none') layerEl.style.display = '';
     const w = layerEl.clientWidth, h = layerEl.clientHeight, cam = app.camera, dist = app.rig.cur.dist;
     const boxes = [];
-    const order = places.slice().sort((a, b) => (a === selected ? -1 : b === selected ? 1 : a.pri - b.pri));
+    const rank = (p) => (p === selected ? -2 : p === hovered ? -1 : p.pri);
+    const order = places.slice().sort((a, b) => rank(a) - rank(b));
     for (const p of order) {
-      let show = p === selected || p.pri === 1 || (p.pri === 2 && dist < 1900) || (p.pri === 3 && dist < 850);
+      let show = p === selected || p === hovered || p.pri === 1 || (p.pri === 2 && dist < 1900) || (p.pri === 3 && dist < 850);
       if (show) {
         proj.copy(p.v).project(cam);
         const d = cam.position.distanceTo(p.v);
@@ -40,7 +41,7 @@ export function initUI(app) {
           const x = (proj.x * 0.5 + 0.5) * w, y = (-proj.y * 0.5 + 0.5) * h - 14;
           const bw = p.name.length * (p.pri === 1 ? 8.2 : 7) + 18, bh = 24;
           if (x < -40 || x > w + 40 || y < 30 || y > h - 40) show = false;
-          else if (p !== selected && boxes.some((q) => Math.abs(q[0] - x) < (q[2] + bw) / 2 && Math.abs(q[1] - y) < bh)) show = false;
+          else if (p !== selected && p !== hovered && boxes.some((q) => Math.abs(q[0] - x) < (q[2] + bw) / 2 && Math.abs(q[1] - y) < bh)) show = false;
           else { boxes.push([x, y, bw]); p.el.style.transform = `translate(-50%, -100%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`; }
         }
       }
@@ -61,12 +62,74 @@ export function initUI(app) {
       cs.appendChild(document.createTextNode('D’après : '));
       p.src.forEach((id, i) => { const s = srcById.get(id); if (!s) return; if (i) cs.appendChild(document.createTextNode(' ; ')); const b = el('button', null, s.title); b.type = 'button'; b.addEventListener('click', () => openSources(id)); cs.appendChild(b); });
     }
+    // chronologie : ce qui précède 1380, puis ce que le lieu est devenu
+    const ol = $('card-chrono'); ol.textContent = ''; $('card-hist').hidden = !p.chrono;
+    if (p.chrono) {
+      let sep = false;
+      for (const [d, t] of p.chrono) {
+        const y = (d.match(/\d{3,4}/) || [])[0], after = y ? +y > 1380 : /Aujourd|\b(XV|XVI|XVII|XVIII|XIX|XX|XXI)e\b/.test(d);
+        if (after && !sep) { sep = true; ol.appendChild(el('li', 'sep', 'Après 1380')); }
+        const li = el('li', after ? 'after' : null); li.appendChild(el('b', null, d)); li.appendChild(el('span', null, t)); ol.appendChild(li);
+      }
+    }
+    $('card-enter').hidden = !(app.interiors && app.interiors.has(p));
     $('card').hidden = false;
     if (fly) flyTo(p);
   }
   function flyTo(p, o = {}) { app.rig.flyTo({ x: p.x, z: p.z, dist: o.dist ?? p.dist, el: o.el ?? 0.42, az: o.az }, o.time ?? 2.4); setMode('fly', true); }
   $('card-view').addEventListener('click', () => selected && flyTo(selected));
   $('card-walk').addEventListener('click', () => selected && startWalk(selected));
+  $('card-enter').addEventListener('click', () => selected && enterInterior(selected));
+
+  // ---------- visite intérieure
+  const touchUI = matchMedia('(pointer: coarse)').matches;
+  function enterInterior(p) {
+    if (!app.interiors || !app.interiors.has(p)) return false;
+    stopTour();
+    if (!app.interiors.enter(p)) return false;
+    const sp = app.interiors.spec(p);
+    $('in-name').textContent = p.name; $('in-title').textContent = sp.title; $('in-text').textContent = sp.text;
+    $('in-hint').textContent = touchUI ? 'Glissez pour regarder autour de vous, touchez le sol pour avancer.' : 'Glissez pour regarder autour de vous, cliquez sur le sol pour avancer. Flèches ou Z Q S D pour marcher, Échap pour sortir.';
+    const box = $('in-spots'); box.textContent = '';
+    (app.interiors.spots || []).forEach((s, i) => { const b = el('button', null, s[0]); b.type = 'button'; b.addEventListener('click', () => app.interiors.goSpot(i)); box.appendChild(b); });
+    const small = window.innerWidth < 700;            // petit écran : notice repliée, la vue d'abord
+    $('inhud').classList.toggle('less', small); $('in-less').textContent = small ? 'Lire la notice' : 'Réduire la notice'; $('inhud').hidden = false; document.body.classList.add('inside');
+    return true;
+  }
+  function leaveInterior() {
+    if (!app.inside) return;
+    app.interiors.exit();
+    $('inhud').hidden = true; document.body.classList.remove('inside');
+  }
+  $('in-exit').addEventListener('click', leaveInterior);
+  $('in-less').addEventListener('click', () => { const less = $('inhud').classList.toggle('less'); $('in-less').textContent = less ? 'Lire la notice' : 'Réduire la notice'; });
+
+  // ---------- désigner un monument dans la scène
+  const pv = new THREE.Vector3();
+  function pick(cx, cy) {
+    if (app.rig.mode !== 'orbit' || app.inside) return null;
+    const rc = app.renderer.domElement.getBoundingClientRect(), w = rc.width, h = rc.height, cam = app.camera, mx = cx - rc.left, my = cy - rc.top;
+    const fl = h / 2 / Math.tan((cam.fov * Math.PI) / 360);
+    let best = null, bs = 1;
+    for (const p of places) {
+      const dist = cam.position.distanceTo(p.v); if (dist > 7000) continue;
+      pv.set(p.x, p.y0, p.z).project(cam); if (pv.z > 1 || pv.z < -1) continue;
+      const x0 = (pv.x * 0.5 + 0.5) * w, y0 = (-pv.y * 0.5 + 0.5) * h;
+      pv.copy(p.v).project(cam); if (pv.z > 1 || pv.z < -1) continue;
+      const dx = (pv.x * 0.5 + 0.5) * w - x0, dy = (-pv.y * 0.5 + 0.5) * h - y0, t = Math.max(0, Math.min(1, ((mx - x0) * dx + (my - y0) * dy) / (dx * dx + dy * dy || 1)));
+      const s = Math.hypot(mx - x0 - dx * t, my - y0 - dy * t) / Math.max(20, (p.rad * fl) / dist);
+      if (s < bs) { bs = s; best = p; }
+    }
+    return best;
+  }
+  {
+    const cv = app.renderer.domElement; let down = null, mouse = null;
+    cv.addEventListener('pointerdown', (e) => { down = e.button === 0 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null; });
+    cv.addEventListener('pointerup', (e) => { const d0 = down; down = null; if (!d0 || Math.hypot(e.clientX - d0.x, e.clientY - d0.y) > 6 || performance.now() - d0.t > 600) return; const p = pick(e.clientX, e.clientY); if (p) select(p, true); });
+    cv.addEventListener('pointermove', (e) => { mouse = e.pointerType === 'mouse' && !e.buttons ? [e.clientX, e.clientY] : null; });
+    cv.addEventListener('pointerleave', () => { mouse = null; });
+    app.on('frame', () => { const p = mouse ? pick(mouse[0], mouse[1]) : null; if (p !== hovered) { hovered = p; if (!app.inside) cv.style.cursor = p ? 'pointer' : ''; } });
+  }
 
   // ---------- liste des lieux
   const list = $('place-list');
@@ -158,15 +221,17 @@ export function initUI(app) {
     setMode('walk', true);
   }
   function stopWalk() {
+    if (app.inside) leaveInterior();
     if (app.rig.mode !== 'walk') return;
     app.rig.exitWalk(); document.body.classList.remove('walking'); $('walkhud').hidden = true;
     $('mode-walk').setAttribute('aria-pressed', 'false'); $('mode-fly').setAttribute('aria-pressed', 'true');
   }
   $('walk-exit').addEventListener('click', stopWalk);
-  canvas.addEventListener('click', () => { if (app.rig.mode === 'walk' && !touch && document.pointerLockElement !== canvas && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* refusé : on garde le glisser pour regarder */ } } });
+  canvas.addEventListener('click', () => { if (app.rig.mode === 'walk' && !app.inside && !touch && document.pointerLockElement !== canvas && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* refusé : on garde le glisser pour regarder */ } } });
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     for (const m of document.querySelectorAll('.modal')) if (!m.hidden) { m.hidden = true; return; }
+    if (app.inside) { leaveInterior(); return; }
     if (app.rig.mode === 'walk' && !document.pointerLockElement) stopWalk();
   });
 
@@ -174,7 +239,7 @@ export function initUI(app) {
     updateLabels();
     if (tourIdx >= 0 && !app.rig.fly) { tourTimer -= dt; if (tourTimer <= 0) showStop(tourIdx + 1); }
   });
-  app.ui = { select, setHour, startTour, stopTour, startWalk, stopWalk, openSources, updateLabels, places, byId };
+  app.ui = { select, setHour, startTour, stopTour, startWalk, stopWalk, openSources, updateLabels, places, byId, enterInterior, leaveInterior, pick };
   setHour(10.5);
   updateLabels();
 }

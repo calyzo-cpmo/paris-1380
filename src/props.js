@@ -52,7 +52,7 @@ export function stall(app, B, x, z, ang, r) {
   panel2(b, P(-1.45, 0.95, y + 1.9), P(1.45, 0.95, y + 1.9), P(1.45, -1.0, y + 2.35), P(-1.45, -1.0, y + 2.35), cl);
   for (let i = 0; i < 4; i++) { const a = -0.95 + i * 0.62 + (r() - 0.5) * 0.15, p = P(a, (r() - 0.5) * 0.3, 0), g = GOODS[(r() * GOODS.length) | 0]; box(b, { cx: p[0], cz: p[2], ux, uz, hl: 0.2 + r() * 0.08, hw: 0.16 }, y + 0.85, y + 0.98 + r() * 0.2, { col: g }); }
   app.solid.fillRect(x, z, ux, uz, 1.3, 0.5, 3);
-  const m = P((r() - 0.5) * 0.8, -0.75, 0); app.figurants.push([m[0], m[2], Math.atan2(nx, nz), r() < 0.6 ? 'man' : 'robe', null, null]);
+  const m = P((r() - 0.5) * 0.8, -0.75, 0); app.figurants.push([m[0], m[2], Math.atan2(nx, nz), r() < 0.6 ? 'man' : 'robe', null, null, 'merchant']);
   const nc = (r() * 3) | 0;
   for (let i = 0; i < nc; i++) { const c = P((r() - 0.5) * 2.2, 1.0 + r() * 0.8, 0); app.figurants.push([c[0], c[2], Math.atan2(-nx, -nz) + (r() - 0.5) * 0.8, r() < 0.5 ? 'man' : 'robe', null, null]); }
 }
@@ -73,7 +73,7 @@ export function scaffold(app, B, x, z, ux, uz, len, h, o = {}) {
   for (let i = 0; i <= n; i++) for (const c of [0.15, dep]) { const a = -len / 2 + (i / n) * len; box(b, { cx: x + ux * a + nx * c, cz: z + uz * a + nz * c, ux, uz, hl: 0.06, hw: 0.06 }, y0 - 0.3, y0 + h + 0.9, { col: WOOD_D, top: false }); }
   for (let yy = 2.2; yy <= h; yy += 2.3) {
     box(b, { cx: x + nx * (dep / 2 + 0.07), cz: z + nz * (dep / 2 + 0.07), ux, uz, hl: len / 2 + 0.2, hw: dep / 2 + 0.1 }, y0 + yy, y0 + yy + 0.07, { col: WOOD });
-    if (o.workers && app.figurants) for (let k = 0; k < 2; k++) { const a = (o.r() - 0.5) * len * 0.8; app.figurants.push([x + ux * a + nx * dep * 0.5, z + uz * a + nz * dep * 0.5, Math.atan2(-nx, -nz), 'man', null, y0 + yy + 0.07]); }
+    if (o.workers && app.figurants) for (let k = 0; k < 2; k++) { const a = (o.r() - 0.5) * len * 0.8; app.figurants.push([x + ux * a + nx * dep * 0.5, z + uz * a + nz * dep * 0.5, Math.atan2(-nx, -nz), 'man', null, y0 + yy + 0.07, 'worker']); }
   }
   for (let i = 0; i < n; i += 2) { const a0 = -len / 2 + (i / n) * len, a1 = -len / 2 + ((i + 1) / n) * len; beam(b, [x + ux * a0 + nx * dep, y0, z + uz * a0 + nz * dep], [x + ux * a1 + nx * dep, y0 + Math.min(h, 4.6), z + uz * a1 + nz * dep], 0.07, WOOD_D); }
 }
@@ -152,7 +152,7 @@ export function buildChantiers(app, B) {
     scaffold(app, B, c[0] - 19.5, c[1] + 4, 0.1, 1, 22, 11.5, { depth: 1.6, workers: true, r, base: top - 13.5 });     // échafaudage en bascule sous le couronnement
     crane(app, B, c[0] - 6, c[1] - 12, top - 0.9, 2.6, 1.0);
     stones(c[0] - 62, c[1] + 4, 14);
-    for (let i = 0; i < 6; i++) { const px = c[0] - 66 + r() * 10, pz = c[1] + r() * 14; if (app.terrain.height(px, pz) > 0.8) app.figurants.push([px, pz, r() * 6.28, 'man', null, null]); }
+    for (let i = 0; i < 6; i++) { const px = c[0] - 66 + r() * 10, pz = c[1] + r() * 14; if (app.terrain.height(px, pz) > 0.8) app.figurants.push([px, pz, r() * 6.28, 'man', null, null, 'worker']); }
   }
   for (const s of app.chantiers) {       // églises figurées « en construction » sur le plan
     scaffold(app, B, s.x, s.z, s.ux, s.uz, s.len, s.h, { depth: 1.5, workers: true, r });
@@ -164,7 +164,7 @@ export function buildChantiers(app, B) {
     const m = M.bridges.saintMichel, e = m.end;      // tête de pont sud, encore en travaux
     crane(app, B, e[0] - 2, e[1] - 6, m.y, 1.2, 0.9);
     stones(e[0] + 3, e[1] + 9, 12);
-    for (let i = 0; i < 5; i++) app.figurants.push([e[0] + (r() - 0.5) * 8, e[1] + 6 + r() * 8, r() * 6.28, 'man', null, null]);
+    for (let i = 0; i < 5; i++) app.figurants.push([e[0] + (r() - 0.5) * 8, e[1] + 6 + r() * 8, r() * 6.28, 'man', null, null, 'worker']);
   }
 }
 
@@ -176,16 +176,16 @@ export function buildFigurants(app) {
   ports.push([20, -330], [-560, -640], [330, -120], [-80, 130], [-700, -560]);
   for (const [px, pz] of ports) for (let i = 0; i < 60; i++) {
     const x = px + (r() - 0.5) * 170, z = pz + (r() - 0.5) * 170, sd = T.sdWater(x, z);
-    if (sd < -1.2 && sd > -9 && !occ.get(x, z) && r() < 0.4) F.push([x, z, r() * 6.28, r() < 0.5 ? 'robe' : 'man', null, null]);
+    if (sd < -1.2 && sd > -9 && !occ.get(x, z) && r() < 0.4) { const w = r() < 0.5; F.push([x, z, r() * 6.28, w ? 'robe' : 'man', null, null, w ? 'peasant' : 'worker']); }
   }
   // cultures : paysans, bergers et moutons, vaches
   for (let i = 0; i < 1300; i++) {
     const x = FRAME.x0 + 30 + r() * (FRAME.x1 - FRAME.x0 - 60), z = FRAME.z0 + 30 + r() * (FRAME.z1 - FRAME.z0 - 60), c = lu.get(x, z);
     if ((c !== LU.FIELD && c !== LU.ISLAND && c !== LU.OUT && c !== LU.GARDEN) || occ.get(x, z) || T.height(x, z) < 1.2) continue;
     const q = r();
-    if (q < 0.5) F.push([x, z, r() * 6.28, r() < 0.6 ? 'man' : 'robe', null, null]);
+    if (q < 0.5) F.push([x, z, r() * 6.28, r() < 0.6 ? 'man' : 'robe', null, null, 'peasant']);
     else if (q < 0.74 && c !== LU.GARDEN) {                    // troupeau de moutons et son berger
-      F.push([x, z, r() * 6.28, 'man', [120, 100, 78], null]);
+      F.push([x, z, r() * 6.28, 'man', [120, 100, 78], null, 'peasant']);
       const n = 6 + ((r() * 9) | 0); for (let k = 0; k < n; k++) { const a = r() * 6.28, d = 2 + r() * 11, sx = x + Math.cos(a) * d, sz = z + Math.sin(a) * d; if (T.height(sx, sz) > 1 && !occ.get(sx, sz)) F.push([sx, sz, r() * 6.28, 'sheep', null, null]); }
     } else if (q < 0.86 && c !== LU.GARDEN) { const n = 3 + ((r() * 5) | 0); for (let k = 0; k < n; k++) { const a = r() * 6.28, d = 2 + r() * 12, sx = x + Math.cos(a) * d, sz = z + Math.sin(a) * d; if (T.height(sx, sz) > 1 && !occ.get(sx, sz)) F.push([sx, sz, r() * 6.28, 'beast', null, null]); } }
   }
@@ -193,7 +193,7 @@ export function buildFigurants(app) {
   const habits = [[34, 32, 34], [214, 208, 196], [98, 84, 70], [70, 62, 56]];
   for (const name of ['Religieux', 'StMartin', 'StVictor', 'StGermain', 'Temple']) for (const s of polys(name, ['#3D575D', '#F8705F'])) {
     const c = centroid(s.pts), A = Math.abs(polyArea(s.pts)), n = clamp(Math.round(A / 500), 2, 9), hb = habits[(r() * habits.length) | 0];
-    for (let i = 0; i < n * 5 && i < 60; i++) { const x = c[0] + (r() - 0.5) * Math.sqrt(A) * 1.4, z = c[1] + (r() - 0.5) * Math.sqrt(A) * 1.4; if (pointInPoly(x, z, s.pts) && !occ.get(x, z) && r() < 0.25) F.push([x, z, r() * 6.28, 'robe', hb, null]); }
+    for (let i = 0; i < n * 5 && i < 60; i++) { const x = c[0] + (r() - 0.5) * Math.sqrt(A) * 1.4, z = c[1] + (r() - 0.5) * Math.sqrt(A) * 1.4; if (pointInPoly(x, z, s.pts) && !occ.get(x, z) && r() < 0.25) F.push([x, z, r() * 6.28, 'robe', hb, null, 'monk']); }
   }
 }
 
@@ -273,7 +273,7 @@ export function buildCountry(app, B) {
     }
   }
   app.monuments.chartreux = { x: C0.cx, z: C0.cz };
-  for (let i = 0; i < 10; i++) { const p = Pc(30 + (r() - 0.5) * 70, 15 + (r() - 0.5) * 70); app.figurants.push([p[0], p[1], r() * 6.28, 'robe', [214, 208, 196], null]); }
+  for (let i = 0; i < 10; i++) { const p = Pc(30 + (r() - 0.5) * 70, 15 + (r() - 0.5) * 70); app.figurants.push([p[0], p[1], r() * 6.28, 'robe', [214, 208, 196], null, 'monk']); }
   // faubourg Saint-Jacques et Notre-Dame-des-Champs, le long de la route d'Orléans
   houses += hamlet(app, B, r, EXTRA_ROAD, { onlyOut: true, gap: 0.35, thatch: 0.3, two: 0.6, half: 4 });
   const nd = [-770, 1255];

@@ -1,4 +1,5 @@
 // Construction de la ville : orchestration des générateurs.
+import { Interiors } from './interiors.js';
 import { Builder } from './builder.js';
 import { makeMaterials } from './textures.js';
 import { buildHouses } from './houses.js';
@@ -57,7 +58,9 @@ export async function buildCity(app, step) {
   app.people = people;
   const boats = buildMovingBoats(app, people), flags = buildFlags(app), wheels = buildWheels(app), birds = buildBirds(app);
   app.log(`${people.total} passants possibles, ${boats.count} bateaux en route, ${app.flags.length} bannières`);
+  app.interiors = new Interiors(app);
   app.on('frame', (dt) => {
+    if (app.inside) return;                      // visite intérieure : la ville est au repos
     smoke.material.uniforms.uTime.value = app.time;
     for (const s of sails) s.rotation.z += dt * 0.55;
     for (const w of wheels) w.rotation.x += dt * 0.9;

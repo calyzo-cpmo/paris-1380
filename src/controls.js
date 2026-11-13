@@ -32,10 +32,10 @@ export class CameraRig {
     });
     d.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'touch') { this._touchMove(e); return; }
-      if (this.mode === 'walk' && document.pointerLockElement === d) { this._look(e.movementX, e.movementY); return; }
+      if (this.mode === 'walk' && !this.grab && document.pointerLockElement === d) { this._look(e.movementX, e.movementY); return; }
       if (!drag) return;
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
-      if (this.mode === 'walk') this._look(dx, dy);
+      if (this.mode === 'walk') { if (this.grab) this._look(-dx * 1.15, -dy * 1.15); else this._look(dx, dy); }      // en intérieur : la vue suit la main, comme dans une visite virtuelle
       else if (drag.rot) this._rotate(dx, dy);
       else this._pan(dx, dy);
     });
@@ -69,6 +69,7 @@ export class CameraRig {
     const px = t.x, py = t.y; t.x = e.clientX; t.y = e.clientY;
     const pts = [...this.touch.values()];
     if (this.mode === 'walk') {
+      if (this.grab) { this._look(-(t.x - px) * 1.7, -(t.y - py) * 1.7); return; }
       if (t.sx < this.dom.clientWidth * 0.45) { this.joy.x = clamp((t.x - t.sx) / 60, -1, 1); this.joy.y = clamp((t.y - t.sy) / 60, -1, 1); }
       else this._look((t.x - px) * 1.6, (t.y - py) * 1.6);
       return;

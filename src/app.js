@@ -84,11 +84,13 @@ export class App {
   deckKey(x, z) { return ((Math.floor(x / 2) + 4096) << 13) | (Math.floor(z / 2) + 4096); }
   deckSet(x, z, y) { this.deck.set(this.deckKey(x, z), y); }
   walkHeight(x, z) {
+    if (this.inside) return this.inside.walkHeight(x, z);
     const d = this.deck.get(this.deckKey(x, z));
     const t = Math.max(this.terrain.height(x, z), 0.2);
     return d != null ? Math.max(d, t) : t;
   }
   walkable(x, z) {
+    if (this.inside) return this.inside.walkable(x, z);
     if (x < FRAME.x0 + 2 || x > FRAME.x1 - 2 || z < FRAME.z0 + 2 || z > FRAME.z1 - 2) return false;
     if (this.solid.get(x, z)) return false;
     if (this.deck.has(this.deckKey(x, z))) return true;
@@ -167,6 +169,7 @@ export class App {
   }
 
   renderNow() {
+    if (this.inside) { this.inside.render(); return; }      // visite intérieure : scène à part
     this.sky.update(this.camera, this.time);
     this.water.update(this.time);
     this.updateShadow();

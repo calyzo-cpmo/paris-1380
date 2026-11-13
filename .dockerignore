@@ -1,0 +1,7 @@
+node_modules
+.shots
+data
+src
+tools
+dist/paris-1380.artifact.html
+*.md

@@ -85,6 +85,51 @@ check('déplacement à pied', moved > 3, moved.toFixed(1) + ' m');
 await page.keyboard.press('Escape');
 check('sortie du mode piéton', await page.evaluate(() => window.__app.rig.mode === 'orbit' && !document.body.classList.contains('walking')));
 await frames(30);
+// personnages détaillés près de la caméra, silhouettes simples au loin
+await page.evaluate(() => { const a = window.__app; a.ui.setHour(13); a.ui.startWalk(a.ui.byId.get('greve')); }); await frames(20);
+const lod = await page.evaluate(() => { const p = window.__app.people; return { pres: p.near, total: p.count, atlas: !!p.atlas.texture.image, hiStat: p.statics.reduce((n, s) => n + (s.hi ? s.hi.im.count : 0), 0) }; });
+check('visages et costumes : corps détaillés autour du promeneur', lod.pres > 10 && lod.pres < lod.total && lod.atlas, JSON.stringify(lod));
+await page.keyboard.press('Escape'); await frames(10);
+// clic direct sur un monument, chronologie
+await page.evaluate(() => window.__app.setView([-330, 260, 150], [-40, 20, -18])); await frames(4);
+const ndPt = await page.evaluate(() => { const a = window.__app, p = a.ui.byId.get('notre-dame'), v = p.v.clone(); v.y = p.y0 + 25; v.project(a.camera); const r = a.renderer.domElement.getBoundingClientRect(); return [r.left + (v.x * 0.5 + 0.5) * r.width, r.top + (-v.y * 0.5 + 0.5) * r.height]; });
+await page.evaluate(() => window.__app.ui.select(null));
+await page.mouse.move(ndPt[0], ndPt[1]); await frames(2);
+check('survol d’un monument : curseur main', await page.evaluate(() => window.__app.renderer.domElement.style.cursor === 'pointer'));
+await page.mouse.click(ndPt[0], ndPt[1]); await frames(40);
+const cardND = await page.evaluate(() => ({ name: document.getElementById('card-name').textContent, chrono: document.querySelectorAll('#card-chrono li:not(.sep)').length, after: document.querySelectorAll('#card-chrono li.after').length, enter: !document.getElementById('card-enter').hidden }));
+check('clic sur le monument : fiche, chronologie, bouton Entrer', cardND.name === 'Notre-Dame' && cardND.chrono >= 6 && cardND.after >= 1 && cardND.enter, JSON.stringify(cardND));
+const hist = await page.evaluate(() => { const ps = window.__app.places; return { n: ps.length, avec: ps.filter((p) => p.chrono && p.chrono.length >= 2).length, visitables: ps.filter((p) => window.__app.interiors.has(p)).length }; });
+check('chaque lieu a son histoire', hist.avec === hist.n, JSON.stringify(hist));
+await page.evaluate(() => window.__app.ui.select(window.__app.ui.byId.get('greve'), false));
+check('lieu sans intérieur : pas de bouton Entrer', await page.evaluate(() => document.getElementById('card-enter').hidden));
+// visite intérieure : entrée, regard, déplacement au clic, points de vue, heure, sortie
+await page.evaluate(() => window.__app.ui.select(window.__app.ui.byId.get('notre-dame'), false));
+await page.click('#card-enter'); await frames(6);
+const in0 = await page.evaluate(() => { const a = window.__app; return { inside: !!a.inside, hud: !document.getElementById('inhud').hidden, cls: document.body.classList.contains('inside'), tris: a.interiors.tris, spots: document.querySelectorAll('#in-spots button').length, w: { ...a.rig.walk }, ok: a.walkable(a.rig.walk.x, a.rig.walk.z) }; });
+check('entrée dans Notre-Dame', in0.inside && in0.hud && in0.cls && in0.tris > 20000 && in0.spots >= 4 && in0.ok, JSON.stringify({ tris: in0.tris, spots: in0.spots }));
+await page.mouse.move(700, 350); await page.mouse.down(); await page.mouse.move(520, 360, { steps: 4 }); await page.mouse.up(); await frames(2);
+const in1 = await page.evaluate(() => ({ ...window.__app.rig.walk }));
+check('glisser pour regarder', Math.abs(in1.yaw - in0.w.yaw) > 0.3, (in1.yaw - in0.w.yaw).toFixed(2));
+await page.mouse.click(600, 560); await frames(70);
+const in2 = await page.evaluate(() => { const a = window.__app; return { ...a.rig.walk, ok: a.walkable(a.rig.walk.x, a.rig.walk.z) }; });
+check('cliquer le sol pour avancer', Math.hypot(in2.x - in1.x, in2.z - in1.z) > 2 && in2.ok, Math.hypot(in2.x - in1.x, in2.z - in1.z).toFixed(1) + ' m');
+await page.click('#in-spots button:last-child'); await frames(90);
+const in3 = await page.evaluate(() => ({ ...window.__app.rig.walk }));
+check('point de vue : glissement vers le chœur', in3.z < in2.z - 10, in3.z.toFixed(1));
+await page.evaluate(() => { const a = window.__app; a.rig.keys.add('KeyW'); }); await frames(40);
+const in4 = await page.evaluate(() => { const a = window.__app; a.rig.keys.clear(); return { ...a.rig.walk, ok: a.walkable(a.rig.walk.x, a.rig.walk.z) }; });
+check('marche au clavier sans traverser le mobilier', in4.ok);
+const g0 = await page.evaluate(() => window.__app.interiors.mats.glass.color.r);
+await page.evaluate(() => { const h = document.getElementById('hour'); h.value = '22'; h.dispatchEvent(new Event('input', { bubbles: true })); }); await frames(2);
+check('la nuit, les vitraux s’éteignent', await page.evaluate(() => window.__app.interiors.mats.glass.color.r) < g0 * 0.4);
+await page.evaluate(() => { const h = document.getElementById('hour'); h.value = '15'; h.dispatchEvent(new Event('input', { bubbles: true })); });
+await page.keyboard.press('Escape'); await frames(4);
+check('sortie : retour au survol', await page.evaluate(() => { const a = window.__app; return !a.inside && a.rig.mode === 'orbit' && document.getElementById('inhud').hidden && !document.body.classList.contains('inside') && a.people.group.visible !== undefined; }));
+// tous les intérieurs se construisent, avec une entrée praticable
+const all = await page.evaluate(() => { const a = window.__app, bad = []; let n = 0; for (const p of a.places) { if (!a.interiors.has(p)) continue; n++; try { if (!a.ui.enterInterior(p)) bad.push(p.id + ' refusé'); else { const w = a.rig.walk; if (!a.walkable(w.x, w.z)) bad.push(p.id + ' entrée bloquée'); for (const s of a.interiors.spots) if (!a.walkable(s[1], s[2])) bad.push(p.id + ' point « ' + s[0] + ' » bloqué'); a.rig.update(0.05); a.emit('frame', 0.05); a.renderNow(); } } catch (e) { bad.push(p.id + ' : ' + e.message); } a.ui.leaveInterior(); } return { n, bad }; });
+check('tous les intérieurs visitables', all.n >= 40 && all.bad.length === 0, all.n + ' lieux ' + all.bad.slice(0, 6).join(' ; '));
+await frames(4);
 // noms, redimensionnement
 await page.click('#toggle-names'); await frames(2);
 check('noms masqués', await page.evaluate(() => document.getElementById('labels').style.display === 'none'));

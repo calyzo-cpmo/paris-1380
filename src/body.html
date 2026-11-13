@@ -25,10 +25,30 @@
   <h2 id="card-name"></h2>
   <p id="card-date"></p>
   <p id="card-text"></p>
-  <div id="card-src"></div>
-  <div class="row">
+  <div class="row" id="card-actions">
+    <button type="button" id="card-enter" class="primary" hidden>Entrer à l’intérieur</button>
     <button type="button" id="card-walk">S’y promener à pied</button>
     <button type="button" id="card-view" class="ghost">Recadrer</button>
+  </div>
+  <details id="card-hist" open hidden>
+    <summary>Son histoire</summary>
+    <ol id="card-chrono"></ol>
+  </details>
+  <div id="card-src"></div>
+</section>
+
+<section id="inhud" hidden aria-live="polite">
+  <p id="in-cat">Visite intérieure</p>
+  <h2 id="in-name"></h2>
+  <div id="in-body">
+    <p id="in-title"></p>
+    <p id="in-text"></p>
+    <p id="in-hint"></p>
+  </div>
+  <div id="in-spots" class="row" role="group" aria-label="Points de vue"></div>
+  <div class="row">
+    <button type="button" id="in-exit" class="primary">Sortir</button>
+    <button type="button" id="in-less" class="ghost">Réduire la notice</button>
   </div>
 </section>
 
@@ -68,6 +88,7 @@
       <li><b>Attesté par le plan de 1380 :</b> le réseau des rues, les îlots bâtis, les cultures, le cours de la Seine et ses îles, le tracé des deux enceintes avec leurs tours et leurs portes, l’emprise au sol des églises, couvents, hôtels, collèges, halles et ponts.</li>
       <li><b>Restitué d’après les images et les vestiges :</b> les volumes de Notre-Dame, de la Sainte-Chapelle, du Palais, du Louvre, de la Bastille, du Temple et des Châtelets.</li>
       <li><b>Vraisemblable, mais conjectural :</b> la forme de chaque maison (17 000 maisons à pans de bois loties automatiquement le long des rues), l’élévation des églises paroissiales et des hôtels, la végétation, le relief de détail.</li>
+      <li><b>Intérieurs :</b> Notre-Dame, la Sainte-Chapelle, la Grand’Salle du Palais, le frigidarium de Cluny, le réfectoire des Bernardins et le donjon de Vincennes suivent leurs dimensions connues ; leur mobilier, comme tous les autres intérieurs, est une restitution signalée dans chaque notice.</li>
       <li><b>Évocation :</b> les habitants, les bêtes, les étals, les bateaux, les bannières et les chantiers donnent l’échelle et la vie ; leur place exacte est inventée. Les villages des environs, le château de Vincennes et la chartreuse de Vauvert sont situés d’après leur emplacement connu, hors du plan de 1380.</li>
     </ul>
   </div>
@@ -82,9 +103,10 @@
       <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
       <dt>Deux doigts</dt><dd>tourner pour pivoter, glisser verticalement pour incliner</dd>
       <dt>Flèches ou Z Q S D</dt><dd>avancer ; A et E pivotent, R et F inclinent</dd>
+      <dt>Monuments</dt><dd>cliquer sur un monument ou sur son nom ouvre sa fiche et son histoire ; « Entrer à l’intérieur » lance la visite. Dedans : glisser pour regarder autour de soi, cliquer sur le sol pour avancer, Échap pour sortir.</dd>
       <dt>À pied</dt><dd>cliquer dans la scène pour regarder à la souris, flèches ou Z Q S D pour marcher, Maj pour courir, Échap pour sortir. Sur écran tactile : pouce gauche pour marcher, pouce droit pour regarder.</dd>
     </dl>
-    <p class="lede">Cliquez sur un nom pour ouvrir sa fiche. Le curseur du bas change l’heure : au crépuscule, les fenêtres s’allument et les rues se vident. Les habitants apparaissent dès que l’on s’approche des rues ; la case « Habitants » les masque.</p>
+    <p class="lede">Le curseur du bas change l’heure : au crépuscule, les fenêtres s’allument et les rues se vident. Les habitants apparaissent dès que l’on s’approche des rues ; la case « Habitants » les masque.</p>
   </div>
 </div>
 

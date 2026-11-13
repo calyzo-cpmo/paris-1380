@@ -36,7 +36,7 @@ function curtain(app, B, pts, h, col) {
   for (const ex of offsetEx([ring], -1.25)) for (let i = 0; i < ex.outer.length; i++) {
     const a = ex.outer[i], q = ex.outer[(i + 1) % ex.outer.length];
     acc += Math.hypot(q[0] - a[0], q[1] - a[1]);
-    if (acc > 170) { acc = 0; app.figurants.push([a[0], a[1], Math.atan2(q[1] - a[1], -(q[0] - a[0])), 'man', [84, 88, 104], top(a[0], a[1])]); }
+    if (acc > 170) { acc = 0; app.figurants.push([a[0], a[1], Math.atan2(q[1] - a[1], -(q[0] - a[0])), 'man', [84, 88, 104], top(a[0], a[1]), 'guard']); }
   }
 }
 
@@ -68,7 +68,7 @@ export function gate(app, B, x, z, ux, uz, o = {}) {
   else { cap(st, c, [], gy + H, { col: tint(col, 0.7) }); crenels(st, c, gy + H, { closed: true, col }); }
   if (o.turrets) for (const p of c) roundTower(app, B, p[0], p[1], o.turrets, H + 2.5, { roof: 'cone', roofCol: o.roofCol ?? COL.slate, col, machi: false, seg: 10, base: gy });
   // sergents de garde de part et d'autre du passage, bannière sur les portes principales
-  for (const s of [-1, 1]) for (const t of [-1, 1]) app.figurants.push([x + ux * t * (pass / 2 + 0.8) - uz * s * (D / 2 + 1.5), z + uz * t * (pass / 2 + 0.8) + ux * s * (D / 2 + 1.5), Math.atan2(-uz * s, ux * s), 'man', [84, 88, 104], null]);
+  for (const s of [-1, 1]) for (const t of [-1, 1]) app.figurants.push([x + ux * t * (pass / 2 + 0.8) - uz * s * (D / 2 + 1.5), z + uz * t * (pass / 2 + 0.8) + ux * s * (D / 2 + 1.5), Math.atan2(-uz * s, ux * s), 'man', [84, 88, 104], null, 'guard']);
   const flag = o.flag ?? (o.turrets ? 0 : null);
   if (flag != null) flagAt(app, B, x, z, gy + H + (o.roof === 'hip' ? D * 0.72 : 0.2), 5.5, flag);
   return gy + H;

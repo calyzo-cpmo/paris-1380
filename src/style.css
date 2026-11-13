@@ -113,7 +113,7 @@ body.walking #top, body.walking #dock, body.walking #labels, body.walking #card,
   #brand h1 { font-size: 23px; }
   #brand p { display: none; }
   button { padding: 7px 10px; }
-  #card { top: auto; bottom: calc(118px + env(safe-area-inset-bottom, 0px)); max-height: 46%; width: auto; right: var(--gutter-r); }
+  #card { top: auto; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); max-height: 44%; width: auto; right: var(--gutter-r); }
   #card-name { font-size: 20px; }
   #card-text { font-size: 15px; }
   #places { left: var(--gutter-l); width: auto; bottom: 118px; }
@@ -122,3 +122,35 @@ body.walking #top, body.walking #dock, body.walking #labels, body.walking #card,
   .keys dd { margin-bottom: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { #load-bar { transition: none; } }
+
+/* fiche : actions, chronologie */
+button.primary { background: var(--gold); color: #1b1606; border-color: var(--gold); font-weight: 700; }
+button.primary:hover { filter: brightness(1.08); }
+#card-actions { margin: 12px 0 4px; }
+#card-hist { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+#card-hist summary { cursor: pointer; font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); padding: 2px 0; }
+#card-chrono { list-style: none; margin: 8px 0 0; padding: 0; }
+#card-chrono li { display: grid; grid-template-columns: 7.2em 1fr; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); font-family: var(--serif); font-size: 14.5px; line-height: 1.4; }
+#card-chrono li b { color: var(--gold); font-weight: 500; font-variant-numeric: tabular-nums; }
+#card-chrono li.after { color: var(--ink-2); }
+#card-chrono li.after b { color: var(--ink-2); }
+#card-chrono li.sep { display: block; border: 0; padding: 10px 0 2px; font-family: var(--sans); font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-2); }
+/* visite intérieure */
+#inhud { position: fixed; left: var(--gutter-l); top: calc(16px + env(safe-area-inset-top, 0px)); width: min(380px, calc(100vw - 32px)); max-height: calc(100% - 110px); overflow: auto; padding: 14px 16px 14px; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
+#in-cat { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); }
+#in-name { font-family: var(--serif); font-size: 23px; font-weight: 700; line-height: 1.15; text-wrap: balance; margin: 2px 0 2px; }
+#in-title { font-family: var(--serif); font-style: italic; color: var(--ink-2); margin-bottom: 8px; }
+#in-text { font-family: var(--serif); font-size: 15.5px; line-height: 1.5; }
+#in-hint { font-size: 13px; color: var(--ink-2); margin-top: 10px; }
+#in-spots { margin: 12px 0 10px; }
+#in-spots button { padding: 4px 10px; font-size: 13.5px; }
+#inhud.less #in-body { display: none; }
+body.inside #top, body.inside #labels, body.inside #card, body.inside #places, body.inside #tour, body.inside #walkhud, body.inside #dock .seg, body.inside #dock .check { display: none; }
+body.inside #dock { display: flex; }
+body.inside #scene canvas { cursor: grab; }
+body.inside #scene canvas:active { cursor: grabbing; }
+@media (max-width: 700px) {
+  #inhud { top: auto; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); max-height: 42%; width: auto; right: var(--gutter-r); padding: 10px 12px; }
+  #in-spots { margin: 8px 0; }
+  #in-name { font-size: 19px; }
+}
