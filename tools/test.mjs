@@ -316,6 +316,9 @@ for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
   const [mode, titre, tris, leg] = attendu[id];
   check(`époque ${id} : calque au sol, ${tris ? 'volumes, ' : ''}légende, crédit ALPAGE`, e.on === 1 && e.mode === mode && e.vis && e.tris >= tris && e.titre === titre && e.dock === titre.replace('Paris ', '') && e.leg >= leg && e.stats > 10 && /ALPAGE/.test(e.credit) && /ODbL/.test(e.credit) && e.corps && e.plan && e.lien.endsWith('&e=' + id), JSON.stringify({ ...e, credit: e.credit.slice(0, 50) }));
 }
+// la frise mène à la seconde maquette depuis la date qui en est la plus proche
+const l89 = await page.evaluate(() => { const a = window.__app, p = document.getElementById('frise-1789'), vu = {}; for (const id of ['1741', '1791', '1836']) { a.ui.setEpoch(id); vu[id] = !p.hidden; } return { vu, href: p.querySelector('a').getAttribute('href'), texte: p.querySelector('a').textContent }; });
+check('frise : en 1791, un lien ouvre la maquette de Paris 1789', l89.vu['1791'] && !l89.vu['1741'] && !l89.vu['1836'] && l89.href === '1789.html' && /1789/.test(l89.texte), JSON.stringify(l89));
 // les chiffres racontent la croissance ; les enceintes se succèdent ; le masque de 1300 laisse en pointillé ce qui n'existe pas encore
 const ev = await page.evaluate(() => {
   const a = window.__app, E = a.epochs, L = E.lib, st = {}; for (const j of L.JALONS) { const s = L.stats(j); st[j.id] = { ilots: s.ilots || 0, ha: s.haUrbain || 0, egl: s.eglises || 0, murs: s.enceintes.length, rues: s.rues || 0 }; }
