@@ -12,6 +12,9 @@ const cache = new Map();
 const memo = (k, f) => { if (!cache.has(k)) cache.set(k, f()); return cache.get(k); };
 const P = (k) => () => memo(k, () => decodePolys(raw[k].g, raw[k].q));
 export const bati = P('bati'), ilots = P('ilots'), eau = P('eau'), mur = P('mur'), jardins = P('jardins');
+// Enclos nommés par l'atlas (parcelles) : [{ nom, rings }] ; emprise de la Bastille.
+export const enclos = () => memo('enclos', () => decodePolys(raw.enclos.g, raw.enclos.q).map((rings, i) => ({ nom: raw.enclos.noms[i], rings })));
+export const bastille = P('bastille');
 export const batiNom = (i) => raw.bati.noms[i] || '';
 export const batiEnclos = (i) => raw.bati.enclos.includes(i);     // ensemble que l'atlas ne détaille pas : rendu comme des ailes autour de cours
 export const ilotDocumente = (i) => raw.ilots.doc[i] === '1';

@@ -14,7 +14,7 @@ LAYERS = ['Enceintes', 'Tours_portes', 'Ilots_1300', 'Ilots_1553', 'Ilots_1652',
           'Rues_Lutece_Vacquer', '1380_antiquites_romaines', 'Hydro_romaine_Vacquer', '1380_emprises_futures', '1380_ilots',
           'Hydro_1791', 'Vasserot_2_Hydro', 'Eglises']
 # couches propres à la page « Paris 1789 » (tools/extract_1789.py)
-LAYERS += ['Vasserot_1_Bati', 'Rues_1791', 'Relief_Girard_Point']
+LAYERS += ['Vasserot_1_Bati', 'Vasserot_1_Parcelles', 'Rues_1791', 'Relief_Girard_Point', 'Bastille']
 
 
 def main():
