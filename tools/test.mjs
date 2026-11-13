@@ -307,11 +307,13 @@ await page.keyboard.press('Escape');
 // ---------- calque des époques : frise, données ALPAGE recalées, volumes, marche, lien
 await page.evaluate(() => { window.__app.ui.stopTour(); window.__app.ui.select(null); }); await overview(); await frames(3);
 await page.click('#btn-epoch'); await frames(2);
-const fr0 = await page.evaluate(() => { const a = window.__app; return { ids: [...document.querySelectorAll('#frise-jalons button')].map((b) => b.dataset.id).join(' '), actif: document.querySelector('#frise-jalons [aria-pressed="true"]').dataset.id, on: a.epochU.uEpochOn.value, info: !document.getElementById('frise-info').hidden, bouton: document.getElementById('btn-epoch').getAttribute('aria-expanded') }; });
+const fr0 = await page.evaluate(() => { const a = window.__app; return { ids: [...document.querySelectorAll('#frise-jalons > *')].map((b) => b.dataset.id).join(' '), actif: document.querySelector('#frise-jalons [aria-pressed="true"]').dataset.id, on: a.epochU.uEpochOn.value, info: !document.getElementById('frise-info').hidden, bouton: document.getElementById('btn-epoch').getAttribute('aria-expanded') }; });
 check('frise des époques : huit jalons, 1380 au repos', (await visible('#frise')) && fr0.ids === 'lutece 1300 1380 1553 1652 1741 1791 1836' && fr0.actif === '1380' && fr0.on === 0 && fr0.info && fr0.bouton === 'true', JSON.stringify(fr0));
 const attendu = { lutece: [2, 'Lutèce', 100, 4], 1300: [1, 'Paris 1300', 0, 5], 1553: [0, 'Paris 1553', 3000, 6], 1652: [0, 'Paris 1652', 8000, 6], 1741: [0, 'Paris 1741', 9000, 6], 1791: [0, 'Paris 1789', 20000, 7], 1836: [0, 'Paris 1836', 20000, 6] };
 for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
-  await page.click(`#frise-jalons button[data-id="${id}"]`); await frames(2);
+  // 1789 est un lien vers sa maquette : son calque, que montre la lecture de la frise, se choisit ici sans cliquer
+  if (id === '1791') await page.evaluate(() => { window.__app.ui.setEpoch('1791'); }); else await page.click(`#frise-jalons button[data-id="${id}"]`);
+  await frames(2);
   const e = await page.evaluate(() => { const a = window.__app, g = a.epochs.group.children[0]; return { on: a.epochU.uEpochOn.value, mode: a.cert.uniforms.uEpochMode.value, tris: g ? g.userData.tris : 0, vis: a.epochs.group.visible, titre: document.querySelector('#brand h1').textContent, dock: document.getElementById('epoch-label').textContent, leg: document.querySelectorAll('#frise-legend li').length, stats: document.getElementById('frise-stats').textContent.length, credit: document.getElementById('frise-credit').textContent, corps: document.body.classList.contains('epoch'), plan: !!a.ui.mini.epoch, lien: a.ui.link() }; });
   const [mode, titre, tris, leg] = attendu[id];
   check(`époque ${id} : calque au sol, ${tris ? 'volumes, ' : ''}légende, crédit ALPAGE`, e.on === 1 && e.mode === mode && e.vis && e.tris >= tris && e.titre === titre && e.dock === titre.replace('Paris ', '') && e.leg >= leg && e.stats > 10 && /ALPAGE/.test(e.credit) && /ODbL/.test(e.credit) && e.corps && e.plan && e.lien.endsWith('&e=' + id), JSON.stringify({ ...e, credit: e.credit.slice(0, 50) }));
