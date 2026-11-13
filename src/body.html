@@ -1,0 +1,89 @@
+<div id="scene" aria-label="Maquette 3D de Paris vers 1380"></div>
+<div id="labels" aria-hidden="true"></div>
+
+<header id="top">
+  <div id="brand">
+    <h1>Paris <span>1380</span></h1>
+    <p>Maquette restituée d’après le plan ALPAGE-CNRS</p>
+  </div>
+  <nav id="menu" aria-label="Panneaux">
+    <button type="button" id="btn-places" aria-controls="places" aria-expanded="false">Lieux</button>
+    <button type="button" id="btn-sources">Sources</button>
+    <button type="button" id="btn-help">Aide</button>
+  </nav>
+</header>
+
+<aside id="places" hidden aria-label="Liste des lieux">
+  <div class="panel-head"><h2>Lieux</h2><button type="button" class="x" data-close="places" aria-label="Fermer">×</button></div>
+  <input id="place-search" type="search" placeholder="Chercher un lieu…" autocomplete="off" aria-label="Chercher un lieu">
+  <div id="place-list"></div>
+</aside>
+
+<section id="card" hidden aria-live="polite">
+  <button type="button" class="x" data-close="card" aria-label="Fermer la fiche">×</button>
+  <p id="card-cat"></p>
+  <h2 id="card-name"></h2>
+  <p id="card-date"></p>
+  <p id="card-text"></p>
+  <div id="card-src"></div>
+  <div class="row">
+    <button type="button" id="card-walk">S’y promener à pied</button>
+    <button type="button" id="card-view" class="ghost">Recadrer</button>
+  </div>
+</section>
+
+<div id="tour" hidden>
+  <p id="tour-text"></p>
+  <div class="row">
+    <button type="button" id="tour-prev" class="ghost">Précédent</button>
+    <span id="tour-count"></span>
+    <button type="button" id="tour-next">Suivant</button>
+    <button type="button" id="tour-stop" class="ghost">Terminer</button>
+  </div>
+</div>
+
+<div id="walkhud" hidden>
+  <p id="walk-hint"></p>
+  <button type="button" id="walk-exit">Reprendre de la hauteur</button>
+</div>
+
+<footer id="dock">
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
+    <button type="button" id="mode-tour" aria-pressed="false">Visite guidée</button>
+    <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
+  </div>
+  <label id="hour-wrap"><span id="hour-label">10 h 30</span><input id="hour" type="range" min="4.5" max="22.5" step="0.25" value="10.5" aria-label="Heure du jour"></label>
+  <label class="check"><input id="toggle-names" type="checkbox" checked> Noms</label>
+</footer>
+
+<div id="sources" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="sources-title">
+  <div class="sheet">
+    <div class="panel-head"><h2 id="sources-title">Les représentations de Paris médiéval</h2><button type="button" class="x" data-close="sources" aria-label="Fermer">×</button></div>
+    <p class="lede">Aucune vue d’ensemble de Paris n’a été dessinée au Moyen Âge. La maquette croise donc trois familles de documents : les plans restitués par les historiens pour le tracé, les enluminures du XVe siècle pour les élévations, et les premiers plans gravés du XVIe siècle pour le détail.</p>
+    <div id="sources-body"></div>
+    <h3>Ce qui est attesté, ce qui est restitué</h3>
+    <ul class="method">
+      <li><b>Attesté par le plan de 1380 :</b> le réseau des rues, les îlots bâtis, les cultures, le cours de la Seine et ses îles, le tracé des deux enceintes avec leurs tours et leurs portes, l’emprise au sol des églises, couvents, hôtels, collèges, halles et ponts.</li>
+      <li><b>Restitué d’après les images et les vestiges :</b> les volumes de Notre-Dame, de la Sainte-Chapelle, du Palais, du Louvre, de la Bastille, du Temple et des Châtelets.</li>
+      <li><b>Vraisemblable, mais conjectural :</b> la forme de chaque maison (17 000 maisons à pans de bois loties automatiquement le long des rues), l’élévation des églises paroissiales et des hôtels, la végétation, les bateaux, le relief de détail.</li>
+    </ul>
+  </div>
+</div>
+
+<div id="help" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sheet narrow">
+    <div class="panel-head"><h2 id="help-title">Se déplacer</h2><button type="button" class="x" data-close="help" aria-label="Fermer">×</button></div>
+    <dl class="keys">
+      <dt>Glisser</dt><dd>déplacer la vue au-dessus de la ville</dd>
+      <dt>Clic droit ou Maj + glisser</dt><dd>pivoter et incliner</dd>
+      <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
+      <dt>Deux doigts</dt><dd>tourner pour pivoter, glisser verticalement pour incliner</dd>
+      <dt>Flèches ou Z Q S D</dt><dd>avancer ; A et E pivotent, R et F inclinent</dd>
+      <dt>À pied</dt><dd>cliquer dans la scène pour regarder à la souris, flèches ou Z Q S D pour marcher, Maj pour courir, Échap pour sortir. Sur écran tactile : pouce gauche pour marcher, pouce droit pour regarder.</dd>
+    </dl>
+    <p class="lede">Cliquez sur un nom pour ouvrir sa fiche. Le curseur du bas change l’heure : au crépuscule, les fenêtres s’allument.</p>
+  </div>
+</div>
+
+<div id="loading"><h1>Paris <span>1380</span></h1><div id="load-label">Chargement…</div><div id="load-track"><div id="load-bar"></div></div></div>

@@ -1,0 +1,4 @@
+node_modules/
+.shots/
+dist/paris-1380.artifact.html
+__pycache__/
