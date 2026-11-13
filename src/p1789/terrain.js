@@ -8,6 +8,11 @@ const CELL = 4;            // maille du masque d'eau (m)
 const QUAI = 2.4;          // hauteur du point le plus bas du nivellement au-dessus de l'eau (m)
 const FOND = -3.2;         // fond du lit (m)
 
+// Rives maçonnées : du Cours-la-Reine à l'Arsenal, le fleuve coule entre des quais de pierre (src/p1789/quais.js) ;
+// en amont et en aval, les berges restent en pente douce.
+export const QUAIS = { x0: -2050, x1: 1500 };
+export const quayK = (x) => smoothstep(QUAIS.x0 - 60, QUAIS.x0 + 60, x) * (1 - smoothstep(QUAIS.x1 - 60, QUAIS.x1 + 60, x));
+
 export class Terrain89 {
   constructor() {
     const R = relief(); this.R = R;
@@ -103,16 +108,51 @@ export class Terrain89 {
     return QUAI + (h[q] * (1 - u) + h[q + 1] * u) * (1 - v) + (h[q + R.nx] * (1 - u) + h[q + R.nx + 1] * u) * v;
   }
 
-  height(x, z) {
-    const l = this.land(x, z), w = this.wetAt(x, z);
-    if (w <= 0.3) return l;
-    return l + (FOND - l) * smoothstep(0.3, 0.74, w);
+  // Tracé des murs de quai (src/p1789/quais.js) : tout ce qui est côté fleuve des murs est de l'eau, quoi que dessine le
+  // plan (les becs des piles de pont, notamment) ; le maillage du sol y est creusé d'office, ainsi que huit mètres en
+  // arrière, sous le dallage — aucune pente ne peut alors dépasser devant un mur.
+  sink(front) {
+    const { W, H } = this, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d', { willReadFrequently: true }), read = (min) => { const im = ctx.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H); for (let i = 0; i < m.length; i++) m[i] = im[i * 4] > min ? 1 : 0; return m; };
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    ctx.beginPath(); ctx.rect((QUAIS.x0 + 15 - CADRE.x0) / CELL, 0, (QUAIS.x1 - QUAIS.x0 - 30) / CELL, H); ctx.clip();
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 16 / CELL; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (const ex of front) for (const l of [ex.outer, ...ex.holes]) { l.forEach((s, i) => { const x = (s.a[0] - CADRE.x0) / CELL, y = (s.a[1] - CADRE.z0) / CELL; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.closePath(); }
+    ctx.fill('evenodd'); this.front = read(40);            // côté fleuve des murs (toute maille entamée compte)
+    ctx.stroke(); this.sunk = read(127);                   // creusé d'office
+  }
+  cell(x, z) { return clamp(Math.floor((z - CADRE.z0) / CELL), 0, this.H - 1) * this.W + clamp(Math.floor((x - CADRE.x0) / CELL), 0, this.W - 1); }
+
+  // Terre ferme d'après le plan (îles et ponts compris), à la maille du masque.
+  dry(x, z) {
+    if (!this.inside(x, z)) return this.wetAt(x, z) < 0.5;
+    const q = this.cell(x, z);
+    return this.sharp[q] === 0 && !(this.front && this.front[q]);
   }
 
+  // Sol tel que le maillage le dessine : le lit est creusé dans le nivellement. Au droit des quais il tombe d'un coup et
+  // plus bas, pour disparaître derrière le mur ; le maillage (5 m) ne peut pas tracer l'arête : un dallage la recouvre.
+  raw(x, z) {
+    if (this.sunk && this.inside(x, z) && this.sunk[this.cell(x, z)]) return FOND - 3.3;
+    const l = this.land(x, z), w = this.wetAt(x, z);
+    if (w <= 0.3) return l;
+    const k = quayK(x);
+    return l + (FOND - 3.3 * k - l) * smoothstep(0.3 + 0.04 * k, 0.74 - 0.22 * k, w);
+  }
+
+  // Sol où l'on marche et où l'on bâtit : sur les quais et les ponts de la ville, le niveau du nivellement jusqu'au mur.
+  height(x, z) { return quayK(x) > 0.5 && this.dry(x, z) ? this.land(x, z) : this.raw(x, z); }
+
+  // Sur la terre ferme des quais, la pente est celle du nivellement : le maillage, qui plonge sous le dallage, reçoit
+  // ainsi le même éclairage que lui et ne s'en distingue pas là où les deux surfaces se confondent.
   normal(x, z, out) {
-    const d = 3, hx = this.height(x + d, z) - this.height(x - d, z), hz = this.height(x, z + d) - this.height(x, z - d), l = Math.hypot(hx, 2 * d, hz);
+    const d = 3, flat = quayK(x) > 0.5 && this.dry(x, z), f = flat ? (a, b) => this.land(a, b) : (a, b) => this.height(a, b);
+    const hx = f(x + d, z) - f(x - d, z), hz = f(x, z + d) - f(x, z - d), l = Math.hypot(hx, 2 * d, hz);
     out[0] = -hx / l; out[1] = (2 * d) / l; out[2] = -hz / l; return out;
   }
+
+  // Vue du terrain pour le maillage du sol.
+  get mesh() { return { height: (x, z) => this.raw(x, z), normal: (x, z, out) => this.normal(x, z, out) }; }
 
   // Distance signée approchée à la rive (négative dans l'eau) : sert à affiner le maillage près du fleuve.
   sdWater(x, z) { return (0.5 - this.wetAt(x, z)) * 40; }

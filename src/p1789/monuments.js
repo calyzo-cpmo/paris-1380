@@ -3,11 +3,12 @@
 // École militaire, Luxembourg, Saint-Sulpice, Val-de-Grâce, Observatoire, hôpitaux). Leur place et leur orientation
 // viennent des données ; leurs dimensions, de ce que l'on sait de chaque édifice ; leur détail est une évocation.
 import { RAW, bati, batiNom, enclos, bastille, rues, eglises } from './data.js';
-import { hash, ARDOISE, PLOMB, PIERRE, building } from './blocks.js';
+import { hash, hex, ARDOISE, PLOMB, PIERRE, building } from './blocks.js';
+import { cathedrale, gothique, clocher } from './eglises.js';
 import { ccw, walls, cap, box, cyl, cone, disc, crenels, rectCorners, ringCircle } from '../builder.js';
 import { polyArea, centroid, minAreaRect, pointInPoly } from '../geom.js';
 
-const OR = 0xd8b85a, BRIQUE = 0xdcbca4, VIEILLE = 0xcfc4a8;
+const OR = hex(0xd8b85a), BRIQUE = hex(0xc89a80), VIEILLE = hex(0xcfc4a8), DALLE = hex(0xb4aa90);
 let seq = 900000;
 
 const frame = (cx, cz, dx, dz) => { const l = Math.hypot(dx, dz) || 1; return { cx, cz, ux: dx / l, uz: dz / l }; };
@@ -42,14 +43,11 @@ export function buildMonuments(app, B) {
   // ---- la Bastille : emprise restituée, dressée à hauteur de ses tours
   { const ring = bastille().map((r) => r[0]).sort((a, b) => Math.abs(polyArea(b)) - Math.abs(polyArea(a)))[0];
     if (ring) { const r = ccw(ring), c = centroid(r), y0 = ground(c[0], c[1]), top = y0 + 24, b = B.at('stone', c[0], c[1]);
-      walls(b, r, y0 - 1, top, { col: VIEILLE }); cap(b, r, [], top - 1.3, { col: 0xb4aa90 }); crenels(b, r, top, { closed: true, h: 1.3, w: 1.7, gap: 1.3, col: VIEILLE });
+      walls(b, r, y0 - 1, top, { col: VIEILLE }); cap(b, r, [], top - 1.3, { col: DALLE }); crenels(b, r, top, { closed: true, h: 1.3, w: 1.7, gap: 1.3, col: VIEILLE });
       app.foot.push({ ring: r, top, reel: true }); reserve.push(c); note('Bastille', c[0], c[1], top); } }
 
-  // ---- Notre-Dame : les deux tours de la façade occidentale
-  { const l = landmark('Notre Dame');
-    if (l) { const s = l.r.ux < 0 ? 1 : -1, f = frame(l.r.cx, l.r.cz, l.r.ux * s, l.r.uz * s), a = l.r.hl - 8;
-      tower(f, a, 13.5, 6.8, 69); const top = tower(f, a, -13.5, 6.8, 69); tower(f, a + 1, 0, 3.5, 45, { hw: 7 });
-      note('Notre-Dame', l.c[0], l.c[1], top); } }
+  // ---- Notre-Dame : la cathédrale entière sur l'emprise que donne l'atlas, sans la flèche de la croisée (démontée dès 1786)
+  if (app.ndRing) { const nd = cathedrale(app, B, app.ndRing), c = centroid(app.ndRing); reserve.push(c); note('Notre-Dame', c[0], c[1], nd.top); }
 
   // ---- hôtel des Invalides : cour d'honneur, cours latérales, église des soldats, Dôme
   { const p = enc('Hôtel des Invalides'), e = enc('Esplanade des Invalides');
@@ -161,17 +159,16 @@ export function buildMonuments(app, B) {
     note(nom, q[0], q[1], top);
   }
 
-  // ---- clochers des paroisses et des collégiales : une tour et sa flèche d'ardoise près du chevet
-  let clochers = 0;
+  // ---- paroisses et collégiales que la ville n'a pas déjà bâties en églises : hors de l'atlas, une église évoquée ;
+  //      là où l'atlas ne montre plus que des maisons (église démolie depuis), un clocher signale la paroisse
+  let clochers = app.paroisses.size;
   for (const e of eglises()) {
-    if (!/paroissiale|collégiale/.test(e.statut) || /Sulpice/.test(e.nom)) continue;
+    if (!/paroissiale|collégiale/.test(e.statut) || /Sulpice/.test(e.nom) || app.paroisses.has(e.nom)) continue;
     let f = app.footAt(e.x, e.z), x = e.x, z = e.z;
     for (let d = 8; d <= 32 && !(f && f.reel); d += 8) for (let k = 0; k < 8 && !(f && f.reel); k++) { const px = e.x + Math.cos(k * 0.785) * d, pz = e.z + Math.sin(k * 0.785) * d, g = app.footAt(px, pz); if (g && g.reel) { f = g; x = px; z = pz; } }
-    const id = 700000 + clochers, y0 = ground(x, z), fr = frame(x, z, 1, 0);
-    if (!(f && f.reel)) { reserve.push([x, z]); nave(fr, 0, 0, 19, 8, 12); }               // paroisse hors de l'atlas : une nef évoquée
-    const h = (f && f.reel ? f.top - y0 : 20) + 9 + hash(id, 1) * 10, half = 3 + hash(id, 2) * 0.8;
-    box(B.at('stone', x, z), { cx: x, cz: z, ux: 1, uz: 0, hl: half, hw: half }, y0 - 0.8, y0 + h, { col: PIERRE, s0: 0.8 });
-    spire(x, z, half * 1.25, y0 + h, y0 + h + 9 + hash(id, 3) * 7, hash(id, 4) < 0.5 ? 4 : 8, ARDOISE, Math.PI / 4);
+    const id = 700000 + clochers, y0 = ground(x, z);
+    if (!(f && f.reel)) { reserve.push([x, z]); gothique(app, B, rectCorners({ cx: x, cz: z, ux: 1, uz: 0, hl: 17 + hash(id, 5) * 5, hw: 7.5 + hash(id, 6) * 2 }), id); }
+    else clocher(app, B, x, z, 3 + hash(id, 2) * 0.8, f.top - y0 + 8 + hash(id, 1) * 9, y0, 9 + hash(id, 3) * 6);
     clochers++;
   }
   app.stats.clochers = clochers; app.stats.monuments = Object.keys(M).length;

@@ -4,10 +4,11 @@ import * as THREE from 'three';
 import { CADRE } from './data.js';
 import { Terrain89 } from './terrain.js';
 import { buildCity89, paintPlan, makeFieldsTile, ilotClasses, TUILE } from './city.js';
+import { planQuais } from './quais.js';
 import { buildGrid } from '../grid.js';
 import { Sky } from '../sky.js';
 import { makeWater } from '../water.js';
-import { makeDetailTexture, makeGroundMaterial } from '../groundmat.js';
+import { makeDetailTexture, makeCobbleTexture, makeGroundMaterial } from '../groundmat.js';
 import { CameraRig } from '../controls.js';
 import { People } from '../people.js';
 import { makeFigureAtlas89, outfit89 } from './figures.js';
@@ -18,21 +19,25 @@ const LOIN = 16000;                                                    // demi-c
 export const CENTRE_RECT = { x: -2700, z: -2500, w: 5000, h: 4200 };   // ville dense : sol peint plus finement
 
 // Sol de la ville : plan d'ensemble, remplacé au centre par une toile plus fine ; grain de détail par-dessus.
-function makeGround89(wide, centre, detail) {
+// De près, les pavés paraissent là où le masque `pave` (rues, quais et places de la ville dense) est blanc.
+function makeGround89(wide, centre, detail, cobble, pave) {
   const m = new THREE.MeshStandardMaterial({ map: wide, roughness: 1, metalness: 0 });
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uDetail = { value: detail }; sh.uniforms.uCentre = { value: centre };
+    sh.uniforms.uDetail = { value: detail }; sh.uniforms.uCentre = { value: centre }; sh.uniforms.uCobble = { value: cobble }; sh.uniforms.uPave = pave;
     sh.uniforms.uRect = { value: new THREE.Vector4(CENTRE_RECT.x, CENTRE_RECT.z, CENTRE_RECT.w, CENTRE_RECT.h) };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWxz = (modelMatrix * vec4(position, 1.0)).xz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail; uniform sampler2D uCentre; uniform vec4 uRect;')
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail; uniform sampler2D uCentre; uniform sampler2D uCobble; uniform sampler2D uPave; uniform vec4 uRect;')
       .replace('#include <map_fragment>', `#include <map_fragment>
         vec2 cu = (vWxz - uRect.xy) / uRect.zw;
         float cin = smoothstep(0.0, 0.012, min(min(cu.x, 1.0 - cu.x), min(cu.y, 1.0 - cu.y)));
         if (cin > 0.0) diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uCentre, vec2(cu.x, 1.0 - cu.y)).rgb, cin);
         float dA = texture2D(uDetail, vWxz * 0.21).r; float dB = texture2D(uDetail, vWxz * 0.023).r;
-        diffuseColor.rgb *= (0.62 + 0.5 * dA) * (0.8 + 0.34 * dB);`);
+        diffuseColor.rgb *= (0.62 + 0.5 * dA) * (0.8 + 0.34 * dB);
+        float pv = cin * texture2D(uPave, cu).r * (1.0 - smoothstep(60.0, 240.0, length(vViewPosition)));
+        vec3 cob = texture2D(uCobble, vWxz * 0.4).rgb;
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.48 + cob * 0.8), pv * 0.9);`);
   };
-  m.customProgramCacheKey = () => 'ground89';
+  m.customProgramCacheKey = () => 'ground89-pave';
   return m;
 }
 
@@ -48,6 +53,7 @@ export class App89 {
     this.log = (m) => { if (shot) console.log(`[${((performance.now() - T0) / 1000).toFixed(1)}s] ${m}`); };
     await step('Lecture des plans de Verniquet et de Vasserot…', 0.03);
     const terrain = new Terrain89(); this.terrain = terrain;
+    this.quaiPans = planQuais(terrain); terrain.sink(this.quaiPans);          // tracé des murs de quai, avant de mailler le sol
     this.ilotCls = ilotClasses();
 
     const renderer = new THREE.WebGLRenderer({ antialias: !shot, powerPreference: 'high-performance', preserveDrawingBuffer: shot });
@@ -65,22 +71,25 @@ export class App89 {
 
     await step('Le sol de Paris, d’après le nivellement de Girard…', 0.1);
     const fw = CADRE.x1 - CADRE.x0, fh = CADRE.z1 - CADRE.z0, bank = (cx, cz, d) => { let lo = 1, hi = 0; for (const [a, b] of [[0, 0], [d, 0], [-d, 0], [0, d], [0, -d]]) { const w = terrain.wetAt(cx + a, cz + b); if (w < lo) lo = w; if (w > hi) hi = w; } return hi > 0.03 && lo < 0.97; };
-    const core = buildGrid({ x0: CADRE.x0, z0: CADRE.z0, x1: CADRE.x1, z1: CADRE.z1, cell: 25, sub: 5, terrain, skirt: 14, fine: (cx, cz) => bank(cx, cz, 16), uv: (x, z) => [(x - CADRE.x0) / fw, 1 - (z - CADRE.z0) / fh] });
+    const core = buildGrid({ x0: CADRE.x0, z0: CADRE.z0, x1: CADRE.x1, z1: CADRE.z1, cell: 25, sub: 5, terrain: terrain.mesh, skirt: 14, fine: (cx, cz) => bank(cx, cz, 16), uv: (x, z) => [(x - CADRE.x0) / fw, 1 - (z - CADRE.z0) / fh] });
     const inside = (x, z) => Math.min(x - CADRE.x0, CADRE.x1 - x, z - CADRE.z0, CADRE.z1 - z);
-    const outer = buildGrid({ x0: -LOIN, z0: -LOIN, x1: LOIN, z1: LOIN, cell: 320, sub: 8, terrain, fine: (cx, cz) => inside(cx, cz) < 0 && bank(cx, cz, 200), skip: (cx, cz) => inside(cx, cz) > 420, lower: (x, z) => 9 * smoothstep(0, 120, inside(x, z)), uv: (x, z) => [x / TUILE, -z / TUILE], skirt: 90 });
+    const outer = buildGrid({ x0: -LOIN, z0: -LOIN, x1: LOIN, z1: LOIN, cell: 320, sub: 8, terrain: terrain.mesh, fine: (cx, cz) => inside(cx, cz) < 0 && bank(cx, cz, 200), skip: (cx, cz) => inside(cx, cz) > 420, lower: (x, z) => 9 * smoothstep(0, 120, inside(x, z)), uv: (x, z) => [x / TUILE, -z / TUILE], skirt: 90 });
 
     await step('Rues, îlots et jardins…', 0.18);
     const tile = makeFieldsTile(), maxTex = Math.min(renderer.capabilities.maxTextureSize, mobile ? 2048 : 4096);
     const paint = (R) => {
       const s = maxTex / Math.max(R.w, R.h), cv = document.createElement('canvas'); cv.width = Math.round(R.w * s); cv.height = Math.round(R.h * s);
-      paintPlan(cv.getContext('2d', { willReadFrequently: true }), { s, x: (x) => (x - R.x) * s, y: (z) => (z - R.z) * s }, tile, this.ilotCls, terrain.ext);
+      paintPlan(cv.getContext('2d', { willReadFrequently: true }), { s, x: (x) => (x - R.x) * s, y: (z) => (z - R.z) * s }, tile, this.ilotCls, terrain.ext, this.quaiPans);
       const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return [cv, t];
     };
     const [wideCv, wideTex] = paint({ x: CADRE.x0, z: CADRE.z0, w: fw, h: fh }), [centreCv, centreTex] = paint(CENTRE_RECT);
     this.plan = { wide: wideCv, centre: centreCv, rectWide: { x: CADRE.x0, z: CADRE.z0, w: fw, h: fh }, rectCentre: CENTRE_RECT };
     const detail = makeDetailTexture(), fields = new THREE.CanvasTexture(tile);
     fields.colorSpace = THREE.SRGBColorSpace; fields.wrapS = fields.wrapT = THREE.RepeatWrapping; fields.anisotropy = 4;
-    const coreMesh = new THREE.Mesh(core, makeGround89(wideTex, centreTex, detail)), outerMesh = new THREE.Mesh(outer, makeGroundMaterial(fields, detail));
+    const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); blank.needsUpdate = true;
+    this.pave = { value: blank };
+    this.groundMat = makeGround89(wideTex, centreTex, detail, makeCobbleTexture(), this.pave);
+    const coreMesh = new THREE.Mesh(core, this.groundMat), outerMesh = new THREE.Mesh(outer, makeGroundMaterial(fields, detail));
     coreMesh.receiveShadow = true; outerMesh.receiveShadow = true; coreMesh.matrixAutoUpdate = false; outerMesh.matrixAutoUpdate = false;
     scene.add(coreMesh, outerMesh);
     this.water = makeWater(this.sky); scene.add(this.water);
@@ -89,10 +98,12 @@ export class App89 {
     this.rig.goal = { x: -350, z: -420, dist: 3600, az: -0.45, el: 0.66 }; this.rig.cur = { ...this.rig.goal };
     this.navRect = CENTRE_RECT;
     await buildCity89(this, step);
+    { const n = this.nav, px = new Uint8Array(n.w * n.h); for (let i = 0; i < px.length; i++) px[i] = n.data[i] ? 255 : 0;      // masque des pavés : la trame des voies
+      const t = new THREE.DataTexture(px, n.w, n.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; this.pave.value = t; }
     this.people = new People(this, { nav: this.nav, atlas: makeFigureAtlas89(mobile ? 0.5 : 1), outfit: outfit89, noBeasts: true, groundCell: 3 });
     this.on('frame', (dt) => this.people.update(dt));
     this.log(`${this.stats.bati} corps de bâtiment, ${this.stats.evoques} évoqués, ${this.stats.tris} triangles, ${this.treeCount} arbres, ${this.people.total} passants possibles`);
-    this.on('hour', () => { const e = (1 - this.sky.day) * 1.5; this.materials.facade.emissiveIntensity = e; this.materials.rdc.emissiveIntensity = e; });
+    this.on('hour', () => { const e = (1 - this.sky.day) * 1.5; for (const k of ['facade', 'rdc', 'comble']) this.materials[k].emissiveIntensity = e; });
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.clock = new THREE.Clock(); this.time = 0;
