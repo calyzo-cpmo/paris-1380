@@ -32,7 +32,8 @@ const stroke = (x, T, polys, style, w) => { x.strokeStyle = style; x.lineWidth =
 
 // Classe d'un îlot : 'c' bâti (cours), 'j' jardins et marais, 'r' rural.
 export function ilotClasses() {
-  return ilots().map((rings, i) => { const a = Math.abs(polyArea(rings[0])); return ilotDocumente(i) || a < 15000 ? 'c' : a < 60000 ? 'j' : 'r'; });
+  // un grand îlot que l'atlas documente n'est bâti qu'en partie : le reste est un enclos de jardins (Luxembourg, couvents)
+  return ilots().map((rings, i) => { const a = Math.abs(polyArea(rings[0])); return ilotDocumente(i) ? (a < 40000 ? 'c' : 'j') : a < 15000 ? 'c' : a < 60000 ? 'j' : 'r'; });
 }
 
 // T : { s (pixels par mètre), x(xMonde), y(zMonde) }.
@@ -133,7 +134,7 @@ export async function buildCity89(app, step) {
   await step('Faubourgs et îlots que l’atlas ne couvre pas…', 0.64);
   const cls = app.ilotCls, all = ilots(); let evoques = 0; app.gardens = [];
   for (let i = 0; i < all.length; i++) {
-    if (ilotDocumente(i)) continue;
+    if (ilotDocumente(i)) { if (cls[i] === 'j') app.gardens.push({ ring: all[i][0], dens: 0.16 }); continue; }
     const rings = all[i], outer = rings[0], area = Math.abs(polyArea(outer)), c = centroid(outer), r = Math.hypot(c[0] - CENTRE.x, c[1] - CENTRE.z);
     if (cls[i] === 'c') {                                  // îlot bâti : une bordure de maisons autour d'une cour
       const depth = r < 2000 ? 11 : 9, inner = offsetEx([{ outer, holes: rings.slice(1) }], -depth), po = ccw(outer);
