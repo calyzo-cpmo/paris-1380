@@ -8,6 +8,7 @@ import { CERT } from './certainty.js';
 import { MiniMap } from './minimap.js';
 import { makeLocator } from './where.js';
 import { store, parseHash, makeHash } from './state.js';
+import { Epochs, JALONS, EPOQUES, stats as epochStats } from './epochs.js';
 import { clamp } from './geom.js';
 import T from '../data/thumbs.json';
 
@@ -31,6 +32,7 @@ export function initUI(app) {
   const small = () => window.innerWidth <= 640;
   let selected = null, hovered = null, hoverLabel = null, namesOn = true, filter = 'all';
   let mini = null, pendingFly = null, walkGoal = null;      // walkGoal : le lieu que l'on est venu voir à pied
+  let epochPlay = 0;                 // défilement des époques : temps restant avant la suivante (0 : arrêté)
   let tour = null, pendingWalk = false, nearPlace = null, welcomeSpin = false, hourPlay = false, hashTimer = 0, whereTimer = 0, hintTimer = 0, toastTimer = 0;
 
   // ---------- carnet de visite : lieux vus, intérieurs visités, parcours suivis
@@ -309,10 +311,10 @@ export function initUI(app) {
     sb.appendChild(grid);
   }
   function openModal(id) { closePops(); if (document.pointerLockElement) document.exitPointerLock(); $(id).hidden = false; }
-  function openSources(id) { openModal('sources'); const c = id && $(id === 'method' ? 'method' : 'src-' + id); if (c) { c.scrollIntoView({ block: id === 'method' ? 'start' : 'center' }); if (id !== 'method') { c.style.outline = '1px solid var(--gold)'; setTimeout(() => (c.style.outline = ''), 2200); } } }
+  function openSources(id) { openModal('sources'); const anchor = id === 'method' || id === 'sources-alpage-title', c = id && $(anchor ? id : 'src-' + id); if (c) { c.scrollIntoView({ block: anchor ? 'start' : 'center' }); if (!anchor) { c.style.outline = '1px solid var(--gold)'; setTimeout(() => (c.style.outline = ''), 2200); } } }
   $('btn-sources').addEventListener('click', () => openSources());
   $('btn-help').addEventListener('click', () => openModal('help'));
-  for (const b of document.querySelectorAll('[data-close]')) b.addEventListener('click', () => { const id = b.dataset.close; if (id === 'card') closeCard(); else if (id === 'places') togglePlaces(false); else if (id === 'legend') setCert(false); else $(id).hidden = true; });
+  for (const b of document.querySelectorAll('[data-close]')) b.addEventListener('click', () => { const id = b.dataset.close; if (id === 'card') closeCard(); else if (id === 'places') togglePlaces(false); else if (id === 'legend') setCert(false); else if (id === 'frise') closeFrise(); else $(id).hidden = true; });
   for (const m of document.querySelectorAll('.modal')) m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; });
 
   // ---------- menus dépliants (heure sur téléphone, affichage, menu)
@@ -398,7 +400,7 @@ export function initUI(app) {
   function startTour(id, at = 0) {
     const def = TOURS.find((d) => d.id === id) || TOURS[0];
     if (app.inside) leaveInterior();
-    stopWalk(); closePops();
+    stopWalk(); closePops(); closeFrise();
     tour = { def, idx: 0, timer: 13, playing: true };
     $('tour-title').textContent = def.title;
     const dots = $('tour-dots'); dots.textContent = '';
@@ -451,11 +453,12 @@ export function initUI(app) {
   function walkUI(on) {
     body.classList.toggle('walking', on); $('walkhud').hidden = !on;
     if (on) {
+      friseInfo(false);                                    // à hauteur d'homme, la frise suffit : le panneau de l'époque se replie
       $('hint').textContent = touch ? 'Pouce gauche pour marcher · pouce droit pour regarder · toucher le sol pour avancer' : 'Glisser pour regarder · cliquer sur le sol pour avancer · flèches ou Z Q S D pour marcher, Maj pour courir · Échap pour remonter';
       $('hint').hidden = !!app.shot; hintTimer = 11; $('card').hidden = true;
       for (const [id, k] of [['mode-fly', 'fly'], ['mode-tour', 'tour'], ['mode-walk', 'walk']]) $(id).setAttribute('aria-pressed', String(k === 'walk'));
     } else { $('prompt').hidden = true; $('hint').hidden = true; nearPlace = null; ring.visible = false; }
-    if (mini) { mini.sig = ''; $('map-zoom').textContent = mini.zoom[mini.mode()] === 'city' ? 'Quartier' : 'Ville entière'; }
+    if (mini) { mini.sig = ''; $('map-zoom').textContent = zoomLabel(); }
     whereTimer = 0; queueHash();
   }
   // Descend à pied en (x, z). Depuis le survol, la caméra plonge jusqu'à hauteur d'homme ; déjà à pied, on remonte d'abord.
@@ -530,8 +533,86 @@ export function initUI(app) {
     pauseTour();
     if (drag) { rig.fly = null; rig.goal.x = x; rig.goal.z = z; } else rig.flyTo({ x, z, dist: Math.min(rig.cur.dist, 700) }, 1.4);
   };
-  $('map-zoom').addEventListener('click', () => { $('map-zoom').textContent = mini.toggleZoom() === 'city' ? 'Quartier' : 'Ville entière'; });
+  // le bouton annonce l'échelle suivante : ville entière → (agglomération, avec un calque d'époque) → quartier
+  const zoomLabel = () => { const z = mini.zoom[mini.mode()]; return z === 'local' ? 'Ville entière' : z === 'city' && mini.epoch ? 'Agglomération' : 'Quartier'; };
+  $('map-zoom').addEventListener('click', () => { mini.toggleZoom(); $('map-zoom').textContent = zoomLabel(); });
   setMap(store.get('map', window.innerWidth > 900));
+
+  // ---------- calque temporel : la frise des époques
+  const epochs = (app.epochs = new Epochs(app));
+  const LEG = { U: ['', '#e8d0a0'], I: ['', 'rgba(232,208,160,0.5)'], R: ['o', '#f4ecd8'], mur: ['l', '#f0c860'], ancien: ['d', '#f0c860'], egl: ['p', '#c7a3f5'], eau: ['', '#568cc4'], vol: ['', '#ece4d0'], rue: ['l', '#ff9a6a'], mon: ['', '#ff9a6a'], or: ['', '#dcb866'], pt: ['s', '#b9c4d8'] };
+  const jl = $('frise-jalons');
+  for (const j of JALONS) { const b = el('button', j.base ? 'base' : null, j.label); b.type = 'button'; b.dataset.id = j.id; b.title = j.titre; b.setAttribute('aria-pressed', String(!!j.base)); b.addEventListener('click', () => { stopEpochPlay(); setEpoch(j.id); }); jl.appendChild(b); }
+  function setEpoch(id) {
+    const j = epochs.set(id), s = epochStats(j), nf = (n) => n.toLocaleString('fr-FR');
+    for (const b of jl.children) b.setAttribute('aria-pressed', String(b.dataset.id === j.id));
+    const act = jl.querySelector('[aria-pressed="true"]');               // sur petit écran la frise défile : la date choisie reste en vue
+    if (act && jl.scrollWidth > jl.clientWidth) jl.scrollLeft += act.getBoundingClientRect().left - jl.getBoundingClientRect().left - (jl.clientWidth - act.offsetWidth) / 2;
+    // à pied, un volume du calque peut surgir autour du promeneur : on le repose au plus près, dans la rue
+    if (rig.mode === 'walk' && !app.inside && epochs.inside(rig.walk.x, rig.walk.z)) { epochs.loose = false; const q = nearestClear(rig.walk.x, rig.walk.z, 220); if (q) { rig.walk.x = q[0]; rig.walk.z = q[1]; rig.walkTo = null; } }
+    const typo = (t) => t.replace(/ ([:;?!»])/g, '\u00a0$1').replace(/« /g, '«\u00a0');      // pas de ponctuation double rejetée en début de ligne
+    $('epoch-label').textContent = j.label; $('frise-title').textContent = j.titre; $('frise-text').textContent = typo(j.texte);
+    // titre de la page : la maquette reste celle de 1380, le calque le rappelle
+    const h1 = document.querySelector('#brand h1'); h1.firstChild.nodeValue = j.lutece ? '' : 'Paris '; h1.querySelector('span').textContent = j.label;
+    $('brand-sub').textContent = j.base ? 'Maquette restituée d’après le plan ALPAGE-CNRS' : 'Calque d’époque sur la maquette de 1380';
+    body.classList.toggle('epoch', !j.base);
+    const leg = $('frise-legend'); leg.textContent = '';
+    const item = (k, text) => { const li = el('li'), sw = el('i', LEG[k][0] || null); sw.style.setProperty('--c', LEG[k][1]); li.append(sw, text); leg.appendChild(li); };
+    if (j.ilots) {
+      if (s.densite === 'plan') { item('U', 'îlots urbains'); item('I', 'intermédiaires'); item('R', 'ruraux (densité figurée par le plan)'); }
+      else if (s.densite === 'dans') { item('U', 'îlots dans les murs'); item('I', 'îlots hors les murs'); }
+      else { item('U', 'îlots de moins de 3 ha'); item('I', 'de 3 à 9 ha'); item('R', 'au-delà (la taille tient lieu de densité)'); }
+    }
+    if (j.lutece) { item('rue', 'rues restituées'); item('mon', 'monuments'); item('eau', 'rivages antiques'); }
+    if (!j.base) {
+      if (s.enceintes.length) item('mur', 'enceinte debout');
+      if (EPOQUES.enceintes.some((w) => j.an >= w.jusqu)) item('ancien', 'ancien tracé');
+      if (j.egl) item('egl', 'établissements religieux');
+      if (j.eau) item('eau', 'la Seine à cette date');
+      if (j.ilots && !j.passe) item('vol', 'en volume : bâti après 1380');
+      if (j.futur) item('or', 'édifices et enceintes postérieurs');
+      if (j.passe) item('pt', 'en pointillé : pas encore bâti');
+    }
+    const st = $('frise-stats'); st.textContent = '';
+    const bits = [];
+    if (s.ilots) bits.push([nf(s.ilots), ' îlots' + (s.haUrbain ? `, dont ${nf(s.haUrbain)} ha d’îlots urbains` : '')]);
+    if (s.rues) bits.push([String(s.rues), ' rues restituées, 5 monuments situés']);
+    if (s.eglises) bits.push([nf(s.eglises), ` établissements religieux, dont ${nf(s.couvents)} couvents`]);
+    if (s.enceintes.length) bits.push(['', s.enceintes.join(', ').replace(/^E/, 'e').replace(/, E/g, ', e').replace(/, M/g, ', m').replace(/^M/, 'm')]);
+    bits.forEach(([n, t], i) => { if (i) st.append(' · '); if (n) st.append(el('b', null, n)); st.append(i === 0 && !n ? t.charAt(0).toUpperCase() + t.slice(1) : t); });
+    $('frise-credit').textContent = j.base ? '' : [s.source, s.credit, 'licence ODbL'].filter(Boolean).join(' — ');
+    $('frise-wide').hidden = !!j.base; $('frise-src').hidden = !!j.base;
+    if (j.base) { const li = el('li'); li.textContent = 'Choisissez une date sur la frise : la maquette reste celle de 1380, l’autre époque vient s’y superposer.'; leg.appendChild(li); }
+    mini.setEpoch(j.base ? null : { id: j.id, city: epochs.city, wide: epochs.wide, rectCity: epochs.rectCity, rectWide: epochs.rectWide }, !!j.ilots && !j.passe);
+    $('map-zoom').textContent = zoomLabel();
+    queueHash();
+    return j;
+  }
+  function stopEpochPlay() { epochPlay = 0; $('frise-play').setAttribute('aria-pressed', 'false'); }
+  // La frise tient en bas ; le panneau de l'époque (texte, légende, chiffres, sources) se range à gauche.
+  function friseInfo(on) { $('frise-info').hidden = !on; $('frise-more').setAttribute('aria-expanded', String(on)); }
+  function openFrise(on) {
+    $('frise').hidden = !on; $('btn-epoch').setAttribute('aria-expanded', String(on));
+    if (on) { closePops(); pauseTour(); $('hint').hidden = true; setEpoch(epochs.current.id); friseInfo(!small() && rig.mode !== 'walk' && !pendingWalk); } else friseInfo(false);
+  }
+  // Fermer la frise retire le calque : la maquette redevient celle de 1380.
+  function closeFrise() { stopEpochPlay(); if (!epochs.current.base) setEpoch('1380'); openFrise(false); }
+  $('btn-epoch').addEventListener('click', () => { if ($('frise').hidden) openFrise(true); else closeFrise(); });
+  $('frise-less').addEventListener('click', () => friseInfo(false));
+  $('frise-more').addEventListener('click', () => friseInfo($('frise-info').hidden));
+  $('frise-play').addEventListener('click', () => { if (epochPlay > 0) { stopEpochPlay(); return; } setEpoch(JALONS[0].id); epochPlay = 3.4; $('frise-play').setAttribute('aria-pressed', 'true'); wideView(); });
+  // Vue d'ensemble adaptée à l'époque : le centre pour Lutèce et 1300, l'agglomération ensuite.
+  function wideView() { const j = epochs.current; if (rig.mode === 'walk' || pendingWalk) stopWalk(); pauseTour(); rig.flyTo(j.ilots && !j.passe ? { x: -350, z: -250, dist: 6600, az: -0.3, el: 0.92 } : j.lutece ? { x: -380, z: 380, dist: 2300, az: -0.3, el: 0.95 } : { x: -80, z: -160, dist: 2700, az: -0.3, el: 0.95 }, 2.2); setMode('fly', true); }
+  $('frise-wide').addEventListener('click', wideView);
+  $('frise-src').addEventListener('click', () => openSources('sources-alpage-title'));
+  {                                                       // panneau « Sources » : les couches du calque et leurs auteurs
+    const ul = $('sources-alpage'), row = (title, credit) => { const li = el('li'); li.append(el('b', null, title + ' : '), credit); ul.appendChild(li); };
+    row('Enceintes antique, médiévales et modernes', '© ALPAGE : ' + [...new Set(EPOQUES.enceintes.flatMap((w) => w.auteurs.split(', ')))].join(', '));
+    for (const y of Object.keys(EPOQUES.ilots)) row(EPOQUES.ilots[y].titre, EPOQUES.ilots[y].credit);
+    row('Lutèce', EPOQUES.lutece.credit); row('Édifices et voies postérieurs à 1380', EPOQUES.futur.credit);
+    row('Établissements ecclésiastiques de 816 à 1790', EPOQUES.eglises.credit);
+    for (const y of Object.keys(EPOQUES.eau)) row('Hydrographie ' + (y === '1791' ? 'de 1785-1791' : 'de 1810-1836'), EPOQUES.eau[y].credit);
+  }
 
   // ---------- lien partageable : l'adresse suit la vue, « Partager » la copie
   function currentState() {
@@ -540,6 +621,7 @@ export function initUI(app) {
     else if (rig.mode === 'walk') s.w = [rig.walk.x, rig.walk.z, wrapPi(rig.walk.yaw)];
     else { const c = rig.fly ? rig.fly.to : rig.cur; s.c = [c.x, c.z, c.dist, wrapPi(c.az), c.el]; }
     if (selected && !$('card').hidden) s.p = selected.id;
+    if (!epochs.current.base) s.e = epochs.current.id;
     return s;
   }
   function queueHash() { hashTimer = 0.8; }
@@ -563,6 +645,7 @@ export function initUI(app) {
     const pi = s.in && byId.get(s.in);
     if (pi && pi.hasIn) { select(pi, false, { quiet: true }); rig.goal = { x: pi.x, z: pi.z, dist: pi.dist, az: rig.cur.az, el: 0.42 }; rig.cur = { ...rig.goal }; rig.fly = null; rig.update(0); enterInterior(pi); used = true; }
     if (s.t && TOURS.some((d) => d.id === s.t)) { startTour(s.t); used = true; }
+    if (s.e && JALONS.some((j) => j.id === s.e && !j.base)) { openFrise(true); setEpoch(s.e); used = true; }
     return used;
   }
 
@@ -585,7 +668,8 @@ export function initUI(app) {
       if (rig.mode === 'walk' && !$('card').hidden) { closeCard(); return; }       // à pied : Échap referme d'abord la fiche
       if ((rig.mode === 'walk' && !document.pointerLockElement) || pendingWalk) { stopWalk(); return; }
       if (!$('places').hidden) { togglePlaces(false); return; }
-      if (!$('card').hidden) closeCard();
+      if (!$('card').hidden) { closeCard(); return; }
+      if (!$('frise').hidden) closeFrise();
       return;
     }
     if ((e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) || e.ctrlKey || e.metaKey || e.altKey || !body.classList.contains('ready')) return;
@@ -597,8 +681,10 @@ export function initUI(app) {
       else if (e.code === 'KeyF' && nearPlace) openCard(nearPlace);
       else if (e.code === 'KeyV') toggleLook();
       else if (e.code === 'KeyN') rig.walk.yawGoal = 0;
+      else if (e.code === 'KeyT') { if ($('frise').hidden) openFrise(true); else closeFrise(); }
       return;
     }
+    if (e.code === 'KeyT') { if ($('frise').hidden) openFrise(true); else closeFrise(); return; }
     if (e.code === 'KeyN') $('compass').click();
     else if (e.code === 'KeyO' || e.code === 'Home') goHome();
     else if (e.code === 'KeyM') setMap(body.classList.contains('no-map'), true);
@@ -610,6 +696,7 @@ export function initUI(app) {
     if (hourPlay && !app.inside) { let h = app.sky.hour + dt * 0.42; if (h > 22.5) h = 4.5; app.setHour(h); $('hour-label').textContent = fmtHour(Math.round(h * 4) / 4); hour.value = String(h); }
     if (pendingWalk && rig.fly !== pendingFly) cancelPending();
     if (welcomeSpin && !rig.fly) rig.goal.az += dt * 0.028;
+    if (epochPlay > 0 && (epochPlay -= dt) <= 0) { const k = JALONS.indexOf(epochs.current); if (k >= JALONS.length - 1) stopEpochPlay(); else { setEpoch(JALONS[k + 1].id); epochPlay = 3.4; } }
     if (rig.mode === 'walk' && !app.inside) updatePrompt();
     if ((whereTimer -= dt) <= 0) { whereTimer = 0.4; updateWhere(); }
     if (hintTimer > 0 && (hintTimer -= dt) <= 0) $('hint').hidden = true;
@@ -620,7 +707,7 @@ export function initUI(app) {
     else if (hashTimer <= 0 && !app.shot && !rig.fly && (rig.userMoved || rig.mode === 'walk')) { rig.userMoved = false; hashTimer = 1.2; }
   });
 
-  app.ui = { select, openCard, closeCard, setHour, openTours, startTour, stopTour, startWalk, goWalk, stopWalk, openSources, updateLabels, places, byId, enterInterior, leaveInterior, pick, vantage, groundPoint, where, setCert, setMap, goHome, showWelcome, endWelcome, share, currentState, applyState, link: () => makeHash(currentState()), openLink: (h) => applyState(parseHash(h)), tours: TOURS, mini, carnet, get tour() { return tour; }, get near() { return nearPlace; }, get pending() { return pendingWalk; } };
+  app.ui = { select, openCard, closeCard, setHour, openTours, startTour, stopTour, startWalk, goWalk, stopWalk, openSources, updateLabels, places, byId, enterInterior, leaveInterior, pick, vantage, groundPoint, where, setCert, setMap, goHome, showWelcome, endWelcome, share, currentState, applyState, setEpoch, openFrise, closeFrise, epochs, link: () => makeHash(currentState()), openLink: (h) => applyState(parseHash(h)), tours: TOURS, mini, carnet, get tour() { return tour; }, get near() { return nearPlace; }, get pending() { return pendingWalk; } };
   setHour(10.5);
   updateCarnet();
   renderList();

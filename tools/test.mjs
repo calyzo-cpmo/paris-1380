@@ -6,14 +6,24 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1100, height: 700 }, deviceScaleFactor: 1 });
+// En rendu logiciel, une image de la maquette coûte plus d'une seconde : délai large pour les clics et les attentes.
+page.setDefaultTimeout(120000);
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ': ' + m.text().slice(0, 300)); });
 page.on('pageerror', (e) => errors.push('pageerror: ' + String(e.stack || e).slice(0, 600)));
 await page.goto('file://' + join(root, 'dist/index.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 240000 });
 let ok = 0, ko = 0;
-const check = (name, cond, extra = '') => { if (cond) { ok++; console.log('  ok  ', name, extra); } else { ko++; console.log('  ÉCHEC', name, extra); } };
-const frames = (n) => page.evaluate((n) => { const a = window.__app; for (let i = 0; i < n; i++) { a.rig.update(0.05); a.time += 0.05; a.emit('frame', 0.05); } a.renderNow(); }, n);
+const t0 = Date.now(), clock = () => String(Math.round((Date.now() - t0) / 1000)).padStart(4) + ' s';      // temps écoulé : repère les étapes lentes
+const check = (name, cond, extra = '') => { if (cond) { ok++; console.log(clock(), ' ok  ', name, extra); } else { ko++; console.log(clock(), ' ÉCHEC', name, extra); } };
+// Avance de n images puis rend la scène, et attend que la carte graphique ait fini (barrière de synchronisation) :
+// sans cela, le rendu logiciel prend du retard sur le script et l'attente retombe au hasard sur un clic ultérieur.
+const frames = (n) => page.evaluate(async (n) => {
+  const a = window.__app; for (let i = 0; i < n; i++) { a.rig.update(0.05); a.time += 0.05; a.emit('frame', 0.05); } a.renderNow();
+  const gl = a.renderer.getContext(); if (!gl.fenceSync) return;
+  const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0); gl.flush();
+  await new Promise((done) => { const poll = () => { const s = gl.clientWaitSync(sync, 0, 0); if (s === gl.TIMEOUT_EXPIRED) setTimeout(poll, 8); else { gl.deleteSync(sync); done(); } }; poll(); });
+}, n);
 const setHour = (h) => page.evaluate((h) => { const e = document.getElementById('hour'); e.value = String(h); e.dispatchEvent(new Event('input', { bubbles: true })); }, h);
 const visible = (sel) => page.evaluate((sel) => { const e = document.querySelector(sel); return !!e && !e.hidden && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden'; }, sel);
 const overview = () => page.evaluate(() => window.__app.setView([-1250, 1500, 1750], [-80, 0, -120]));
@@ -294,6 +304,90 @@ await page.click('#welcome .door[data-start="tour"]');
 check('accueil : porte « visite guidée »', await page.evaluate(() => document.body.classList.contains('ready') && !document.body.classList.contains('welcome') && !document.getElementById('tours').hidden));
 await page.keyboard.press('Escape');
 
+// ---------- calque des époques : frise, données ALPAGE recalées, volumes, marche, lien
+await page.evaluate(() => { window.__app.ui.stopTour(); window.__app.ui.select(null); }); await overview(); await frames(3);
+await page.click('#btn-epoch'); await frames(2);
+const fr0 = await page.evaluate(() => { const a = window.__app; return { ids: [...document.querySelectorAll('#frise-jalons button')].map((b) => b.dataset.id).join(' '), actif: document.querySelector('#frise-jalons [aria-pressed="true"]').dataset.id, on: a.epochU.uEpochOn.value, info: !document.getElementById('frise-info').hidden, bouton: document.getElementById('btn-epoch').getAttribute('aria-expanded') }; });
+check('frise des époques : huit jalons, 1380 au repos', (await visible('#frise')) && fr0.ids === 'lutece 1300 1380 1553 1652 1741 1791 1836' && fr0.actif === '1380' && fr0.on === 0 && fr0.info && fr0.bouton === 'true', JSON.stringify(fr0));
+const attendu = { lutece: [2, 'Lutèce', 100, 4], 1300: [1, 'Paris 1300', 0, 5], 1553: [0, 'Paris 1553', 3000, 6], 1652: [0, 'Paris 1652', 8000, 6], 1741: [0, 'Paris 1741', 9000, 6], 1791: [0, 'Paris 1791', 20000, 7], 1836: [0, 'Paris 1836', 20000, 6] };
+for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
+  await page.click(`#frise-jalons button[data-id="${id}"]`); await frames(2);
+  const e = await page.evaluate(() => { const a = window.__app, g = a.epochs.group.children[0]; return { on: a.epochU.uEpochOn.value, mode: a.cert.uniforms.uEpochMode.value, tris: g ? g.userData.tris : 0, vis: a.epochs.group.visible, titre: document.querySelector('#brand h1').textContent, dock: document.getElementById('epoch-label').textContent, leg: document.querySelectorAll('#frise-legend li').length, stats: document.getElementById('frise-stats').textContent.length, credit: document.getElementById('frise-credit').textContent, corps: document.body.classList.contains('epoch'), plan: !!a.ui.mini.epoch, lien: a.ui.link() }; });
+  const [mode, titre, tris, leg] = attendu[id];
+  check(`époque ${id} : calque au sol, ${tris ? 'volumes, ' : ''}légende, crédit ALPAGE`, e.on === 1 && e.mode === mode && e.vis && e.tris >= tris && e.titre === titre && e.dock === titre.replace('Paris ', '') && e.leg >= leg && e.stats > 10 && /ALPAGE/.test(e.credit) && /ODbL/.test(e.credit) && e.corps && e.plan && e.lien.endsWith('&e=' + id), JSON.stringify({ ...e, credit: e.credit.slice(0, 50) }));
+}
+// les chiffres racontent la croissance ; les enceintes se succèdent ; le masque de 1300 laisse en pointillé ce qui n'existe pas encore
+const ev = await page.evaluate(() => {
+  const a = window.__app, E = a.epochs, L = E.lib, st = {}; for (const j of L.JALONS) { const s = L.stats(j); st[j.id] = { ilots: s.ilots || 0, ha: s.haUrbain || 0, egl: s.eglises || 0, murs: s.enceintes.length, rues: s.rues || 0 }; }
+  const murs = {}; for (const w of L.enceintes()) murs[w.id] = L.JALONS.map((j) => L.wallState(w, j.an)).join('');
+  a.ui.setEpoch('1300'); const m = E.mask, d = m.getContext('2d').getImageData(0, 0, m.width, m.height).data; let blanc = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 127) blanc++;
+  return { st, murs, masque: +(blanc / (d.length / 4)).toFixed(2) };
+});
+check('époques : îlots et surface urbaine croissent de 1300 à 1791', ev.st['1300'].ilots > 300 && ev.st['1300'].ilots < ev.st['1553'].ilots && ev.st['1553'].ilots < ev.st['1652'].ilots && ev.st['1652'].ilots < ev.st['1741'].ilots && ev.st['1741'].ilots < ev.st['1791'].ilots && ev.st['1553'].ha < ev.st['1652'].ha && ev.st['1652'].ha < ev.st['1741'].ha && ev.st['1300'].egl < ev.st['1553'].egl && ev.st['1553'].egl < ev.st['1652'].egl && ev.st.lutece.rues > 20, JSON.stringify(ev.st));
+check('époques : les enceintes se succèdent (pas encore bâtie, debout, ancien tracé)', ev.murs['philippe-auguste'] === '01111222' && ev.murs['charles-v'] === '00111222' && ev.murs['fosses-jaunes'] === '00001222' && ev.murs['fermiers-generaux'] === '00000011' && ev.st['1741'].murs === 0 && ev.st['1791'].murs === 1, JSON.stringify(ev.murs));
+check('époque passée : masque de ce qui existe déjà', ev.masque > 0.3 && ev.masque < 0.8, String(ev.masque));
+// recalage : les portes de la maquette tombent sur les enceintes d'ALPAGE, les monuments dans leurs îlots, la Grève reste une place
+const rec = await page.evaluate(() => {
+  const a = window.__app, L = a.epochs.lib;
+  const seg = (p, q, x, z) => { const dx = q[0] - p[0], dz = q[1] - p[1], l = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - p[0]) * dx + (z - p[1]) * dz) / l)); return Math.hypot(p[0] + t * dx - x, p[1] + t * dz - z); };
+  const dMur = (id, x, z) => { let d = 1e9; for (const rings of L.enceintes().find((w) => w.id === id).polys) for (const r of rings) for (let i = 0; i < r.length; i++) d = Math.min(d, seg(r[i], r[(i + 1) % r.length], x, z)); return d; };
+  const ds = a.gates.map((g) => dMur(g.kind === 'PA' ? 'philippe-auguste' : 'charles-v', g.x, g.z));
+  const dans = (y, x, z) => L.ilotsOf(y).some((rings) => { const r = rings[0]; let ins = false; for (let i = 0, k = r.length - 1; i < r.length; k = i++) { const p = r[i], q = r[k]; if ((p[1] > z) !== (q[1] > z) && x < ((q[0] - p[0]) * (z - p[1])) / (q[1] - p[1]) + p[0]) ins = !ins; } return ins; });
+  const lieux = {}; for (const id of ['notre-dame', 'saint-merri', 'louvre', 'temple', 'bastille', 'greve']) { const p = a.ui.byId.get(id); lieux[id] = [dans('1300', p.x, p.z), dans('1791', p.x, p.z)]; }
+  return { portes: ds.length, proches: ds.filter((d) => d < 12).length, max: Math.round(Math.max(...ds)), lieux };
+});
+const both = (id, a, b) => rec.lieux[id][0] === a && rec.lieux[id][1] === b;
+check('recalage : portes de la maquette sur les enceintes ALPAGE', rec.portes >= 20 && rec.proches >= rec.portes - 2 && rec.max < 60, JSON.stringify({ portes: rec.portes, proches: rec.proches, max: rec.max }));
+check('recalage : monuments dans leurs îlots, Grève en place, Bastille absente de 1300', both('notre-dame', true, true) && both('saint-merri', true, true) && both('louvre', true, true) && both('temple', true, true) && both('bastille', false, true) && both('greve', false, false), JSON.stringify(rec.lieux));
+// à pied : les volumes du calque se contournent, et l'on n'y reste pas enfermé quand l'époque change
+const wk = await page.evaluate(() => {
+  const a = window.__app, E = a.epochs, ui = a.ui, rig = a.rig; ui.setEpoch('1791');
+  const libre = (x, z) => !a.solid.get(x, z) && a.terrain.height(x, z) > 0.35;
+  let pick = null;
+  for (const l of E.foot.values()) { for (const f of l) { const r = f.rings[0]; let cx = 0, cz = 0; for (const p of r) { cx += p[0]; cz += p[1]; } cx /= r.length; cz /= r.length; if (!E.inside(cx, cz) || !libre(cx, cz) || Math.hypot(cx, cz) < 1700) continue; let x = cx; while (E.inside(x, cz) && x < cx + 400) x += 1; x += 5; if (!E.inside(x, cz) && a.walkable(x, cz) && a.walkable(x + 1.5, cz) && a.walkable(x - 1.5, cz)) { pick = { cx, cz, x }; break; } } if (pick) break; }
+  if (!pick) return { pick: null };
+  const bloque = !a.walkable(pick.cx, pick.cz);
+  ui.goWalk(pick.x, pick.cz, Math.PI / 2, -0.02, { instant: true }); rig.walkTo = [pick.cx, pick.cz];
+  for (let i = 0; i < 120; i++) { rig.update(0.05); a.time += 0.05; a.emit('frame', 0.05); }
+  const apres = { dedans: E.inside(rig.walk.x, rig.walk.z), avance: +(pick.x - rig.walk.x).toFixed(1), reste: Math.round(Math.hypot(rig.walk.x - pick.cx, rig.walk.z - pick.cz)), panneau: document.getElementById('frise-info').hidden, frise: !document.getElementById('frise').hidden };
+  ui.setEpoch('1380'); const marche1380 = a.walkable(pick.cx, pick.cz); rig.walk.x = pick.cx; rig.walk.z = pick.cz; ui.setEpoch('1791');
+  const sorti = { dedans: E.inside(rig.walk.x, rig.walk.z), sol: a.walkable(rig.walk.x, rig.walk.z), pas: Math.round(Math.hypot(rig.walk.x - pick.cx, rig.walk.z - pick.cz)) };
+  ui.stopWalk(); a.renderNow();
+  return { pick: 1, blocs: E.group.children[0].userData.blocs, bloque, apres, marche1380, sorti };
+});
+check('à pied : un îlot du calque arrête le promeneur', wk.pick && wk.blocs > 300 && wk.bloque && !wk.apres.dedans && wk.apres.avance > 1 && wk.apres.reste > 1 && wk.apres.frise && wk.apres.panneau, JSON.stringify(wk));
+check('à pied : changer d’époque ne l’enferme pas dans un volume', wk.pick && wk.marche1380 && !wk.sorti.dedans && wk.sorti.sol && wk.sorti.pas > 0, JSON.stringify(wk.sorti || {}));
+await frames(30);
+// mini-plan à l'échelle de l'agglomération, lien partageable, sources, lecture de la frise, fermeture
+const mz = await page.evaluate(() => { const a = window.__app; a.ui.setEpoch('1791'); const z1 = a.ui.mini.zoom.orbit, t1 = document.getElementById('map-zoom').textContent; a.ui.setEpoch('1300'); return { z1, t1, z2: a.ui.mini.zoom.orbit }; });
+check('mini-plan : agglomération pour les époques étendues, ville pour 1300', mz.z1 === 'wide' && mz.z2 === 'city', JSON.stringify(mz));
+// le mini-plan se redessine à chaque mouvement de caméra : sous un calque, cela doit rester immédiat
+const mp = await page.evaluate(() => { const a = window.__app, c = document.getElementById('minimap'); a.ui.setEpoch('1791'); const t = performance.now(); a.ui.mini.sig = ''; a.ui.mini.draw(); c.getContext('2d').getImageData(0, 0, 1, 1); const d = performance.now() - t; a.ui.setEpoch('1300'); return Math.round(d); });
+check('mini-plan : redessin immédiat sous un calque d’époque', mp < 400, mp + ' ms');
+const le = await page.evaluate(() => { const a = window.__app; a.ui.setEpoch('1652'); const l = a.ui.link(); a.ui.closeFrise(); const ferme = a.epochs.current.id; const used = a.ui.openLink(l); const r = { l, ferme, used, id: a.epochs.current.id, frise: !document.getElementById('frise').hidden }; a.ui.closeFrise(); r.inconnu = a.ui.openLink('#c=-80,-120,2300,0,0.9&e=1999') && a.epochs.current.id; r.mal = a.ui.openLink('#e=<script>'); r.fin = a.epochs.current.id; return r; });
+check('lien partageable : l’époque revient, une époque inconnue est ignorée', /&e=1652$/.test(le.l) && le.ferme === '1380' && le.used && le.id === '1652' && le.frise && le.inconnu === '1380' && le.mal === false && le.fin === '1380', JSON.stringify(le));
+await page.keyboard.press('KeyT'); await frames(2);
+await page.click('#frise-jalons button[data-id="1741"]'); await frames(2);
+await page.click('#frise-src');
+const so = await page.evaluate(() => ({ ouvert: !document.getElementById('sources').hidden, lignes: document.querySelectorAll('#sources-alpage li').length, texte: document.getElementById('sources-alpage').textContent }));
+check('sources du calque : couches ALPAGE créditées, licence ODbL', so.ouvert && so.lignes >= 8 && /Verniquet/.test(so.texte) && /Vasserot/.test(so.texte) && /IRHT \(C\. Bourlet\)/.test(so.texte) && /ODbL/.test(await page.evaluate(() => document.getElementById('sources').textContent)), JSON.stringify({ lignes: so.lignes }));
+await page.keyboard.press('Escape');
+check('touche T : la frise s’ouvre, Échap referme les sources sans retirer le calque', (await visible('#frise')) && (await page.evaluate(() => document.getElementById('sources').hidden && window.__app.epochs.current.id === '1741')));
+await page.click('#frise-play'); await frames(2);
+const p0 = await page.evaluate(() => ({ id: window.__app.epochs.current.id, joue: document.getElementById('frise-play').getAttribute('aria-pressed') }));
+await frames(72);
+const p1 = await page.evaluate(() => window.__app.epochs.current.id);
+await frames(72 * 7);
+const p2 = await page.evaluate(() => ({ id: window.__app.epochs.current.id, joue: document.getElementById('frise-play').getAttribute('aria-pressed') }));
+check('lecture de la frise : de Lutèce à 1836, puis arrêt', p0.id === 'lutece' && p0.joue === 'true' && p1 === '1300' && p2.id === '1836' && p2.joue === 'false', JSON.stringify([p0, p1, p2]));
+await page.evaluate(() => { const a = window.__app; a.ui.setEpoch('1652'); a.ui.startTour('grand-tour'); }); await frames(3);
+check('une visite guidée retire le calque', await page.evaluate(() => window.__app.epochs.current.id === '1380' && document.getElementById('frise').hidden && !!window.__app.ui.tour));
+await page.evaluate(() => window.__app.ui.stopTour()); await overview(); await frames(3);
+await page.click('#btn-epoch'); await page.click('#frise-jalons button[data-id="1553"]'); await frames(2);
+await page.keyboard.press('Escape'); await frames(2);
+const fin = await page.evaluate(() => { const a = window.__app; return { id: a.epochs.current.id, on: a.epochU.uEpochOn.value, mode: a.cert.uniforms.uEpochMode.value, vis: a.epochs.group.visible, titre: document.querySelector('#brand h1').textContent, corps: document.body.classList.contains('epoch'), dock: document.getElementById('epoch-label').textContent, plan: a.ui.mini.epoch, zoom: a.ui.mini.zoom.orbit, marche: a.walkable(-700, -1500) }; });
+check('Échap referme la frise : la maquette redevient celle de 1380', !(await visible('#frise')) && !(await visible('#frise-info')) && fin.id === '1380' && fin.on === 0 && fin.mode === 0 && !fin.vis && fin.titre === 'Paris 1380' && !fin.corps && fin.dock === '1380' && !fin.plan && fin.zoom !== 'wide' && fin.marche, JSON.stringify(fin));
+
 // ---------- noms, redimensionnement, téléphone
 await page.click('#btn-view'); await page.click('#toggle-names'); await frames(2);
 check('noms masqués', await page.evaluate(() => document.getElementById('labels').style.display === 'none'));
@@ -307,6 +401,16 @@ check('téléphone : le volet se déplie', await page.evaluate(() => !document.g
 await page.click('#hour-btn');
 check('téléphone : réglage de l’heure dépliant', (await visible('#hour-pop')) && (await visible('#hour')));
 await page.click('#hour-btn');
+await page.evaluate(() => window.__app.ui.select(null));
+await page.click('#btn-epoch'); await frames(2);
+await page.evaluate(() => window.__app.ui.setEpoch('1836')); await frames(2);
+const mf = await page.evaluate(() => { const R = (id) => document.getElementById(id).getBoundingClientRect(), f = R('frise'), jl = R('frise-jalons'), act = document.querySelector('#frise-jalons [aria-pressed="true"]').getBoundingClientRect(), dock = R('dock'); return { info: document.getElementById('frise-info').hidden, gauche: Math.round(f.left), droite: Math.round(f.right), bas: Math.round(f.bottom), dock: Math.round(dock.top), actif: act.left >= jl.left - 1 && act.right <= jl.right + 1, large: document.documentElement.scrollWidth <= window.innerWidth + 1 }; });
+check('téléphone : frise sur une ligne au-dessus de la barre, date choisie en vue, panneau replié', mf.info && mf.gauche >= 0 && mf.droite <= 391 && mf.bas <= mf.dock + 1 && mf.actif && mf.large, JSON.stringify(mf));
+await page.click('#frise-more'); await frames(1);
+const mi = await page.evaluate(() => { const i = document.getElementById('frise-info').getBoundingClientRect(), f = document.getElementById('frise').getBoundingClientRect(); return { vu: !document.getElementById('frise-info').hidden, haut: Math.round(i.top), bas: Math.round(i.bottom), frise: Math.round(f.top), l: Math.round(i.width) }; });
+check('téléphone : « Détails » déplie le panneau de l’époque au-dessus de la frise', mi.vu && mi.haut >= 50 && mi.bas <= mi.frise + 1 && mi.l >= 380, JSON.stringify(mi));
+await page.click('#frise [data-close="frise"]'); await frames(2);
+check('téléphone : la croix referme la frise et retire le calque', await page.evaluate(() => document.getElementById('frise').hidden && document.getElementById('frise-info').hidden && window.__app.epochs.current.id === '1380' && window.__app.epochU.uEpochOn.value === 0));
 check('aucune erreur ni avertissement console', errors.length === 0, errors.slice(0, 5).join(' | '));
 console.log(`\n${ok} vérifications réussies, ${ko} échec(s)`);
 await browser.close();

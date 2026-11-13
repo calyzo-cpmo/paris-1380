@@ -57,10 +57,13 @@ export class App {
     const geos = buildTerrainGeometries(terrain);
     const detail = makeDetailTexture();
     const maxTex = Math.min(renderer.capabilities.maxTextureSize, mobile ? 2048 : 4096);
-    const core = new THREE.Mesh(geos.core, makeGroundMaterial(paintCoreGround(maxTex, terrain), detail, { mask: makeStreetMask(lu), cobble: makeCobbleTexture() }));
+    // calque temporel : deux toiles (centre, agglomération) que src/epochs.js remplit quand une autre époque est choisie
+    const blank = new THREE.DataTexture(new Uint8Array(4), 1, 1); blank.needsUpdate = true;
+    this.epochU = { uEpochOn: { value: 0 }, uEpochCityMap: { value: blank }, uEpochWideMap: { value: blank }, uEpochCity: { value: new THREE.Vector4(0, 0, 1, 1) }, uEpochWide: { value: new THREE.Vector4(0, 0, 1, 1) } };
+    const core = new THREE.Mesh(geos.core, makeGroundMaterial(paintCoreGround(maxTex, terrain), detail, { mask: makeStreetMask(lu), cobble: makeCobbleTexture() }, null, this.epochU));
     await step('Champs, vignes et prés des environs…', 0.13);
     const country = paintOuterGround(terrain, maxTex);                     // campagne lointaine (répétée en miroir au-delà) et campagne proche, peinte finement
-    const outer = new THREE.Mesh(geos.outer, makeGroundMaterial(country.far, detail, null, country.near));
+    const outer = new THREE.Mesh(geos.outer, makeGroundMaterial(country.far, detail, null, country.near, this.epochU));
     const far = new THREE.Mesh(geos.far, makeGroundMaterial(country.far, detail));
     core.receiveShadow = true; outer.receiveShadow = true; core.matrixAutoUpdate = false; outer.matrixAutoUpdate = false; far.matrixAutoUpdate = false;
     scene.add(core, outer, far);
@@ -97,6 +100,7 @@ export class App {
     if (this.inside) return this.inside.walkable(x, z);
     if (x < -8000 || x > 8000 || z < -8000 || z > 8000) return false;      // au-delà du plan, on marche dans la campagne
     if (this.solid.get(x, z)) return false;
+    if (this.epochs && this.epochs.blocked(x, z)) return false;           // volumes du calque d'époque
     if (this.deck.has(this.deckKey(x, z))) return true;
     return this.terrain.height(x, z) > 0.35;
   }

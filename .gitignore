@@ -1,4 +1,5 @@
 node_modules/
+data/source/alpage/
 .shots/
 dist/paris-1380.artifact.html
 __pycache__/
