@@ -1,6 +1,6 @@
 {
   "name": "paris-1380",
-  "version": "4.4.0",
+  "version": "4.4.1",
   "private": true,
   "description": "Paris à travers le temps : maquettes 3D interactives de Paris vers 1380 et en 1789, construites sur les données du projet ALPAGE",
   "type": "module",
@@ -11,11 +11,12 @@
     "extract:1789": "python3 tools/extract_1789.py",
     "build": "node tools/build.mjs",
     "shot": "node tools/shot.mjs",
-    "test": "node tools/test.mjs && node tools/test1789.mjs",
+    "test": "node tools/test_toits.mjs && node tools/test.mjs && node tools/test1789.mjs",
     "test:1380": "node tools/test.mjs",
     "test:1789": "node tools/test1789.mjs",
     "inshot": "node tools/inshot.mjs",
-    "thumbs": "python3 tools/make_thumbs.py"
+    "thumbs": "python3 tools/make_thumbs.py",
+    "test:toits": "node tools/test_toits.mjs"
   },
   "license": "SEE LICENSE IN README.md",
   "devDependencies": {

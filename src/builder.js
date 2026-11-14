@@ -136,17 +136,29 @@ const key = (p) => Math.round(p[0] * 100) + ',' + Math.round(p[1] * 100);
 
 // Couture de deux anneaux emboîtés (la bande entre un polygone et son érodé) : chaque triangle prend un côté sur un
 // anneau et son sommet sur l'autre, si bien que les pans restent plans — une triangulation par oreilles, elle, rabote
-// les angles. Rend des triplets d'indices dans A.concat(Bq).
+// les angles. Les deux anneaux sont parcourus ensemble, dans l'ordre de l'abscisse curviligne mesurée sur A : chaque
+// sommet de Bq y est rapporté par son point le plus proche, de sorte qu'une arête relie toujours un angle du polygone
+// à l'angle correspondant de son érodé (l'arêtier du toit). Rend des triplets d'indices dans A.concat(Bq).
 function stitch(A, Bq) {
-  const n = A.length, m = Bq.length, dir = polyArea(A) * polyArea(Bq) >= 0 ? 1 : -1, tris = [];
-  let j0 = 0, best = Infinity;
-  for (let j = 0; j < m; j++) { const d = (Bq[j][0] - A[0][0]) ** 2 + (Bq[j][1] - A[0][1]) ** 2; if (d < best) { best = d; j0 = j; } }
-  const J = (k) => (((j0 + dir * k) % m) + m) % m;
+  const n = A.length, m = Bq.length, sA = new Float64Array(n + 1), sB = new Float64Array(m), tris = [];
+  for (let i = 0; i < n; i++) { const a = A[i], b = A[(i + 1) % n]; sA[i + 1] = sA[i] + Math.hypot(b[0] - a[0], b[1] - a[1]); }
+  const tot = sA[n] || 1;
+  for (let j = 0; j < m; j++) {
+    const p = Bq[j]; let best = Infinity;
+    for (let i = 0; i < n; i++) {
+      const a = A[i], b = A[(i + 1) % n], dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2));
+      const d = (a[0] + t * dx - p[0]) ** 2 + (a[1] + t * dz - p[1]) ** 2;
+      if (d < best - 1e-9) { best = d; sB[j] = sA[i] + t * Math.sqrt(l2); }
+    }
+  }
+  const dir = polyArea(A) * polyArea(Bq) >= 0 ? 1 : -1; let j0 = 0;
+  for (let j = 1; j < m; j++) if (sB[j] < sB[j0]) j0 = j;
+  const J = (k) => (((j0 + dir * k) % m) + m) % m, u = new Float64Array(m + 1);
+  for (let k = 0, prev = 0; k < m; k++) { let v = sB[J(k)]; if (v < prev) v = prev - v > tot / 2 ? v + tot : prev; u[k] = prev = v; }      // abscisses rendues croissantes
+  u[m] = u[0] + tot;
   let i = 0, k = 0;
   while (i < n || k < m) {
-    const a = A[i % n], q = Bq[J(k)];
-    let adv = k >= m;
-    if (i < n && k < m) { const a1 = A[(i + 1) % n], q1 = Bq[J(k + 1)]; adv = (a1[0] - q[0]) ** 2 + (a1[1] - q[1]) ** 2 <= (q1[0] - a[0]) ** 2 + (q1[1] - a[1]) ** 2; }
+    const adv = k >= m || (i < n && sA[i + 1] <= u[k + 1]);
     if (adv) { tris.push([i % n, (i + 1) % n, n + J(k)]); i++; } else { tris.push([i % n, n + J(k + 1), n + J(k)]); k++; }
   }
   return tris;
@@ -166,7 +178,15 @@ export function skeletonRoof(b, exIn, y, o = {}) {
   const emit = (ex, hOuter, hInner, innerKeys, bb = b, cc = col, uu = us) => {
     const all = ex.outer.concat(...ex.holes);
     const hs = all.map((p) => (innerKeys && innerKeys.has(key(p)) ? hInner : hOuter));
-    const tris = o.stitch && innerKeys && ex.holes.length === 1 ? stitch(ex.outer, ex.holes[0]) : THREE.ShapeUtils.triangulateShape(ex.outer.map(V2), ex.holes.map((h) => h.map(V2)));
+    // La couture n'est gardée que si elle pave exactement la bande (aucun triangle retourné, aire égale à celle de la
+    // bande) : quand l'érosion fait disparaître un décrochement, elle relierait des sommets qui ne se répondent pas.
+    let tris = null;
+    if (o.stitch && innerKeys && ex.holes.length === 1) {
+      const t = stitch(ex.outer, ex.holes[0]), band = 2 * (Math.abs(polyArea(ex.outer)) - Math.abs(polyArea(ex.holes[0]))); let sum = 0, pos = 0, neg = 0;
+      for (const tr of t) { const a = all[tr[0]], c = all[tr[1]], d = all[tr[2]], w = (c[0] - a[0]) * (d[1] - a[1]) - (c[1] - a[1]) * (d[0] - a[0]); sum += Math.abs(w); if (w > 1e-6) pos++; else if (w < -1e-6) neg++; }
+      if (!(pos && neg) && Math.abs(sum - band) <= 0.01 * band + 0.02) tris = t;
+    }
+    if (!tris) tris = THREE.ShapeUtils.triangulateShape(ex.outer.map(V2), ex.holes.map((h) => h.map(V2)));
     for (const tr of tris) {
       let i0 = tr[0], i1 = tr[1], i2 = tr[2];
       let a = all[i0], c = all[i1], d = all[i2];

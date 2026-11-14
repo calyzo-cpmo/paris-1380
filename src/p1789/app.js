@@ -76,13 +76,14 @@ export class App89 {
     const outer = buildGrid({ x0: -LOIN, z0: -LOIN, x1: LOIN, z1: LOIN, cell: 320, sub: 8, terrain: terrain.mesh, fine: (cx, cz) => inside(cx, cz) < 0 && bank(cx, cz, 200), skip: (cx, cz) => inside(cx, cz) > 420, lower: (x, z) => 9 * smoothstep(0, 120, inside(x, z)), uv: (x, z) => [x / TUILE, -z / TUILE], skirt: 90 });
 
     await step('Rues, îlots et jardins…', 0.18);
-    const tile = makeFieldsTile(), maxTex = Math.min(renderer.capabilities.maxTextureSize, mobile ? 2048 : 4096);
-    const paint = (R) => {
+    // le plan d'ensemble est allégé sur téléphone ; la toile du centre, où l'on regarde de près, reste fine, sauf appareil à petite mémoire
+    const tile = makeFieldsTile(), gl = renderer.capabilities.maxTextureSize, petit = mobile && navigator.deviceMemory && navigator.deviceMemory < 4;
+    const paint = (R, maxTex) => {
       const s = maxTex / Math.max(R.w, R.h), cv = document.createElement('canvas'); cv.width = Math.round(R.w * s); cv.height = Math.round(R.h * s);
       paintPlan(cv.getContext('2d', { willReadFrequently: true }), { s, x: (x) => (x - R.x) * s, y: (z) => (z - R.z) * s }, tile, this.ilotCls, terrain.ext, this.quaiPans);
       const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return [cv, t];
     };
-    const [wideCv, wideTex] = paint({ x: CADRE.x0, z: CADRE.z0, w: fw, h: fh }), [centreCv, centreTex] = paint(CENTRE_RECT);
+    const [wideCv, wideTex] = paint({ x: CADRE.x0, z: CADRE.z0, w: fw, h: fh }, Math.min(gl, mobile ? 2048 : 4096)), [centreCv, centreTex] = paint(CENTRE_RECT, Math.min(gl, petit ? 2048 : 4096));
     this.plan = { wide: wideCv, centre: centreCv, rectWide: { x: CADRE.x0, z: CADRE.z0, w: fw, h: fh }, rectCentre: CENTRE_RECT };
     const detail = makeDetailTexture(), fields = new THREE.CanvasTexture(tile);
     fields.colorSpace = THREE.SRGBColorSpace; fields.wrapS = fields.wrapT = THREE.RepeatWrapping; fields.anisotropy = 4;
@@ -151,7 +152,12 @@ export class App89 {
     q.n++; q.sum += ms;
     if (q.n < 50) return;
     const avg = q.sum / q.n; q.n = 0; q.sum = 0;
-    if (avg > 45 && q.level < 3) { q.level++; q.skip = 30; this.quality = [1, 0.8, 0.65, 0.55][q.level]; this.crowdScale = [1, 0.8, 0.55, 0.35][q.level]; if (q.level >= 2 && this.trees) this.trees.castShadow = false; this.shadowState.hour = -1; this.resize(); }
+    const apply = () => { q.skip = 30; q.bon = 0; this.quality = [1, 0.85, 0.72, 0.62][q.level]; this.crowdScale = [1, 0.8, 0.55, 0.35][q.level]; if (this.trees) this.trees.castShadow = q.level < 2; this.shadowState.hour = -1; this.resize(); };
+    // trop lent : on réduit. Redevenu fluide durablement (vue rapprochée, moins de ville à l'écran) : on rend la netteté.
+    // Une remontée aussitôt suivie d'une rechute double l'attente avant la suivante : pas de va-et-vient.
+    if (avg > 45 && q.level < 3) { if (q.monte) q.besoin = Math.min(24, (q.besoin || 3) * 2); q.monte = false; q.level++; apply(); }
+    else if (avg < 24 && q.level > 0) { if ((q.bon = (q.bon || 0) + 1) >= (q.besoin || 3)) { q.level--; q.monte = true; apply(); } }
+    else q.bon = 0;
   }
 
   updateShadow() {

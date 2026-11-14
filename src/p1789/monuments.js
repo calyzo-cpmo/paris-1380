@@ -27,9 +27,9 @@ export function buildMonuments(app, B) {
   const nave = (f, a, c, ha, hc, h) => building(app, B, { outer: rect(f, a, c, ha, hc), holes: [] }, seq++, { kind: 'eglise', h, col: PIERRE, area: 4 * ha * hc, reel: true });
   const tower = (f, a, c, half, h, o = {}) => { const p = at(f, a, c), y0 = ground(p[0], p[1]), r = { cx: p[0], cz: p[1], ux: f.ux, uz: f.uz, hl: half, hw: o.hw ?? half }; box(B.at('stone', p[0], p[1]), r, (o.from ?? 0) ? y0 + o.from : y0 - 0.8, y0 + h, { col: o.col ?? PIERRE, s0: 0.8 }); if (!o.from) app.foot.push({ ring: rectCorners(r), top: y0 + h, reel: true }); return y0 + h; };
   const round = (x, z, r, h, o = {}) => { const y0 = ground(x, z), b = B.at('stone', x, z); cyl(b, x, z, r, y0 - 0.8, y0 + h, { seg: o.seg ?? 16, col: o.col ?? PIERRE, s0: 0.8 }); disc(b, x, z, r, y0 + h, { seg: o.seg ?? 16, col: o.col ?? PIERRE }); app.foot.push({ ring: ringCircle(x, z, r, 12), top: y0 + h, reel: true }); return y0 + h; };
-  const spire = (x, z, r, y0, y1, seg = 8, col = ARDOISE, a0 = 0) => cone(B.at('roof', x, z), x, z, r, y0, y1, { seg, col, a0 });
+  const spire = (x, z, r, y0, y1, seg = 8, col = ARDOISE, a0 = 0) => cone(B.at('ardoise', x, z), x, z, r, y0, y1, { seg, col, a0 });
   const dome = (x, z, r, yBase, hDrum, hDome, o = {}) => {
-    const bs = B.at('stone', x, z), br = B.at('roof', x, z), n = 6, TOP = 1.45;
+    const bs = B.at('stone', x, z), br = B.at('ardoise', x, z), n = 6, TOP = 1.45;
     cyl(bs, x, z, r, yBase, yBase + hDrum, { seg: 20, col: PIERRE, s0: 0.86 });
     for (let k = 0; k < n; k++) { const t0 = (k / n) * TOP, t1 = ((k + 1) / n) * TOP; cyl(br, x, z, r * 1.03 * Math.cos(t0), yBase + hDrum + (hDome * Math.sin(t0)) / Math.sin(TOP), yBase + hDrum + (hDome * Math.sin(t1)) / Math.sin(TOP), { seg: 20, r1: r * 1.03 * Math.cos(t1), col: o.col ?? PLOMB, s0: 0.92, s1: 1 }); }
     const yt = yBase + hDrum + hDome, rl = r * 0.22, hl = o.lantern ?? r * 0.6, hs = o.spire ?? r * 0.6;

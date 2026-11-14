@@ -199,6 +199,7 @@ tools/build.mjs              assemble les deux pages autonomes dans dist/ (index
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
 tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
+tools/test_toits.mjs         contrôle géométrique des toits de 1789, sans navigateur : l'aire de chaque toit égale celle de son emprise, cours déduites
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/inshot.mjs, uishot.mjs captures des intérieurs et de l'interface

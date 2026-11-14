@@ -145,15 +145,18 @@ export class App {
     q.n++; q.sum += ms;
     if (q.n < 50) return;
     const avg = q.sum / q.n; q.n = 0; q.sum = 0;
+    const apply = () => { q.skip = 30; q.bon = 0; this.quality = [1, 0.85, 0.72, 0.62][q.level]; this.crowdScale = [1, 0.8, 0.55, 0.35][q.level]; this.shadowState.hour = -1; this.resize(); };
+    // trop lent : on réduit. Redevenu fluide durablement (vue rapprochée, moins de ville à l'écran) : on rend la netteté
+    // et la foule ; les ombres des arbres et les fumées, une fois retirées, le restent. Une remontée aussitôt suivie
+    // d'une rechute double l'attente avant la suivante : pas de va-et-vient.
     if (avg > 45 && q.level < 3) {
-      q.level++; q.skip = 30;
-      this.quality = [1, 0.8, 0.65, 0.55][q.level];
+      if (q.monte) q.besoin = Math.min(24, (q.besoin || 3) * 2); q.monte = false; q.level++;
       if (q.level >= 2 && this.trees) this.trees.traverse((o) => { o.castShadow = false; });
-      this.crowdScale = [1, 0.8, 0.55, 0.35][q.level];
       if (q.level >= 3 && this.smoke) this.smoke.visible = false;
-      this.shadowState.hour = -1;
-      this.resize();
+      apply();
     }
+    else if (avg < 24 && q.level > 0) { if ((q.bon = (q.bon || 0) + 1) >= (q.besoin || 3)) { q.level--; q.monte = true; apply(); } }
+    else q.bon = 0;
   }
 
   updateShadow() {

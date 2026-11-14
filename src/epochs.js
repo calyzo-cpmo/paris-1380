@@ -228,7 +228,7 @@ export class Epochs {
 
   // Matières des maisons dessinées : celles de la maquette, plus les façades enduites des XVIIe-XIXe siècles (créées au besoin).
   houseMats(enduit) {
-    if (enduit && !this.m89) this.m89 = makeHouseMaterials89(this.app.mobile ? 0.5 : 1);
+    if (enduit && !this.m89) this.m89 = makeHouseMaterials89();
     return { ...this.app.materials, ...(this.m89 || {}) };
   }
 
