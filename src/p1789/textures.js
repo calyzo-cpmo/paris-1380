@@ -144,11 +144,28 @@ function archPanel(k) {
   const t = tex(c); t.wrapT = THREE.ClampToEdgeWrapping; return t;
 }
 
-// Les seules matières des maisons — étages, rez-de-chaussée, brisis à lucarnes : elles servent aussi, dans la première
-// page, aux dates de la frise postérieures au XVIe siècle.
-export function makeHouseMaterials89(scale) {
-  const k = scale >= 1 ? 1 : 0.5, up = upper(k), rdc = ground(k), at = attic(k);
+// Ardoise : rangs réguliers d'une teinte presque unie — vu d'en haut, un toit d'ardoise est lisse, pas tacheté.
+// Claire, elle est teintée par la couleur des sommets.
+function slate() {
+  const N = 512, [c, x] = canvas(N, N), r = mulberry32(1640), rh = 16, tw = 32;
+  for (let row = 0, y = 0; y < N; y += rh, row++) {
+    for (let sx = -(row % 2) * (tw / 2); sx < N; sx += tw) {
+      const v = Math.round(222 + (r() - 0.5) * 16); x.fillStyle = `rgb(${v},${v},${v + 3})`; x.fillRect(sx, y, tw, rh);
+      x.fillStyle = 'rgba(40,46,60,0.3)'; x.fillRect(sx + tw - 1, y, 1, rh);                       // joint entre deux ardoises
+    }
+    x.fillStyle = 'rgba(20,24,36,0.32)'; x.fillRect(0, y, N, 1.6);                                  // ombre du rang supérieur
+    x.fillStyle = 'rgba(255,255,255,0.1)'; x.fillRect(0, y + rh - 2, N, 2);                         // arête éclairée
+  }
+  const t = tex(c); t.anisotropy = 8; return t;
+}
+
+// Les seules matières des maisons — étages, rez-de-chaussée, brisis à lucarnes, ardoise : elles servent aussi, dans la
+// première page, aux dates de la frise postérieures au XVIe siècle. Ces textures sont petites (512 points) : elles
+// gardent leur pleine définition sur téléphone, où la moitié les rendait floues.
+export function makeHouseMaterials89() {
+  const k = 1, up = upper(k), rdc = ground(k), at = attic(k);
   return {
+    ardoise: new THREE.MeshStandardMaterial({ map: slate(), vertexColors: true, roughness: 0.74, metalness: 0 }),
     facade: new THREE.MeshStandardMaterial({ map: up.map, emissiveMap: up.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.93, metalness: 0 }),
     rdc: new THREE.MeshStandardMaterial({ map: rdc.map, emissiveMap: rdc.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.93, metalness: 0 }),
     comble: new THREE.MeshStandardMaterial({ map: at.map, emissiveMap: at.emissiveMap, emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: 0.84, metalness: 0 }),
@@ -156,9 +173,10 @@ export function makeHouseMaterials89(scale) {
 }
 
 export function makeMaterials89(scale) {
-  const k = scale >= 1 ? 1 : 0.5, s = makeStone(scale), f = makeStoneFx(scale, scale >= 1 ? 2 : 1), rf = makeRoof(scale), ns = (v) => new THREE.Vector2(v, v);
+  // seul l'atlas des baies gothiques (2 048 points) est réduit sur téléphone ; pierre, tuile et façades restent entières
+  const k = 1, s = makeStone(1), f = makeStoneFx(scale, scale >= 1 ? 2 : 1), rf = makeRoof(1), ns = (v) => new THREE.Vector2(v, v);
   return {
-    ...makeHouseMaterials89(scale),
+    ...makeHouseMaterials89(),
     pont: new THREE.MeshStandardMaterial({ map: archPanel(k), vertexColors: true, roughness: 0.95, metalness: 0 }),
     nef: new THREE.MeshStandardMaterial({ map: navePanel(k), vertexColors: true, roughness: 0.94, metalness: 0 }),
     stonefx: new THREE.MeshStandardMaterial({ map: f.map, normalMap: f.normalMap, normalScale: ns(0.7), vertexColors: true, roughness: 0.94, metalness: 0 }),
