@@ -545,9 +545,9 @@ export function initUI(app) {
   const LEG = { U: ['', '#e8d0a0'], I: ['', 'rgba(232,208,160,0.5)'], R: ['o', '#f4ecd8'], mur: ['l', '#f0c860'], ancien: ['d', '#f0c860'], egl: ['p', '#c7a3f5'], eau: ['', '#568cc4'], vol: ['', '#b0704e'], rue: ['l', '#ff9a6a'], mon: ['', '#ff9a6a'], or: ['', '#e6dcc4'], pt: ['s', '#b9c4d8'] };
   const jl = $('frise-jalons');
   for (const j of JALONS) {
-    // une date qui a sa propre maquette (1789) est un lien vers elle ; les autres posent la ville de cette date sur celle-ci
+    // une date qui a sa propre maquette (Lutèce, 1789) est un lien vers elle ; les autres posent la ville de cette date sur celle-ci
     const b = el(j.ere ? 'a' : 'button', j.ere ? 'maquette' : j.base ? 'base' : null, j.label); b.dataset.id = j.id; b.setAttribute('aria-pressed', String(!!j.base));
-    if (j.ere) { b.href = 'index.html#m=' + j.ere; b.title = 'Passer à la maquette détaillée de Paris en ' + j.label; b.addEventListener('click', (e) => { stopEpochPlay(); goEra(e, j.ere); }); }
+    if (j.ere) { b.href = 'index.html#m=' + j.ere; b.title = j.vers; b.addEventListener('click', (e) => { stopEpochPlay(); goEra(e, j.ere); }); }
     else { b.type = 'button'; b.title = j.titre; b.addEventListener('click', () => { stopEpochPlay(); setEpoch(j.id); }); }
     jl.appendChild(b);
   }
@@ -590,7 +590,8 @@ export function initUI(app) {
     bits.forEach(([n, t], i) => { if (i) st.append(' · '); if (n) st.append(el('b', null, n)); st.append(i === 0 && !n ? t.charAt(0).toUpperCase() + t.slice(1) : t); });
     $('frise-credit').textContent = j.base ? '' : typo([s.source, s.credit, 'licence ODbL'].filter(Boolean).join(' — '));
     $('frise-wide').hidden = !!j.base; $('frise-src').hidden = !!j.base;
-    $('frise-1789').hidden = !j.ere;               // la date la plus proche de la seconde maquette
+    $('frise-1789').hidden = !j.ere;               // une date qui a sa propre maquette : un lien y mène
+    if (j.ere) { const a = $('lien-1789'); a.href = 'index.html#m=' + j.ere; a.textContent = j.lien; a.nextElementSibling.textContent = j.lienNote; }
     if (j.base) { const li = el('li'); li.textContent = 'Choisissez une date sur la frise : la maquette reste celle de 1380, l’autre époque vient s’y superposer.'; leg.appendChild(li); }
     mini.setEpoch(j.base ? null : { id: j.id, city: epochs.city, wide: epochs.wide, rectCity: epochs.rectCity, rectWide: epochs.rectWide }, !!j.ilots && !j.passe);
     $('map-zoom').textContent = zoomLabel();
@@ -640,7 +641,7 @@ export function initUI(app) {
   // Passage à une autre maquette. Hébergée par la page d'accueil, la maquette lui demande la transition ; ouverte
   // seule, le lien y mène, à la même vue et à la même heure.
   function goEra(e, id) { if (askEra(id)) { e.preventDefault(); return; } e.currentTarget.href = 'index.html#m=' + id + '&' + viewHash().slice(1); }
-  $('lien-1789').addEventListener('click', (e) => goEra(e, '1789'));
+  $('lien-1789').addEventListener('click', (e) => goEra(e, epochs.current.ere || '1789'));
   async function share() {
     const url = shareUrl(makeHash(currentState()));
     let ok = false;

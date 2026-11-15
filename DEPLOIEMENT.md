@@ -4,9 +4,10 @@ Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dépôt.
 
 ## Ce qui est à déployer
 
-Trois fichiers autonomes, à servir côte à côte : `dist/index.html` (page d'accueil, 8 Ko : elle héberge les maquettes
+Quatre fichiers autonomes, à servir côte à côte : `dist/index.html` (page d'accueil, 8 Ko : elle héberge les maquettes
 dans des cadres et fait passer de l'une à l'autre), `dist/1380.html` (Paris 1380, environ 1,8 Mo, 720 Ko une fois
-compressé) et `dist/1789.html` (Paris 1789, environ 1,5 Mo, 660 Ko compressé). Chaque maquette contient son code et
+compressé), `dist/1789.html` (Paris 1789, environ 1,5 Mo, 660 Ko compressé) et `dist/lutece.html` (Lutèce, environ
+0,8 Mo, 240 Ko compressé). Chaque maquette contient son code et
 ses données ; toutes les textures et la géométrie sont
 calculées dans le navigateur. Pas de base de données, pas de
 variables d'environnement, pas de secret, pas de volume.
@@ -29,17 +30,17 @@ En local : `docker build -t paris-1380 . && docker run --rm -p 8080:80 paris-138
 Variante sans Docker : n'importe quel hébergement statique, en publiant le répertoire `dist`. Le Dockerfile ajoute
 seulement la compression gzip, le point `/healthz` et trois en-têtes.
 
-Le Dockerfile ne reconstruit pas les pages : il copie `dist/index.html`, `dist/1380.html` et `dist/1789.html` tels qu'ils
+Le Dockerfile ne reconstruit pas les pages : il copie `dist/index.html`, `dist/1380.html`, `dist/1789.html` et `dist/lutece.html` tels qu'ils
 sont versionnés. Après une modification des sources, lancer `npm install && npm run build && npm test` puis committer
-les trois fichiers.
+les quatre fichiers.
 
 ## GitHub Pages (gratuit)
 
 Le dépôt est prêt à être servi tel quel : à la racine, `index.html` renvoie vers la page d'accueil `dist/index.html` et
-`1789.html` vers cette même page ouverte sur 1789 (en gardant le lien partagé), et `.nojekyll` évite toute transformation des fichiers. Pour l'activer : dans le dépôt, *Settings* → *Pages* → *Build and deployment* →
+`1789.html` et `lutece.html` vers cette même page ouverte sur 1789 ou sur Lutèce (en gardant le lien partagé), et `.nojekyll` évite toute transformation des fichiers. Pour l'activer : dans le dépôt, *Settings* → *Pages* → *Build and deployment* →
 *Source* : « Deploy from a branch », branche `main`, dossier `/ (root)`, puis *Save*. Le site répond au bout d'une minute
 ou deux aux adresses <https://calyzo-cpmo.github.io/paris-1380/> (Paris 1380) et
-<https://calyzo-cpmo.github.io/paris-1380/1789.html> (Paris 1789) ; chaque envoi sur `main` le met à jour.
+<https://calyzo-cpmo.github.io/paris-1380/1789.html> (Paris 1789) et <https://calyzo-cpmo.github.io/paris-1380/lutece.html> (Lutèce) ; chaque envoi sur `main` le met à jour.
 
 ## À savoir avant d'ouvrir au public
 

@@ -193,6 +193,9 @@ export function skeletonRoof(b, exIn, y, o = {}) {
   let cur = o.overhang ? offsetEx([exIn], o.overhang) : [exIn];
   let t = 0, guard = 0, step = step0, retrait = 0;         // retrait : celui de la bande en cours, pour la couture
   let top = y;
+  // Reste d'érosion sans épaisseur (moins de six centimètres) : quand un corps a partout la même largeur, l'érosion
+  // s'achève sur un polygone plat, que la triangulation étalerait d'un bord à l'autre de son enveloppe. Rien à couvrir.
+  const plat = (ex) => { let a = Math.abs(polyArea(ex.outer)), p = 0; for (const h of ex.holes) a -= Math.abs(polyArea(h)); for (const r of [ex.outer, ...ex.holes]) for (let i = 0; i < r.length; i++) { const q = r[(i + 1) % r.length]; p += Math.hypot(q[0] - r[i][0], q[1] - r[i][1]); } return a < 0.03 * p; };
   // Couture d'une bande : { tris, faux }. Elle n'est gardée (tris) que si elle pave la bande : l'aire signée de ses
   // triangles égale celle de la bande, et les triangles retournés — un éclat au droit d'un côté de quelques
   // décimètres — restent infimes ; on les retire. Elle échoue quand l'érosion fait disparaître une aile ou un
@@ -234,13 +237,13 @@ export function skeletonRoof(b, exIn, y, o = {}) {
   };
   while (cur.length && guard++ < 160) {
     const h0 = y + H(t);
-    if (H(t) >= maxH) { for (const ex of cur) emit(ex, h0, h0, null); top = h0; break; }
+    if (H(t) >= maxH) { for (const ex of cur) if (!plat(ex)) emit(ex, h0, h0, null); top = h0; break; }
     const inB = t < bd - 1e-6, st = inB ? bd - t : step; retrait = st;
     const next = offsetEx(cur, -st);
     if (!next.length) {
       if (inB) { bd = 0; bh = 0; continue; }               // corps trop étroit pour un brisis : simple toit à versants
       if (step > minStep) { step *= 0.5; continue; }
-      for (const ex of cur) emit(ex, h0, h0, null);
+      for (const ex of cur) if (!plat(ex)) emit(ex, h0, h0, null);
       top = h0; break;
     }
     const bands = difference(cur, next), plans = bands.map(couture);

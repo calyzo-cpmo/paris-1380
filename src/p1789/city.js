@@ -1,6 +1,5 @@
 // Construction de Paris à la veille de la Révolution : sol peint d'après le plan, bâti de l'Atlas de Vasserot dressé
 // en volumes, îlots non couverts par l'atlas évoqués par un bâti de bordure, mur des Fermiers généraux, arbres.
-import * as THREE from 'three';
 import { buildMonuments } from './monuments.js';
 import { solidShim, gothique } from './eglises.js';
 import { buildQuais } from './quais.js';
@@ -10,6 +9,7 @@ import { makeMaterials89 } from './textures.js';
 import { hash, hex, ENDUITS, ARDOISE, PIERRE, ardoise, tuile, building } from './blocks.js';
 import { Builder, ccw } from '../builder.js';
 import { polyArea, centroid, mulberry32, offsetEx, difference, pointInPoly, clamp } from '../geom.js';
+import { ring, fill, stroke, indexFoot, buildTrees } from './outils.js';
 
 export const CENTRE = { x: -250, z: -500 };              // cœur dense de la ville (entre les Halles et le Châtelet)
 export const TUILE = 1600;                               // côté du motif de campagne (m)
@@ -26,10 +26,6 @@ export function makeFieldsTile(n = 512) {
   }
   return c;
 }
-
-const ring = (x, T, r) => { x.moveTo(T.x(r[0][0]), T.y(r[0][1])); for (let i = 1; i < r.length; i++) x.lineTo(T.x(r[i][0]), T.y(r[i][1])); x.closePath(); };
-const fill = (x, T, polys, style) => { x.fillStyle = style; x.beginPath(); for (const rings of polys) for (const r of rings) ring(x, T, r); x.fill('evenodd'); };
-const stroke = (x, T, polys, style, w) => { x.strokeStyle = style; x.lineWidth = w; x.lineJoin = 'round'; x.beginPath(); for (const rings of polys) for (const r of rings) ring(x, T, r); x.stroke(); };
 
 // Classe d'un îlot : 'c' bâti (cours), 'j' jardins et marais, 'r' rural.
 export function ilotClasses() {
@@ -101,16 +97,6 @@ const partBrises = (r) => (r < 1300 ? 0.4 : r < 2300 ? 0.28 : 0.06);
 const EGLISE = /^(eglise|église|temple protestant|saint denis du)|eglise saint paul/i;
 // églises encore gothiques en 1789 parmi celles que l'atlas nomme ; paroisses rebâties à la moderne
 const GOTHIQUE = /Saint Germain (l'Auxerrois|des Prés)|Saint Gervais|Saint Séverin|Saint Méry/, CLASSIQUE = /Roch|Louis|Philippe/;
-
-// Emprises infranchissables, rangées par cases de 48 m : app.footAt(x, z) rend l'emprise qui couvre le point.
-function indexFoot(app) {
-  const CELL = 48, cells = new Map();
-  for (const f of app.foot) {
-    if (f.x0 == null) { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of f.ring) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1]; } f.x0 = x0; f.z0 = z0; f.x1 = x1; f.z1 = z1; }
-    for (let i = Math.floor(f.x0 / CELL); i <= Math.floor(f.x1 / CELL); i++) for (let k = Math.floor(f.z0 / CELL); k <= Math.floor(f.z1 / CELL); k++) { const key = (i + 2048) * 4096 + k + 2048; let l = cells.get(key); if (!l) cells.set(key, (l = [])); l.push(f); }
-  }
-  app.footAt = (x, z) => { const l = cells.get((Math.floor(x / CELL) + 2048) * 4096 + Math.floor(z / CELL) + 2048); if (l) for (const f of l) if (x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pointInPoly(x, z, f.ring)) return f; return null; };
-}
 
 export async function buildCity89(app, step) {
   const T = app.terrain, B = new Builder(), mats = (app.materials = makeMaterials89(app.mobile ? 0.5 : 1));
@@ -245,38 +231,4 @@ export async function buildCity89(app, step) {
     x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; x.beginPath(); for (const f of app.foot) ring(x, TT, f.ring); x.fill(); x.stroke();
     const im = x.getImageData(0, 0, w, h).data, data = new Uint8Array(w * h); for (let i = 0; i < data.length; i++) data[i] = im[i * 4] > 200 ? 1 : 0;
     app.nav = { data, w, h, x0: R.x, z0: R.z, cell }; }
-}
-
-// Arbres des jardins : une seule géométrie (tronc et houppier), instanciée.
-function buildTrees(app) {
-  const T = app.terrain, r = mulberry32(17), pts = [];
-  for (const g of app.gardens) {
-    let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of g.ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); }
-    const pas = 11;
-    for (let x = x0; x < x1; x += pas) for (let z = z0; z < z1; z += pas) {
-      if (r() > g.dens) continue;
-      const px = x + r() * pas, pz = z + r() * pas;
-      if (!pointInPoly(px, pz, g.ring) || app.footAt(px, pz) || T.wetAt(px, pz) > 0.05) continue;
-      pts.push(px, T.height(px, pz), pz, 0.75 + r() * 0.7, r());
-      if (pts.length >= 5 * 14000) break;
-    }
-  }
-  const crown = new THREE.IcosahedronGeometry(1, 0), trunk = new THREE.CylinderGeometry(0.16, 0.22, 1, 4, 1, true);
-  crown.scale(2.6, 3.1, 2.6); crown.translate(0, 5.6, 0); trunk.scale(1, 3.2, 1); trunk.translate(0, 1.6, 0);
-  { const P = crown.attributes.position, N = crown.attributes.normal;      // houppier lissé : normales de l'ellipsoïde, au lieu de facettes
-    for (let i = 0; i < P.count; i++) { const nx = P.getX(i) / 6.76, ny = (P.getY(i) - 5.6) / 9.61, nz = P.getZ(i) / 6.76, l = Math.hypot(nx, ny, nz) || 1; N.setXYZ(i, nx / l, ny / l, nz / l); } }
-  const paint = (g0, c) => { const g = g0.index ? g0.toNonIndexed() : g0, n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c[0]; a[i * 3 + 1] = c[1]; a[i * 3 + 2] = c[2]; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); return g; };
-  const a = paint(crown, [1, 1, 1]), b = paint(trunk, [0.35, 0.26, 0.18]), n = a.attributes.position.count + b.attributes.position.count;
-  const geo = new THREE.BufferGeometry();
-  for (const k of ['position', 'normal', 'color']) { const arr = new Float32Array(n * 3); arr.set(a.attributes[k].array, 0); arr.set(b.attributes[k].array, a.attributes[k].array.length); geo.setAttribute(k, new THREE.BufferAttribute(arr, 3)); }
-  const count = pts.length / 5, mesh = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 }), count);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), col = new THREE.Color();
-  for (let i = 0; i < count; i++) {
-    const k = pts[i * 5 + 3], t = pts[i * 5 + 4];
-    p.set(pts[i * 5], pts[i * 5 + 1] - 0.1, pts[i * 5 + 2]); s.set(k, k * (0.9 + t * 0.3), k); q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, t * 6.28);
-    mesh.setMatrixAt(i, m.compose(p, q, s)); mesh.setColorAt(i, col.setRGB(0.24 + t * 0.12, 0.38 + t * 0.13, 0.17 + t * 0.06, THREE.SRGBColorSpace));
-  }
-  mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false; mesh.count = count;
-  app.scene.add(mesh); app.treeCount = count;
-  return mesh;
 }

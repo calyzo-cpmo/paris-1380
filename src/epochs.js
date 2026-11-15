@@ -17,8 +17,9 @@ export const EPOQUES = E;
 
 // Jalons de la frise. `egl` : année retenue pour les établissements religieux (la couche s'arrête à 1790).
 export const JALONS = [
-  { id: 'lutece', label: 'Lutèce', an: 250, titre: 'Lutèce, ville romaine', lutece: true, passe: 2,
-    texte: 'La ville romaine s’étend surtout sur la rive gauche, autour d’un quadrillage de rues. Rues et rivages sont ceux qu’a restitués l’archéologue Théodore Vacquer au XIXe siècle ; cinq grands monuments sont situés : le forum, le théâtre, les arènes, les thermes du Nord (ceux de Cluny) et les thermes de l’Est.' },
+  { id: 'lutece', label: 'Lutèce', an: 250, titre: 'Lutèce, ville romaine', lutece: true, passe: 2, ere: 'lutece',
+    vers: 'Passer à la maquette détaillée de Lutèce, vers 250', lien: 'Visiter Lutèce en maquette', lienNote: 'La ville gallo-romaine vers 250 : forum, thermes, théâtre, arènes.',
+    texte: 'La ville romaine s’étend surtout sur la rive gauche, autour d’un quadrillage de rues. Rues et rivages sont ceux qu’a restitués l’archéologue Théodore Vacquer au XIXe siècle ; cinq grands monuments sont situés : le forum, le théâtre, les arènes, les thermes du Nord (ceux de Cluny) et les thermes de l’Est. Cette date a sa propre maquette.' },
   { id: '1300', label: '1300', an: 1300, titre: 'Paris en 1300', ilots: '1300', egl: 1300, passe: 1,
     texte: 'Les îlots d’habitation sont restitués d’après les rôles de la taille de 1299 et 1300. La ville tient dans l’enceinte de Philippe Auguste ; sur la rive droite, faute de connaître la limite exacte de l’urbanisation, les îlots extérieurs ont été prolongés jusqu’au futur mur de Charles V.' },
   { id: '1380', label: '1380', an: 1380, titre: 'Paris vers 1380', base: true,
@@ -30,6 +31,7 @@ export const JALONS = [
   { id: '1741', label: '1741', an: 1741, titre: 'Paris vers 1741', ilots: '1741', egl: 1741, futur: true,
     texte: 'D’après le plan de Delagrive, levé en 1728 avec une triangulation rigoureuse et mis à jour vers 1741. Les anciennes enceintes ne sont plus que des tracés.' },
   { id: '1791', label: '1789', an: 1789, titre: 'Paris en 1789', ilots: '1791', egl: 1789, eau: '1791', futur: true, ere: '1789',
+    vers: 'Passer à la maquette détaillée de Paris en 1789', lien: 'Visiter Paris 1789 en maquette', lienNote: 'La ville à la veille de la Révolution, bâtiment par bâtiment.',
     texte: 'Paris à la veille de la Révolution, d’après le plan de Verniquet, levé de 1782 à 1790. Le mur des Fermiers généraux, bâti de 1784 à 1790, entoure la ville. Les établissements religieux sont ceux de 1789, à la veille de leur suppression. Cette date a sa propre maquette, détaillée bâtiment par bâtiment.' },
   { id: '1836', label: '1836', an: 1836, titre: 'Paris vers 1836', ilots: '1836', eau: '1836', futur: true,
     texte: 'D’après l’Atlas par îlots de Philibert Vasserot, dressé de 1810 à 1836 : la ville avant les percées du Second Empire.' },

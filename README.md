@@ -1,6 +1,6 @@
-# Paris à travers le temps — maquettes 3D interactives de Paris en 1380 et en 1789
+# Paris à travers le temps — maquettes 3D interactives de Lutèce, de Paris en 1380 et en 1789
 
-Paris à huit dates, de Lutèce à 1836, dont deux maquettes détaillées : 1380 et 1789. La première page est une restitution
+Paris à huit dates, de Lutèce à 1836, dont trois maquettes détaillées : Lutèce vers 250, 1380 et 1789. La première page est une restitution
 en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
 survol libre, cinq parcours commentés, promenade à pied dans des rues peuplées et jusque dans la campagne, histoire de
 chaque monument, visite de leurs intérieurs, mini-plan et boussole, heure du jour réglable, calque montrant ce qui est
@@ -10,12 +10,16 @@ Une seconde page, **Paris 1789**, montre la ville à la veille de la Révolution
 plus de vingt mille bâtiments dressés d'après leur emprise réelle, la Seine, le relief, une cinquantaine de repères,
 le survol et la promenade à pied.
 
-Une **page d'accueil** héberge les deux maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
-« 1789 » (ou « 1380 ») dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
+Une troisième page, **Lutèce**, montre la ville gallo-romaine vers 250 : le forum, les deux thermes, le théâtre et les
+arènes sur la colline de la rive gauche, l'île et ses deux ponts de bois, un fleuve plus large qu'aujourd'hui, d'après
+la restitution de Théodore Vacquer.
+
+Une **page d'accueil** héberge les trois maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
+« Lutèce », « 1380 » ou « 1789 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
 et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent et l'autre ville s'élève.
 
-**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789. Les deux adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/1380.html` et `dist/1789.html`.
-**Les ouvrir sur son ordinateur :** `dist/index.html` (les trois fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
+**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce. Les trois adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html` et `dist/1789.html`.
+**Les ouvrir sur son ordinateur :** `dist/index.html` (les quatre fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
 
 ## Ce que montre la maquette
@@ -71,7 +75,7 @@ et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent 
   au sol (rues et monuments de Lutèce, îlots de 1300) ; pour les époques postérieures, les quartiers bâtis depuis 1380
   sont dessinés en maisons le long des rues — à pans de bois en 1553, enduites à hautes fenêtres ensuite —, les édifices
   postérieurs et les nouvelles enceintes (Fossés jaunes, Fermiers généraux) en pierre, les établissements religieux en
-  pastilles, et le mini-plan passe à l'échelle de l'agglomération. La date 1789, en doré comme 1380, ouvre sa propre
+  pastilles, et le mini-plan passe à l'échelle de l'agglomération. Lutèce et 1789, en doré comme 1380, ouvrent leur propre
   maquette détaillée. Chaque date a son texte, sa légende, ses chiffres et ses crédits ; un bouton fait défiler toute la
   frise. À pied, les maisons du calque se contournent comme les autres.
 - **Partager** : l'adresse de la page suit la vue, l'heure, la fiche ouverte et l'époque ; le bouton « Partager » la copie.
@@ -125,6 +129,30 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   - les habitants sont une évocation ; ils ne circulent que dans la ville dense (5 × 4,2 km autour du centre) ;
   - il n'y a pas encore de parcours commentés ni d'intérieurs ;
   - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
+
+## Lutèce — la troisième maquette
+
+- **Ce qu'elle montre** : la ville gallo-romaine vers 250, à son apogée, avant les invasions de la fin du IIIe siècle
+  (5 × 5 km de terrain modelé). Sur la colline de la rive gauche, le forum — esplanade fermée de boutiques, temple sur
+  podium, basilique —, les thermes du Nord (ceux de Cluny) et de l'Est, voûtés, le théâtre et, à l'écart, les arènes ;
+  le cardo, qui descend la colline et franchit les deux bras du fleuve par deux ponts de bois ; l'île, basse et peu
+  bâtie ; un fleuve large de trois cents à sept cents mètres, ses sept îles et ses grèves ; la Bièvre ; les bras morts
+  et les prés inondables de la rive droite ; environ 1 700 maisons le long des rues, leurs jardins, les bois ; des
+  habitants en costume gallo-romain ; quinze repères avec leur notice.
+- **D'où viennent les données** : rues, rivages et emprise des cinq monuments sont la restitution de Théodore Vacquer,
+  numérisée par le projet ALPAGE (© ALPAGE : M. Fernandez ; monuments © ALPAGE : P. Rouet, licence ODbL 1.0) — les
+  mêmes couches que la date « Lutèce » de la frise. Le relief est celui du nivellement de Girard (1805-1807).
+- **Ce qui est attesté, ce qui est évoqué** (le panneau « Sources » de la page le détaille) :
+  - attesté par les fouilles : le tracé des rues retrouvées, les rives et les îles, les ruisseaux, l'emplacement et
+    l'emprise au sol du forum, des deux thermes, du théâtre et des arènes ;
+  - évoqué : toutes les maisons — elles bordent les rues restituées, serrées autour du forum, clairsemées vers les
+    champs —, l'élévation des monuments, la forme des ponts (placés là où le cardo franchit l'eau), les bois et les
+    cultures ; le pilier des Nautes et les tombeaux de la route du sud sont placés par convention ;
+  - décalage de date : le relief est moderne. Près des rives et dans les îles, le sol a été rabattu pour retrouver
+    des berges basses ; les grands édifices sont posés sur des terrasses de niveau.
+- **Technique** : la page réutilise l'application de Paris 1789, à laquelle la ville est fournie comme un « monde »
+  (cadre, terrain, sol peint, construction, habitants). Elle ne transporte que ses propres données : 810 Ko, une ville
+  bâtie en quelques secondes, cinquante mille triangles.
 
 ## Sources
 
@@ -198,10 +226,11 @@ tools/fetch_alpage.py        télécharge les vingt et une couches GeoPackage du
 tools/extract_epochs.py      GeoPackage → data/epoques.json (recalage sur la maquette, simplification, codage compact)
 tools/extract_1789.py        GeoPackage → data/paris1789.json (même recalage, relief en grille, repères projetés en Lambert-93)
 tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, géométries WKB)
-tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html)
+tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
 tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
+tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, marche à pied, heure, frise, sources, téléphone
 tools/test_accueil.mjs       test de la page d'accueil : hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
 tools/test_toits.mjs         contrôle géométrique des toits de 1789, sans navigateur : l'aire de chaque toit égale celle de son emprise, cours déduites
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
@@ -250,7 +279,20 @@ src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots év
 src/p1789/monuments.js       tours, dômes, clochers et grands ensembles posés sur les emprises et les enclos de l'atlas
 src/p1789/figures.js         visages et costumes de 1789, choix du costume de chaque passant
 src/p1789/places.js          repères de 1789 et leurs notices
-src/p1789/app.js, ui.js      application et interface de la seconde page
+src/p1789/app.js, ui.js      application et interface des pages Paris 1789 et Lutèce : la ville leur est fournie comme un « monde »
+src/p1789/monde.js           le monde de Paris 1789 : cadre, terrain et quais, sol peint, construction, habitants
+src/p1789/outils.js          outils communs aux deux villes : tracé sur le plan du sol, emprises infranchissables, arbres
+src/relief.js                décodage de la grille de relief
+src/bodylutece.html          page Lutèce (mêmes styles que les deux autres)
+src/lutece/data.js           accès aux données de Lutèce (rues, rivages, monuments) et au relief
+src/lutece/plan.js           plan de la ville : lit du fleuve et îles, ruisseaux, voies, aménagement des monuments, ponts, maisons et jardins évoqués
+src/lutece/sol.js            sol peint : campagne, bois, prés inondables, bras morts, rues dallées, esplanades, fleuve
+src/lutece/textures.js       murs enduits à soubassement peint, tuiles romaines, petit appareil, murs à arcades
+src/lutece/ville.js          maisons, portiques du cardo, arbres, trame des passants
+src/lutece/monuments.js      forum (temple, basilique, portiques), thermes voûtés, théâtre, arènes, ponts de bois, pilier des Nautes, tombeaux
+src/lutece/figures.js        visages et costumes gallo-romains
+src/lutece/places.js         repères de Lutèce et leurs notices
+src/lutece/monde.js          le monde de Lutèce
 ```
 
 ## Reconstruire
@@ -261,8 +303,8 @@ npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
 npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (40 Mo)
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
-npm run build     # produit dist/index.html (page d'accueil), dist/1380.html et dist/1789.html
-npm test          # toits, puis Paris 1380, Paris 1789 et la page d'accueil, dans Chromium (Playwright requis) ; une vingtaine de minutes en rendu logiciel
+npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html et dist/lutece.html
+npm test          # toits, puis Paris 1380, Paris 1789, Lutèce et la page d'accueil, dans Chromium (Playwright requis) ; une vingtaine de minutes en rendu logiciel
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),
@@ -275,11 +317,11 @@ esbuild (outil de build). Toute la géométrie et toutes les textures sont gén�
 - **Plan de 1380** (`data/source/Paris_1380.svg`, `data/paris1380.json`) : [CC BY-SA 2.0 FR](https://creativecommons.org/licenses/by-sa/2.0/fr/),
   d'après J. Leuridan et J.-A. Mallet (CNRS Éditions), infographie C. Roms (LAMOP), projet ALPAGE. Toute réutilisation doit
   citer ces auteurs et partager les versions modifiées du plan sous la même licence.
-- **Calque des époques et Paris 1789** (`data/epoques.json`, `data/paris1789.json`) : [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), base dérivée des
+- **Calque des époques, Lutèce et Paris 1789** (`data/epoques.json`, `data/paris1789.json`) : [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), base dérivée des
   couches du SIG ALPAGE. Toute réutilisation doit créditer « © ALPAGE » suivi des auteurs de chaque couche (tableau
   ci-dessus ; les données de C. Bourlet se citent « © ALPAGE : IRHT (C. Bourlet) »), et toute base dérivée rendue
   publique doit l'être sous la même licence.
-- **Pages construites** (`dist/index.html`, `dist/1380.html`, `dist/1789.html`) : elles réunissent le code et les données. Elles se
+- **Pages construites** (`dist/index.html`, `dist/1380.html`, `dist/1789.html`, `dist/lutece.html`) : elles réunissent le code et les données. Elles se
   redistribuent librement à condition de laisser visibles les attributions du plan et des couches ALPAGE, qui figurent
   dans leur panneau « Sources ».
 - **Vignettes des sources** (`data/thumbs.json`) : reproductions d'œuvres du domaine public.

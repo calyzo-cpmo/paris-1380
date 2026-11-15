@@ -1,9 +1,11 @@
 // Page d'accueil « Paris à travers le temps ». Elle héberge chaque maquette dans un cadre et orchestre le passage de
 // l'une à l'autre sans changer de page : la ville d'arrivée se construit en arrière-plan, puis, au même point de vue et
 // à la même heure, la ville de départ s'enfonce dans le sol, les deux plans se fondent, et l'autre ville s'élève.
-// Les maquettes restent des pages autonomes (1380.html, 1789.html) ; le dialogue passe par des messages (src/embed.js).
+// Les maquettes restent des pages autonomes (lutece.html, 1380.html, 1789.html) ; le dialogue passe par des messages
+// (src/embed.js).
 
 const ERES = {
+  lutece: { page: 'lutece.html', nom: 'Lutèce' },
   1380: { page: '1380.html', nom: 'Paris 1380' },
   1789: { page: '1789.html', nom: 'Paris 1789' },
 };

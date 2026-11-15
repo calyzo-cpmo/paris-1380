@@ -1,8 +1,8 @@
 {
   "name": "paris-1380",
-  "version": "4.5.0",
+  "version": "4.6.0",
   "private": true,
-  "description": "Paris à travers le temps : maquettes 3D interactives de Paris vers 1380 et en 1789, et passage de l'une à l'autre sur place, construites sur les données du projet ALPAGE",
+  "description": "Paris à travers le temps : maquettes 3D interactives de Lutèce vers 250, de Paris vers 1380 et en 1789, et passage de l'une à l'autre sur place, construites sur les données du projet ALPAGE",
   "type": "module",
   "scripts": {
     "extract": "python3 tools/extract_alpage.py",
@@ -11,9 +11,10 @@
     "extract:1789": "python3 tools/extract_1789.py",
     "build": "node tools/build.mjs",
     "shot": "node tools/shot.mjs",
-    "test": "node tools/test_toits.mjs && node tools/test.mjs && node tools/test1789.mjs && node tools/test_accueil.mjs",
+    "test": "node tools/test_toits.mjs && node tools/test.mjs && node tools/test1789.mjs && node tools/test_lutece.mjs && node tools/test_accueil.mjs",
     "test:1380": "node tools/test.mjs",
     "test:1789": "node tools/test1789.mjs",
+    "test:lutece": "node tools/test_lutece.mjs",
     "inshot": "node tools/inshot.mjs",
     "thumbs": "python3 tools/make_thumbs.py",
     "test:toits": "node tools/test_toits.mjs",

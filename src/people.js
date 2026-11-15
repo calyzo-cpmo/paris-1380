@@ -466,10 +466,11 @@ class Statics {
 
 export class People {
   // opts (facultatif, pour une autre ville que celle de 1380) : nav { data, w, h, x0, z0, cell } trame des voies ;
-  // atlas : visages et costumes ; outfit : choix du costume ; noBeasts : pas de bêtes en liberté ; groundCell : maille du sol.
+  // atlas : visages et costumes ; outfit : choix du costume ; noBeasts : pas de bêtes en liberté ; groundCell : maille du sol ;
+  // density : part de la foule habituelle (une petite ville a moins de passants).
   constructor(app, opts = {}) {
     this.app = app; this.r = mulberry32(2024); this.enabled = true; this.first = true; this.frame = 0;
-    this.outfit = opts.outfit || outfit;
+    this.outfit = opts.outfit || outfit; this.density = opts.density || 1;
     if (opts.nav) { const n = opts.nav; this.navData = n.data; this.nw = n.w; this.nh = n.h; this.x0 = n.x0; this.z0 = n.z0; this.nc = n.cell || 1; }
     else {
       const lu = app.lu, solid = app.solid, w = lu.w, h = lu.h;
@@ -523,7 +524,7 @@ export class People {
     const cx = walk ? rig.walk.x : rig.target.x, cz = walk ? rig.walk.z : rig.target.z;
     const R = walk ? 250 : clamp(dist * 0.8, 170, 520), cam = app.camera.position, hi2 = (walk ? 80 : 95) ** 2;
     // densité visée : un passant pour ~26 m² de voie (les rues couvrent environ un cinquième de la ville), moins la nuit
-    const want = clamp((Math.PI * R * R * 0.2) / 26, 250, this.total) * (0.12 + 0.88 * app.sky.day) * (app.crowdScale || 1);
+    const want = clamp((Math.PI * R * R * 0.2) / 26, 250, this.total) * (0.12 + 0.88 * app.sky.day) * (app.crowdScale || 1) * this.density;
     // après un saut (fiche, visite guidée, entrée à pied), la foule se reforme d'emblée autour du nouveau point
     const fresh = this.first || Math.hypot(cx - this.lastX, cz - this.lastZ) > 70; this.lastX = cx; this.lastZ = cz;
     let n = 0, near = 0;

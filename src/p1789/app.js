@@ -1,30 +1,26 @@
-// Application de la page « Paris 1789 » : même moteur que la maquette de 1380 (ciel, eau, caméra, assemblage des
-// volumes), autre ville. Les méthodes de pilotage portent les mêmes noms que dans src/app.js.
+// Application des pages « Paris 1789 » et « Lutèce » : même moteur que la maquette de 1380 (ciel, eau, caméra,
+// assemblage des volumes), autre ville. Les méthodes de pilotage portent les mêmes noms que dans src/app.js.
+// La ville elle-même est un « monde » fourni à la construction (src/p1789/monde.js, src/lutece/monde.js) : cadre,
+// terrain, peinture du sol, construction, habitants. Ce fichier ne contient aucune donnée.
 import * as THREE from 'three';
-import { CADRE } from './data.js';
-import { Terrain89 } from './terrain.js';
-import { buildCity89, paintPlan, makeFieldsTile, ilotClasses, TUILE } from './city.js';
-import { planQuais } from './quais.js';
 import { buildGrid } from '../grid.js';
 import { Sky } from '../sky.js';
 import { makeWater } from '../water.js';
 import { makeDetailTexture, makeCobbleTexture, makeGroundMaterial } from '../groundmat.js';
 import { CameraRig } from '../controls.js';
 import { People } from '../people.js';
-import { makeFigureAtlas89, outfit89 } from './figures.js';
 import { clamp, smoothstep } from '../geom.js';
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 const LOIN = 16000;                                                    // demi-côté du paysage autour de la ville (m)
-export const CENTRE_RECT = { x: -2700, z: -2500, w: 5000, h: 4200 };   // ville dense : sol peint plus finement
 
 // Sol de la ville : plan d'ensemble, remplacé au centre par une toile plus fine ; grain de détail par-dessus.
 // De près, les pavés paraissent là où le masque `pave` (rues, quais et places de la ville dense) est blanc.
-function makeGround89(wide, centre, detail, cobble, pave) {
+function makeGround89(wide, centre, detail, cobble, pave, rect) {
   const m = new THREE.MeshStandardMaterial({ map: wide, roughness: 1, metalness: 0 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uDetail = { value: detail }; sh.uniforms.uCentre = { value: centre }; sh.uniforms.uCobble = { value: cobble }; sh.uniforms.uPave = pave;
-    sh.uniforms.uRect = { value: new THREE.Vector4(CENTRE_RECT.x, CENTRE_RECT.z, CENTRE_RECT.w, CENTRE_RECT.h) };
+    sh.uniforms.uRect = { value: new THREE.Vector4(rect.x, rect.z, rect.w, rect.h) };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWxz = (modelMatrix * vec4(position, 1.0)).xz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail; uniform sampler2D uCentre; uniform sampler2D uCobble; uniform sampler2D uPave; uniform vec4 uRect;')
       .replace('#include <map_fragment>', `#include <map_fragment>
@@ -42,7 +38,10 @@ function makeGround89(wide, centre, detail, cobble, pave) {
 }
 
 export class App89 {
-  constructor(container) { this.container = container; this.onProgress = () => {}; this.listeners = []; }
+  // monde : { cadre { x0, z0, x1, z1 }, centre { x, z, w, h } (sol peint finement, trame des passants), vue (vue
+  // d'ensemble), tuile (côté du motif de campagne), etapes [3 libellés], terrain(app), motif(), peindre(ctx, T, tuile,
+  // app), construire(app, step), figures(mobile), lumieres [matières éclairées la nuit], bilan(app) }
+  constructor(container, monde) { this.container = container; this.monde = monde; this.onProgress = () => {}; this.listeners = []; this.deck = new Map(); }
 
   async start() {
     const step = async (label, frac) => { this.onProgress(label, frac); if (this.log) this.log(label); await tick(); await tick(); };
@@ -51,10 +50,9 @@ export class App89 {
     const shot = location.hash === '#shot'; this.shot = shot;
     const T0 = performance.now();
     this.log = (m) => { if (shot) console.log(`[${((performance.now() - T0) / 1000).toFixed(1)}s] ${m}`); };
-    await step('Lecture des plans de Verniquet et de Vasserot…', 0.03);
-    const terrain = new Terrain89(); this.terrain = terrain;
-    this.quaiPans = planQuais(terrain); terrain.sink(this.quaiPans);          // tracé des murs de quai, avant de mailler le sol
-    this.ilotCls = ilotClasses();
+    const monde = this.monde, CADRE = monde.cadre, CENTRE_RECT = monde.centre, TUILE = monde.tuile;
+    await step(monde.etapes[0], 0.03);
+    const terrain = monde.terrain(this); this.terrain = terrain;
 
     const renderer = new THREE.WebGLRenderer({ antialias: !shot, powerPreference: 'high-performance', preserveDrawingBuffer: shot });
     renderer.setPixelRatio(shot ? 1 : Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
@@ -69,18 +67,18 @@ export class App89 {
     const smap = shot || mobile ? 2048 : 4096; this.sky.sun.shadow.mapSize.set(smap, smap);
     this.shadowState = { x: 1e9, z: 1e9, s: 0, hour: -1, t: 0 };
 
-    await step('Le sol de Paris, d’après le nivellement de Girard…', 0.1);
+    await step(monde.etapes[1], 0.1);
     const fw = CADRE.x1 - CADRE.x0, fh = CADRE.z1 - CADRE.z0, bank = (cx, cz, d) => { let lo = 1, hi = 0; for (const [a, b] of [[0, 0], [d, 0], [-d, 0], [0, d], [0, -d]]) { const w = terrain.wetAt(cx + a, cz + b); if (w < lo) lo = w; if (w > hi) hi = w; } return hi > 0.03 && lo < 0.97; };
     const core = buildGrid({ x0: CADRE.x0, z0: CADRE.z0, x1: CADRE.x1, z1: CADRE.z1, cell: 25, sub: 5, terrain: terrain.mesh, skirt: 14, fine: (cx, cz) => bank(cx, cz, 16), uv: (x, z) => [(x - CADRE.x0) / fw, 1 - (z - CADRE.z0) / fh] });
     const inside = (x, z) => Math.min(x - CADRE.x0, CADRE.x1 - x, z - CADRE.z0, CADRE.z1 - z);
     const outer = buildGrid({ x0: -LOIN, z0: -LOIN, x1: LOIN, z1: LOIN, cell: 320, sub: 8, terrain: terrain.mesh, fine: (cx, cz) => inside(cx, cz) < 0 && bank(cx, cz, 200), skip: (cx, cz) => inside(cx, cz) > 420, lower: (x, z) => 9 * smoothstep(0, 120, inside(x, z)), uv: (x, z) => [x / TUILE, -z / TUILE], skirt: 90 });
 
-    await step('Rues, îlots et jardins…', 0.18);
+    await step(monde.etapes[2], 0.18);
     // le plan d'ensemble est allégé sur téléphone ; la toile du centre, où l'on regarde de près, reste fine, sauf appareil à petite mémoire
-    const tile = makeFieldsTile(), gl = renderer.capabilities.maxTextureSize, petit = mobile && navigator.deviceMemory && navigator.deviceMemory < 4;
+    const tile = monde.motif(), gl = renderer.capabilities.maxTextureSize, petit = mobile && navigator.deviceMemory && navigator.deviceMemory < 4;
     const paint = (R, maxTex) => {
       const s = maxTex / Math.max(R.w, R.h), cv = document.createElement('canvas'); cv.width = Math.round(R.w * s); cv.height = Math.round(R.h * s);
-      paintPlan(cv.getContext('2d', { willReadFrequently: true }), { s, x: (x) => (x - R.x) * s, y: (z) => (z - R.z) * s }, tile, this.ilotCls, terrain.ext, this.quaiPans);
+      monde.peindre(cv.getContext('2d', { willReadFrequently: true }), { s, x: (x) => (x - R.x) * s, y: (z) => (z - R.z) * s }, tile, this);
       const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return [cv, t];
     };
     const [wideCv, wideTex] = paint({ x: CADRE.x0, z: CADRE.z0, w: fw, h: fh }, Math.min(gl, mobile ? 2048 : 4096)), [centreCv, centreTex] = paint(CENTRE_RECT, Math.min(gl, petit ? 2048 : 4096));
@@ -89,27 +87,28 @@ export class App89 {
     fields.colorSpace = THREE.SRGBColorSpace; fields.wrapS = fields.wrapT = THREE.RepeatWrapping; fields.anisotropy = 4;
     const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); blank.needsUpdate = true;
     this.pave = { value: blank };
-    this.groundMat = makeGround89(wideTex, centreTex, detail, makeCobbleTexture(), this.pave);
+    this.groundMat = makeGround89(wideTex, centreTex, detail, makeCobbleTexture(), this.pave, CENTRE_RECT);
     const coreMesh = new THREE.Mesh(core, this.groundMat), outerMesh = new THREE.Mesh(outer, makeGroundMaterial(fields, detail));
     coreMesh.receiveShadow = true; outerMesh.receiveShadow = true; coreMesh.matrixAutoUpdate = false; outerMesh.matrixAutoUpdate = false;
     scene.add(coreMesh, outerMesh);
     this.water = makeWater(this.sky); scene.add(this.water);
 
     this.rig = new CameraRig(camera, renderer.domElement, this);
-    this.rig.goal = { x: -350, z: -420, dist: 3600, az: -0.45, el: 0.66 }; this.rig.cur = { ...this.rig.goal };
+    this.rig.goal = { ...monde.vue }; this.rig.cur = { ...this.rig.goal };
     this.navRect = CENTRE_RECT;
-    await buildCity89(this, step);
-    { const n = this.nav, px = new Uint8Array(n.w * n.h); for (let i = 0; i < px.length; i++) px[i] = n.data[i] ? 255 : 0;      // masque des pavés : la trame des voies
+    await monde.construire(this, step);
+    { const n = this.nav, src = this.pavage || n.data, px = new Uint8Array(n.w * n.h); for (let i = 0; i < px.length; i++) px[i] = src[i] ? 255 : 0;      // masque des pavés : la trame des voies, ou celle que la ville désigne (this.pavage)
       const t = new THREE.DataTexture(px, n.w, n.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; this.pave.value = t; }
-    this.people = new People(this, { nav: this.nav, atlas: makeFigureAtlas89(mobile ? 0.5 : 1), outfit: outfit89, noBeasts: true, groundCell: 3 });
+    this.people = new People(this, { nav: this.nav, ...monde.figures(mobile), noBeasts: true, groundCell: 3 });
     this.on('frame', (dt) => this.people.update(dt));
     // maisons, monuments, arbres et habitants vont dans un groupe que le passage d'une époque à l'autre enfonce dans
     // le sol ou dresse (setCityScale) ; le sol, le fleuve et ses quais restent en place
     this.bati = new THREE.Group(); this.bati.matrixAutoUpdate = false;
     for (const m of this.batiMeshes) this.bati.add(m);
-    this.bati.add(this.trees, this.people.group); scene.add(this.bati); this.bati.updateMatrix(); this.cityScale = 1;
-    this.log(`${this.stats.bati} corps de bâtiment, ${this.stats.evoques} évoqués, ${this.stats.tris} triangles, ${this.treeCount} arbres, ${this.people.total} passants possibles`);
-    this.on('hour', () => { const e = (1 - this.sky.day) * 1.5; for (const k of ['facade', 'rdc', 'comble']) this.materials[k].emissiveIntensity = e; });
+    if (this.trees) this.bati.add(this.trees);
+    this.bati.add(this.people.group); scene.add(this.bati); this.bati.updateMatrix(); this.cityScale = 1;
+    this.log(monde.bilan(this));
+    this.on('hour', () => { const e = (1 - this.sky.day) * 1.5; for (const k of monde.lumieres) this.materials[k].emissiveIntensity = e; });
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.clock = new THREE.Clock(); this.time = 0;
@@ -121,10 +120,15 @@ export class App89 {
   }
 
   // ---- monde ----
-  heightAt(x, z) { return this.terrain.height(x, z); }
-  walkHeight(x, z) { return Math.max(this.terrain.height(x, z), 0.2); }
+  // Tabliers de ponts jetés par-dessus l'eau : hauteur par case de 2 m (mêmes noms que dans src/app.js ; la foule s'en sert)
+  deckKey(x, z) { return ((Math.floor(x / 2) + 4096) << 13) | (Math.floor(z / 2) + 4096); }
+  deckSet(x, z, y) { this.deck.set(this.deckKey(x, z), y); }
+  heightAt(x, z) { const h = this.terrain.height(x, z); if (!this.deck.size) return h; const d = this.deck.get(this.deckKey(x, z)); return d !== undefined ? Math.max(d, h) : h; }
+  walkHeight(x, z) { return Math.max(this.heightAt(x, z), 0.2); }
   walkable(x, z) {
+    const CADRE = this.monde.cadre;
     if (x < CADRE.x0 + 40 || x > CADRE.x1 - 40 || z < CADRE.z0 + 40 || z > CADRE.z1 - 40) return false;
+    if (this.deck.size && this.deck.has(this.deckKey(x, z))) return true;
     if (this.terrain.height(x, z) < 0.35) return false;
     return !this.footAt(x, z);
   }
