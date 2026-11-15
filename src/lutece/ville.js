@@ -11,18 +11,18 @@ import { distPolyline } from '../geom.js';
 
 const ENDUITS = [0xf3ecd9, 0xe9dcc0, 0xeee2c8, 0xe3cfa6, 0xdcc096, 0xe8cdb4, 0xf5f0e4, 0xe0cba4, 0xead9b8, 0xd8b890].map(hex);
 const TUILES = [rgb(186, 112, 82), rgb(172, 104, 78), rgb(196, 124, 92), rgb(160, 98, 76), rgb(180, 118, 94), rgb(200, 134, 100), rgb(168, 110, 88)];
-const BOIS = rgb(120, 92, 64);
+const BOIS = rgb(142, 110, 78), SOUS_TOIT = rgb(104, 80, 58);
 
 // Portique de bois devant une maison du cardo : poteaux, sablière, appentis de tuiles au-dessus du trottoir.
 function portique(app, B, l, toit) {
   const T = app.terrain, a = l.a, b = l.b, L = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, P = 2.6, n = Math.max(1, Math.round(L / 3));
   const y = Math.max(T.height(a[0], a[1]), T.height(b[0], b[1]), 0.3), bp = B.at('plain', l.x, l.z), a2 = [a[0] + l.nx * P, a[1] + l.nz * P], b2 = [b[0] + l.nx * P, b[1] + l.nz * P];
-  for (let k = 0; k <= n; k++) box(bp, { cx: a2[0] + (ux * L * k) / n, cz: a2[1] + (uz * L * k) / n, ux, uz, hl: 0.13, hw: 0.13 }, y - 0.6, y + 2.75, { col: BOIS, s0: 0.8 });
+  for (let k = 0; k <= n; k++) box(bp, { cx: a2[0] + (ux * L * k) / n, cz: a2[1] + (uz * L * k) / n, ux, uz, hl: 0.1, hw: 0.1 }, y - 0.6, y + 2.75, { col: BOIS, s0: 0.8 });
   box(bp, { cx: (a2[0] + b2[0]) / 2, cz: (a2[1] + b2[1]) / 2, ux, uz, hl: L / 2 + 0.1, hw: 0.11 }, y + 2.62, y + 2.84, { col: BOIS });
   const br = B.at('roof', l.x, l.z), o = 0.45, e0 = [a2[0] + l.nx * o, a2[1] + l.nz * o], e1 = [b2[0] + l.nx * o, b2[1] + l.nz * o], yb = y + 2.72, yh = y + 3.5;
-  // le versant regarde la rue et le ciel : l'ordre des points suit le sens de la façade
-  if ((e1[1] - e0[1]) * (a[0] - e0[0]) - (e1[0] - e0[0]) * (a[1] - e0[1]) >= 0) br.quad(e0[0], yb, e0[1], e1[0], yb, e1[1], b[0], yh, b[1], a[0], yh, a[1], 0, 0, L * 0.33, 1, toit, 0.9, 1);
-  else br.quad(e1[0], yb, e1[1], e0[0], yb, e0[1], a[0], yh, a[1], b[0], yh, b[1], L * 0.33, 0, 0, 1, toit, 0.9, 1);
+  // le versant regarde la rue et le ciel : l'ordre des points suit le sens de la façade ; dessous, le voligeage, vu du trottoir
+  if ((e1[1] - e0[1]) * (a[0] - e0[0]) - (e1[0] - e0[0]) * (a[1] - e0[1]) >= 0) { br.quad(e0[0], yb, e0[1], e1[0], yb, e1[1], b[0], yh, b[1], a[0], yh, a[1], 0, 0, L * 0.33, 1, toit, 0.9, 1); bp.quad(e1[0], yb - 0.05, e1[1], e0[0], yb - 0.05, e0[1], a[0], yh - 0.05, a[1], b[0], yh - 0.05, b[1], 0, 0, 1, 1, SOUS_TOIT, 1, 0.8); }
+  else { br.quad(e1[0], yb, e1[1], e0[0], yb, e0[1], a[0], yh, a[1], b[0], yh, b[1], L * 0.33, 0, 0, 1, toit, 0.9, 1); bp.quad(e0[0], yb - 0.05, e0[1], e1[0], yb - 0.05, e1[1], b[0], yh - 0.05, b[1], a[0], yh - 0.05, a[1], 0, 0, 1, 1, SOUS_TOIT, 1, 0.8); }
 }
 
 export async function construire(app, step) {
