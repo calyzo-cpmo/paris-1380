@@ -8,7 +8,9 @@ let handlers = null, era = null;
 const waiting = [];
 
 const framed = (() => { try { return window.parent !== window; } catch (e) { return true; } })();
-export function tell(msg) { if (framed) { try { window.parent.postMessage({ src: 'paris', era, ...msg }, '*'); } catch (e) { /* cadre sans parent joignable */ } } }
+// Message à la page d'accueil. Tant qu'elle ne s'est pas annoncée, seule l'annonce de la maquette part : intégrée
+// ailleurs (un aperçu, un autre site), la page n'envoie rien d'autre à une fenêtre parente qu'elle ne connaît pas.
+export function tell(msg) { if (framed && (shell.on || msg.t === 'boot')) { try { window.parent.postMessage({ src: 'paris', era, ...msg }, '*'); } catch (e) { /* cadre sans parent joignable */ } } }
 
 // Marges de l'écran (encoche, barre d'accueil) : dans un cadre, env(safe-area-inset-*) vaut zéro ; la page d'accueil
 // transmet donc les siennes, que la feuille de style lit dans --sat, --sar, --sab et --sal.
