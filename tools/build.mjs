@@ -1,4 +1,4 @@
-// Assemble les pages autonomes de dist/ : les maquettes (1380.html, 1789.html), la page d'accueil qui les héberge et
+// Assemble les pages autonomes de dist/ : les maquettes (1380.html, 1789.html, lutece.html), la page d'accueil qui les héberge et
 // orchestre le passage de l'une à l'autre (index.html), et le fragment publié (paris-1380.artifact.html).
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -50,24 +50,22 @@ ${body}
 `);
 console.log('build ok', (fragment.length / 1024).toFixed(0) + ' Ko');
 
-// ---- seconde page : Paris 1789 (même moteur, mêmes styles, autres données)
-const res89 = await build({
-  entryPoints: [join(root, 'src/p1789/main.js')], bundle: true, format: 'iife', write: false,
-  minify: !dev, target: 'es2020', legalComments: 'none', loader: { '.json': 'json', '.glsl': 'text' },
-  define: { __DEV__: dev ? 'true' : 'false' },
-});
-const js89 = res89.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-const body89 = readFileSync(join(root, 'src/body1789.html'), 'utf8');
-const desc89 = 'Maquette 3D interactive de Paris en 1789, dans le mur des Fermiers généraux : plus de vingt mille bâtiments d’après les plans de Verniquet et de Vasserot, survol et promenade à pied.';
-const page89 = `<!DOCTYPE html>
+// ---- les autres maquettes : même moteur, mêmes styles, autres données
+async function maquette({ entree, corps, sortie, titre, description }) {
+  const r = await build({
+    entryPoints: [join(root, entree)], bundle: true, format: 'iife', write: false,
+    minify: !dev, target: 'es2020', legalComments: 'none', loader: { '.json': 'json', '.glsl': 'text' },
+    define: { __DEV__: dev ? 'true' : 'false' },
+  });
+  const page = `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Paris à travers le temps — Paris 1789 en maquette 3D</title>
-<meta name="description" content="${desc89}">
-<meta property="og:title" content="Paris à travers le temps — Paris 1789 en maquette 3D">
-<meta property="og:description" content="${desc89}">
+<title>${titre}</title>
+<meta name="description" content="${description}">
+<meta property="og:title" content="${titre}">
+<meta property="og:description" content="${description}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
 <meta name="theme-color" content="#0b1230">
@@ -75,18 +73,27 @@ ${fonts}
 <style>${css}</style>
 </head>
 <body>
-${body89}
-<script>${js89}</script>
+${readFileSync(join(root, corps), 'utf8')}
+<script>${r.outputFiles[0].text.replace(/<\/script/gi, '<\\/script')}</script>
 </body>
 </html>
 `;
-writeFileSync(join(root, 'dist/1789.html'), page89);
-console.log('build 1789 ok', (page89.length / 1024).toFixed(0) + ' Ko');
+  writeFileSync(join(root, 'dist', sortie), page);
+  console.log('build', sortie, 'ok', (page.length / 1024).toFixed(0) + ' Ko');
+}
+await maquette({
+  entree: 'src/p1789/main.js', corps: 'src/body1789.html', sortie: '1789.html', titre: 'Paris à travers le temps — Paris 1789 en maquette 3D',
+  description: 'Maquette 3D interactive de Paris en 1789, dans le mur des Fermiers généraux : plus de vingt mille bâtiments d’après les plans de Verniquet et de Vasserot, survol et promenade à pied.',
+});
+await maquette({
+  entree: 'src/lutece/main.js', corps: 'src/bodylutece.html', sortie: 'lutece.html', titre: 'Paris à travers le temps — Lutèce vers 250 en maquette 3D',
+  description: 'Maquette 3D interactive de Lutèce vers 250 : le forum, les thermes, le théâtre et les arènes de la ville gallo-romaine, l’île et ses ponts de bois, d’après la restitution de Théodore Vacquer.',
+});
 
 // ---- page d'accueil : héberge les maquettes et fait la transition entre époques
 const resShell = await build({ entryPoints: [join(root, 'src/shell/main.js')], bundle: true, format: 'iife', write: false, minify: !dev, target: 'es2020', legalComments: 'none' });
 const jsShell = resShell.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-const descShell = 'Paris à huit dates, de Lutèce à 1836, et deux maquettes 3D détaillées — Paris vers 1380 et Paris en 1789 : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
+const descShell = 'Paris à huit dates, de Lutèce à 1836, et trois maquettes 3D détaillées — Lutèce vers 250, Paris vers 1380 et Paris en 1789 : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
 const shell = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -94,7 +101,7 @@ const shell = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Paris à travers le temps</title>
 <meta name="description" content="${descShell}">
-<meta property="og:title" content="Paris à travers le temps — maquettes 3D de Paris en 1380 et en 1789">
+<meta property="og:title" content="Paris à travers le temps — maquettes 3D de Lutèce, de Paris en 1380 et en 1789">
 <meta property="og:description" content="${descShell}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">

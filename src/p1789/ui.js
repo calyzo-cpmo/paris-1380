@@ -1,20 +1,19 @@
-// Interface de la page « Paris 1789 » : lieux et fiches, heure, mini-plan, boussole, marche à pied, lien partageable.
-// Mêmes repères visuels que la maquette de 1380 (src/ui.js), en plus simple : ni parcours ni intérieurs pour l'instant.
+// Interface des pages « Paris 1789 » et « Lutèce » : lieux et fiches, heure, mini-plan, boussole, marche à pied, lien
+// partageable. Mêmes repères visuels que la maquette de 1380 (src/ui.js), en plus simple : ni parcours ni intérieurs
+// pour l'instant. Ce qui est propre à une ville vient de `cfg` : { cats { clé: [nom, couleur] }, places(app) → lieux,
+// sources [[titre, crédit]…], absent (phrase ajoutée à la fiche d'un édifice attendu mais non modelé) }.
 import * as THREE from 'three';
-import { CADRE, RAW } from './data.js';
-import { CATS, makePlaces } from './places.js';
 import { parseHash, makeHash } from '../state.js';
 import { bindEmbed, askEra, tellHash, shareUrl } from '../embed.js';
 import { suivreBarre } from '../layout.js';
 import { clamp } from '../geom.js';
 
-const HOME = { x: -350, z: -420, dist: 3600, az: -0.45, el: 0.66 };
-
-export function initUI89(app) {
+export function initUI89(app, cfg) {
+  const HOME = app.monde.vue, CADRE = app.monde.cadre, CATS = cfg.cats;
   const $ = (id) => document.getElementById(id), body = document.body, rig = app.rig, canvas = app.renderer.domElement, T = app.terrain;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const small = () => window.innerWidth <= 640;
-  const places = makePlaces(app), byId = new Map(places.map((p) => [p.id, p]));
+  const places = cfg.places(app), byId = new Map(places.map((p) => [p.id, p]));
   app.places = places;
   let selected = null, hintTimer = 0, toastTimer = 0, hourPlay = false, hashTimer = 0, calm = false;
 
@@ -30,7 +29,7 @@ export function initUI89(app) {
     const o = ray.ray.origin, d = ray.ray.direction; let t0 = 0, step = 3;
     for (let t = 0; t < far; t += step) {
       const x = o.x + d.x * t, y = o.y + d.y * t, z = o.z + d.z * t;
-      if (y < T.height(x, z)) { let a = t0, b = t; for (let i = 0; i < 12; i++) { const m = (a + b) / 2; if (o.y + d.y * m < T.height(o.x + d.x * m, o.z + d.z * m)) b = m; else a = m; } return [o.x + d.x * b, o.z + d.z * b]; }
+      if (y < app.heightAt(x, z)) { let a = t0, b = t; for (let i = 0; i < 12; i++) { const m = (a + b) / 2; if (o.y + d.y * m < app.heightAt(o.x + d.x * m, o.z + d.z * m)) b = m; else a = m; } return [o.x + d.x * b, o.z + d.z * b]; }
       t0 = t; step = Math.min(40, 3 + t * 0.02);
     }
     return null;
@@ -61,7 +60,7 @@ export function initUI89(app) {
   // ---------- fiche
   function openCard(p) {
     const c = $('card-cat'); c.textContent = ''; const i = el('i'); i.style.setProperty('--c', p.color); c.append(i, p.catName);
-    $('card-name').textContent = p.name; $('card-text').textContent = p.note + (p.absent ? ' L’atlas de Vasserot ne couvre pas cet îlot : l’édifice n’est pas encore modelé.' : ''); $('card').hidden = false; $('card').classList.toggle('peek', small());
+    $('card-name').textContent = p.name; $('card-text').textContent = p.note + (p.absent && cfg.absent ? ' ' + cfg.absent : ''); $('card').hidden = false; $('card').classList.toggle('peek', small());
   }
   function closeCard() { $('card').hidden = true; selected = null; queueHash(); }
   function frame(p) { rig.flyTo({ x: p.x, z: p.z, dist: 520, az: rig.cur.az, el: 0.62 }, 2.2); }
@@ -105,25 +104,20 @@ export function initUI89(app) {
     if (act && jl.scrollWidth > jl.clientWidth) jl.scrollLeft = act.offsetLeft - jl.offsetLeft - (jl.clientWidth - act.offsetWidth) / 2;
   };
   $('btn-epoch').addEventListener('click', () => toggleFrise($('frise').hidden));
-  // Passage à la maquette de 1380 (et, par elle, aux autres dates de la frise). Hébergée par la page d'accueil, la
-  // maquette lui demande la transition ; ouverte seule, le lien y mène, à la même vue et à la même heure.
+  // Passage à une autre maquette (data-m) ou à une date de la frise, qui se pose sur la maquette de 1380 (data-e).
+  // Hébergée par la page d'accueil, la maquette lui demande la transition ; ouverte seule, le lien y mène, à la même
+  // vue et à la même heure.
   const viewHash = () => { const c = rig.mode === 'walk' ? { x: rig.walk.x, z: rig.walk.z, dist: 260, az: rig.walk.yaw, el: 0.5 } : rig.fly ? rig.fly.to : rig.goal; return makeHash({ h: app.sky.hour, c: [c.x, c.z, c.dist, c.az, c.el] }); };
-  const vers1380 = (extra) => 'index.html#' + (extra ? extra + '&' : '') + viewHash().slice(1);
-  $('btn-1380').addEventListener('click', () => { closeMore(); if (!askEra('1380')) location.href = vers1380(''); });
+  const vers = (m, extra) => 'index.html#' + [m !== '1380' ? 'm=' + m : '', extra, viewHash().slice(1)].filter(Boolean).join('&');
+  for (const b of document.querySelectorAll('#menu-more [data-m]')) b.addEventListener('click', () => { closeMore(); if (!askEra(b.dataset.m)) location.href = vers(b.dataset.m, ''); });
   for (const a of document.querySelectorAll('#frise-jalons a[href]')) a.addEventListener('click', (e) => {
-    const extra = (a.getAttribute('data-e') ? 'e=' + a.getAttribute('data-e') : '');
-    if (askEra('1380', extra)) { e.preventDefault(); toggleFrise(false); } else a.href = vers1380(extra);
+    const m = a.dataset.m || '1380', extra = a.dataset.e ? 'e=' + a.dataset.e : '';
+    if (askEra(m, extra)) { e.preventDefault(); toggleFrise(false); } else a.href = vers(m, extra);
   });
   for (const b of document.querySelectorAll('[data-close]')) b.addEventListener('click', () => { const id = b.dataset.close; if (id === 'card') closeCard(); else if (id === 'places') togglePlaces(false); else if (id === 'frise') toggleFrise(false); else $(id).hidden = true; });
   for (const m of document.querySelectorAll('.modal')) m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; });
   { const ul = $('sources-list'), row = (t, c) => { const li = el('li'); li.append(el('b', null, t + ' : '), c); ul.appendChild(li); };
-    row('Îlots, rues nommées et Seine', 'plan de Verniquet, levé de 1782 à 1790 — © ALPAGE : P. Rouet ; rues © ALPAGE : L. Hermenault');
-    row('Emprise des bâtiments', RAW.bati.credit);
-    row('Mur des Fermiers généraux', RAW.mur.credit);
-    row('Enclos nommés : places, jardins, hôpitaux, palais', RAW.enclos.credit);
-    row('Emprise de la Bastille', RAW.bastille.credit);
-    row('Relief', RAW.relief.credit);
-    row('Établissements religieux en 1789', RAW.eglises.credit); }
+    for (const [t, c] of cfg.sources) row(t, c); }
 
   // ---------- heure
   const fmt = (h) => { const m = Math.round(h * 60); return Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0'); };
@@ -180,7 +174,7 @@ export function initUI89(app) {
   function updateWhere() {
     const walking = rig.mode === 'walk', x = walking ? rig.walk.x : rig.cur.x, z = walking ? rig.walk.z : rig.cur.z, w = $('where');
     if (!walking && rig.cur.dist > 700) { if (!w.hidden) { w.hidden = true; $('brand-sub').hidden = false; whereSig = ''; } return; }
-    const rue = app.streetAt(x, z, walking ? 30 : 60); let near = null, nd = 220;
+    const rue = app.streetAt ? app.streetAt(x, z, walking ? 30 : 60) : null; let near = null, nd = 220;
     for (const p of places) { const d = Math.hypot(p.x - x, p.z - z); if (d < nd) { nd = d; near = p; } }
     const sig = (rue || '') + '|' + (near ? near.id : '');
     if (sig === whereSig) return; whereSig = sig;

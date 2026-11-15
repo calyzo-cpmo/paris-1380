@@ -24,7 +24,7 @@ const etat = (f) => f.evaluate(() => { const a = window.__app, g = a.rig.goal; r
 const shell = (page) => page.evaluate(() => ({ ere: window.__shell.ere, occupe: window.__shell.occupe, hash: location.hash, titre: document.title, cadres: [...document.querySelectorAll('iframe.ere')].map((f) => f.getAttribute('src').split('#')[0] + (f.classList.contains('vue') ? ' (vue)' : '')), attente: !document.getElementById('attente').hidden, texte: document.getElementById('attente-texte').textContent, voile: !document.getElementById('voile').hidden }));
 const meme = (v, w) => Math.abs(v.x - w.x) <= 2 && Math.abs(v.z - w.z) <= 2 && Math.abs(v.dist - w.dist) <= 2 && Math.abs(v.az - w.az) <= 0.02 && Math.abs(v.el - w.el) <= 0.02;
 
-// ---------- ordinateur : arrivée sur 1380, passage à 1789, retour, date de la frise
+// ---------- ordinateur : arrivée sur 1380, passage à 1789, retour, date de la frise, Lutèce
 const page = await browser.newPage({ viewport: { width: 1000, height: 720 }, deviceScaleFactor: 1 });      // au moins 700 points : en deçà, les maquettes se croient sur téléphone
 watch(page); page.setDefaultTimeout(180000);
 await page.goto(URL);
@@ -80,6 +80,20 @@ await f1789.click('#frise-jalons a[data-e="1553"]');
 await arrive(page, '1380');
 s = await shell(page); e = await etat(f1380);
 check('une date de la frise choisie en 1789 : retour à 1380 sous cette date', e.epoque === '1553' && e.k === 1 && /e=1553/.test(s.hash), JSON.stringify({ epoque: e.epoque, hash: s.hash }));
+
+// Lutèce, troisième maquette : on y va depuis 1380, puis de Lutèce à 1789 par la frise de Lutèce
+await f1380.evaluate(() => { window.__app.ui.applyState({ c: [-560, 560, 800, 0.5, 0.6], h: 11 }); });
+const avant = await etat(f1380);
+await page.evaluate(() => window.__shell.aller('lutece'));
+await arrive(page, 'lutece');
+const fLut = cadre(page, 'lutece');
+s = await shell(page); e = await etat(fLut);
+check('Lutèce : on y arrive de 1380 au même point de vue et à la même heure ; titre et adresse suivent', meme(e, avant) && e.h === 11 && e.k === 1 && e.vis && !e.pause && !e.morph && e.heberge && /Lutèce/.test(s.titre) && /^#m=lutece&c=-560,560,800/.test(s.hash) && s.cadres.length === 3 && /lutece\.html \(vue\)/.test(s.cadres.join()), JSON.stringify({ e, titre: s.titre, hash: s.hash, cadres: s.cadres }));
+await fLut.click('#btn-epoch');
+await fLut.click('#frise-jalons a[data-m="1789"]');
+await arrive(page, '1789');
+s = await shell(page); e = await etat(f1789); const eLut = await etat(fLut);
+check('de Lutèce à 1789 par la frise : même vue, Lutèce en pause, ville enfoncée', meme(e, avant) && e.h === 11 && e.k === 1 && e.vis && eLut.pause && eLut.k === 0 && /^#m=1789&c=-560,560,800/.test(s.hash) && /1789\.html \(vue\)/.test(s.cadres.join()), JSON.stringify({ e, lutece: { pause: eLut.pause, k: eLut.k }, hash: s.hash }));
 await page.close();
 
 // ---------- téléphone : lien direct vers 1789, puis passage à 1380 ; une seule ville reste en mémoire

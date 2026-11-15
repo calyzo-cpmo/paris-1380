@@ -1,8 +1,7 @@
 // Relief et fleuve de Paris à la fin du XVIIIe siècle.
 // Le sol vient du nivellement de Girard ; au-delà de la zone nivelée il est prolongé en douceur. La Seine est creusée
 // d'après le plan de Verniquet : là où le plan dessine un pont, le fleuve s'interrompt et le sol passe à niveau.
-import { CADRE, relief, eau } from './data.js';
-import { clamp, smoothstep } from '../geom.js';
+import { clamp, smoothstep, pointInPoly, distPolyline } from '../geom.js';
 
 const CELL = 4;            // maille du masque d'eau (m)
 const QUAI = 2.4;          // hauteur du point le plus bas du nivellement au-dessus de l'eau (m)
@@ -14,8 +13,18 @@ export const QUAIS = { x0: -2050, x1: 1500 };
 export const quayK = (x) => smoothstep(QUAIS.x0 - 60, QUAIS.x0 + 60, x) * (1 - smoothstep(QUAIS.x1 - 60, QUAIS.x1 + 60, x));
 
 export class Terrain89 {
-  constructor() {
-    const R = relief(); this.R = R;
+  // o : { cadre { x0, z0, x1, z1 }, relief (grille décodée), eau (polygones du fleuve), quais { x0, x1 } ou rien pour des
+  // berges en pente partout, ext [{ x, z, dx, dz, half }] prolongements du fleuve hors du plan (déduits de ses
+  // extrémités s'ils ne sont pas donnés), terrasses [{ ring, marge }] plates-formes où le sol est mis à niveau (à la
+  // moyenne du terrain sous leur contour) et raccordé à la pente en `marge` mètres, berges { niveau, part } : à moins
+  // d'une centaine de mètres de l'eau, le sol est rabattu vers `niveau` (m au-dessus de l'eau) — de `part` au bord de
+  // l'eau à rien au-delà, et partout dans les îles (berges.iles : leurs contours) ; c'est ainsi qu'un relief moderne,
+  // remblayé le long du fleuve, retrouve des rives basses }.
+  // Le terrain ne connaît aucune ville : celle qui s'en sert lui donne ses données.
+  constructor(o) {
+    const CADRE = (this.cadre = o.cadre), eau = () => o.eau;
+    this.quais = o.quais || null;
+    const R = o.relief; this.R = R;
     const { nx, nz, h, ok } = R, n = nx * nz;
     // nœuds hors nivellement : propagation de proche en proche, puis lissage (prolongement harmonique)
     const v = Float32Array.from(h), known = Uint8Array.from(ok);
@@ -42,7 +51,6 @@ export class Terrain89 {
       v.set(w);
     }
     this.h = v;
-
     // masque d'eau : polygones du fleuve (les îles et les ponts y sont des vides), puis adoucissement des rives
     const W = Math.ceil((CADRE.x1 - CADRE.x0) / CELL), H = Math.ceil((CADRE.z1 - CADRE.z0) / CELL);
     this.W = W; this.H = H;
@@ -54,8 +62,8 @@ export class Terrain89 {
     const im = ctx.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H);
     for (let i = 0; i < m.length; i++) m[i] = im[i * 4] > 127 ? 255 : 0;
     this.sharp = m;
-    const blur = (src, horizontal) => {
-      const out = new Uint8Array(W * H), r = 2, len = horizontal ? W : H, lines = horizontal ? H : W;
+    const blur = (src, horizontal, r = 2) => {
+      const out = new Uint8Array(W * H), len = horizontal ? W : H, lines = horizontal ? H : W;
       for (let l = 0; l < lines; l++) {
         let s = 0; const at = (j) => (horizontal ? src[l * W + clamp(j, 0, len - 1)] : src[clamp(j, 0, len - 1) * W + l]);
         for (let j = -r; j <= r; j++) s += at(j);
@@ -64,11 +72,23 @@ export class Terrain89 {
       return out;
     };
     this.soft = blur(blur(m, true), false);
+    // voisinage de l'eau, pour les berges basses : part d'eau dans un rayon d'une centaine de mètres
+    this.berges = o.berges || null; this.terrasses = [];
+    if (this.berges) {
+      this.large = blur(blur(blur(blur(m, true, 12), false, 12), true, 12), false, 12);
+      this.iles = (this.berges.iles || []).map((ring) => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return { ring, x0, z0, x1, z1 }; });
+    }
+    for (const t of o.terrasses || []) {
+      let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9, y = 0; const m = t.marge ?? 18;
+      for (const p of t.ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); y += this.land(p[0], p[1]); }
+      this.terrasses.push({ ring: t.ring, y: y / t.ring.length, m, x0: x0 - m, x1: x1 + m, z0: z0 - m, z1: z1 + m });
+    }
+
 
     // Le plan arrête le fleuve avant le bord du cadre : on le prolonge tout droit, dans l'axe de chacune de ses deux
     // extrémités (les « bouchons » qui ferment le polygone du lit), jusqu'à l'horizon.
-    this.ext = [];
-    {
+    this.ext = o.ext ? o.ext.slice() : [];
+    if (!o.ext) {
       const inPoly = (r, x, z) => { let ins = false; for (let i = 0, k = r.length - 1; i < r.length; k = i++) { const p = r[i], q = r[k]; if ((p[1] > z) !== (q[1] > z) && x < ((q[0] - p[0]) * (z - p[1])) / (q[1] - p[1]) + p[0]) ins = !ins; } return ins; };
       const caps = [null, null];                           // extrémité aval (la plus à l'ouest), extrémité amont (la plus au sud-est)
       for (const rings of eau()) {                         // les ponts coupent le lit en biefs : on cherche parmi tous
@@ -91,21 +111,38 @@ export class Terrain89 {
     }
   }
 
-  inside(x, z) { return x >= CADRE.x0 && x <= CADRE.x1 && z >= CADRE.z0 && z <= CADRE.z1; }
+  // Part des quais maçonnés en x (0 : berge en pente ; 1 : quai), nulle si la ville n'a pas de quais.
+  qk(x) { const q = this.quais; return q ? smoothstep(q.x0 - 60, q.x0 + 60, x) * (1 - smoothstep(q.x1 - 60, q.x1 + 60, x)) : 0; }
+
+  inside(x, z) { return x >= this.cadre.x0 && x <= this.cadre.x1 && z >= this.cadre.z0 && z <= this.cadre.z1; }
 
   // Part d'eau autour du point (0 terre ferme, 1 plein fleuve), rives adoucies.
   wetAt(x, z) {
     let w = 0;
     for (const e of this.ext) { const t = (x - e.x) * e.dx + (z - e.z) * e.dz; if (t < -150) continue; const d = Math.abs((x - e.x) * -e.dz + (z - e.z) * e.dx); w = Math.max(w, (1 - smoothstep(e.half - 14, e.half + 14, d)) * smoothstep(-150, -120, t)); }      // amorcé en retrait, dans le lit même : pas d'encoche au raccord
     if (!this.inside(x, z)) return w;
-    const fx = (x - CADRE.x0) / CELL - 0.5, fz = (z - CADRE.z0) / CELL - 0.5, i = clamp(Math.floor(fx), 0, this.W - 2), k = clamp(Math.floor(fz), 0, this.H - 2), u = clamp(fx - i, 0, 1), v = clamp(fz - k, 0, 1), s = this.soft, q = k * this.W + i;
+    const fx = (x - this.cadre.x0) / CELL - 0.5, fz = (z - this.cadre.z0) / CELL - 0.5, i = clamp(Math.floor(fx), 0, this.W - 2), k = clamp(Math.floor(fz), 0, this.H - 2), u = clamp(fx - i, 0, 1), v = clamp(fz - k, 0, 1), s = this.soft, q = k * this.W + i;
     return Math.max(w, ((s[q] * (1 - u) + s[q + 1] * u) * (1 - v) + (s[q + this.W] * (1 - u) + s[q + this.W + 1] * u) * v) / 255);
   }
 
   // Sol sans le fleuve : nivellement, prolongé à plat hors du cadre.
   land(x, z) {
     const R = this.R, fx = clamp((x - R.x0) / R.pas, 0, R.nx - 1.001), fz = clamp((z - R.z0) / R.pas, 0, R.nz - 1.001), i = Math.floor(fx), k = Math.floor(fz), u = fx - i, v = fz - k, h = this.h, q = k * R.nx + i;
-    return QUAI + (h[q] * (1 - u) + h[q + 1] * u) * (1 - v) + (h[q + R.nx] * (1 - u) + h[q + R.nx + 1] * u) * v;
+    let y = QUAI + (h[q] * (1 - u) + h[q + 1] * u) * (1 - v) + (h[q + R.nx] * (1 - u) + h[q + R.nx + 1] * u) * v;
+    if (this.large && y > this.berges.niveau && this.inside(x, z)) {
+      const c = this.cadre, gx = (x - c.x0) / CELL - 0.5, gz = (z - c.z0) / CELL - 0.5, a = clamp(Math.floor(gx), 0, this.W - 2), b = clamp(Math.floor(gz), 0, this.H - 2), s = clamp(gx - a, 0, 1), t = clamp(gz - b, 0, 1), L = this.large, p = b * this.W + a;
+      const part = ((L[p] * (1 - s) + L[p + 1] * s) * (1 - t) + (L[p + this.W] * (1 - s) + L[p + this.W + 1] * s) * t) / 255;
+      const bord = smoothstep(0, 220, Math.min(x - c.x0, c.x1 - x, z - c.z0, c.z1 - z));      // rien au bord du cadre : le sol s'y raccorde au paysage
+      let k = clamp(part * 2, 0, 1);
+      if (k < 1) for (const i of this.iles) if (x >= i.x0 && x <= i.x1 && z >= i.z0 && z <= i.z1 && pointInPoly(x, z, i.ring)) { k = 1; break; }
+      y -= (y - this.berges.niveau) * this.berges.part * k * bord;
+    }
+    for (const t of this.terrasses) {
+      if (x < t.x0 || x > t.x1 || z < t.z0 || z > t.z1) continue;
+      const d = pointInPoly(x, z, t.ring) ? 0 : distPolyline(x, z, t.ring, true);
+      if (d < t.m) y += (t.y - y) * (1 - smoothstep(0, t.m, d));
+    }
+    return y;
   }
 
   // Tracé des murs de quai (src/p1789/quais.js) : tout ce qui est côté fleuve des murs est de l'eau, quoi que dessine le
@@ -115,13 +152,13 @@ export class Terrain89 {
     const { W, H } = this, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d', { willReadFrequently: true }), read = (min) => { const im = ctx.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H); for (let i = 0; i < m.length; i++) m[i] = im[i * 4] > min ? 1 : 0; return m; };
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-    ctx.beginPath(); ctx.rect((QUAIS.x0 + 15 - CADRE.x0) / CELL, 0, (QUAIS.x1 - QUAIS.x0 - 30) / CELL, H); ctx.clip();
+    ctx.beginPath(); ctx.rect((this.quais.x0 + 15 - this.cadre.x0) / CELL, 0, (this.quais.x1 - this.quais.x0 - 30) / CELL, H); ctx.clip();
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 16 / CELL; ctx.lineJoin = 'round'; ctx.beginPath();
-    for (const ex of front) for (const l of [ex.outer, ...ex.holes]) { l.forEach((s, i) => { const x = (s.a[0] - CADRE.x0) / CELL, y = (s.a[1] - CADRE.z0) / CELL; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.closePath(); }
+    for (const ex of front) for (const l of [ex.outer, ...ex.holes]) { l.forEach((s, i) => { const x = (s.a[0] - this.cadre.x0) / CELL, y = (s.a[1] - this.cadre.z0) / CELL; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.closePath(); }
     ctx.fill('evenodd'); this.front = read(40);            // côté fleuve des murs (toute maille entamée compte)
     ctx.stroke(); this.sunk = read(127);                   // creusé d'office
   }
-  cell(x, z) { return clamp(Math.floor((z - CADRE.z0) / CELL), 0, this.H - 1) * this.W + clamp(Math.floor((x - CADRE.x0) / CELL), 0, this.W - 1); }
+  cell(x, z) { return clamp(Math.floor((z - this.cadre.z0) / CELL), 0, this.H - 1) * this.W + clamp(Math.floor((x - this.cadre.x0) / CELL), 0, this.W - 1); }
 
   // Terre ferme d'après le plan (îles et ponts compris), à la maille du masque.
   dry(x, z) {
@@ -136,17 +173,17 @@ export class Terrain89 {
     if (this.sunk && this.inside(x, z) && this.sunk[this.cell(x, z)]) return FOND - 3.3;
     const l = this.land(x, z), w = this.wetAt(x, z);
     if (w <= 0.3) return l;
-    const k = quayK(x);
+    const k = this.qk(x);
     return l + (FOND - 3.3 * k - l) * smoothstep(0.3 + 0.04 * k, 0.74 - 0.22 * k, w);
   }
 
   // Sol où l'on marche et où l'on bâtit : sur les quais et les ponts de la ville, le niveau du nivellement jusqu'au mur.
-  height(x, z) { return quayK(x) > 0.5 && this.dry(x, z) ? this.land(x, z) : this.raw(x, z); }
+  height(x, z) { return this.qk(x) > 0.5 && this.dry(x, z) ? this.land(x, z) : this.raw(x, z); }
 
   // Sur la terre ferme des quais, la pente est celle du nivellement : le maillage, qui plonge sous le dallage, reçoit
   // ainsi le même éclairage que lui et ne s'en distingue pas là où les deux surfaces se confondent.
   normal(x, z, out) {
-    const d = 3, flat = quayK(x) > 0.5 && this.dry(x, z), f = flat ? (a, b) => this.land(a, b) : (a, b) => this.height(a, b);
+    const d = 3, flat = this.qk(x) > 0.5 && this.dry(x, z), f = flat ? (a, b) => this.land(a, b) : (a, b) => this.height(a, b);
     const hx = f(x + d, z) - f(x - d, z), hz = f(x, z + d) - f(x, z - d), l = Math.hypot(hx, 2 * d, hz);
     out[0] = -hx / l; out[1] = (2 * d) / l; out[2] = -hz / l; return out;
   }

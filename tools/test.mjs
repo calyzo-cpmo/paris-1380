@@ -311,8 +311,8 @@ const fr0 = await page.evaluate(() => { const a = window.__app; return { ids: [.
 check('frise des époques : huit jalons, 1380 au repos', (await visible('#frise')) && fr0.ids === 'lutece 1300 1380 1553 1652 1741 1791 1836' && fr0.actif === '1380' && fr0.on === 0 && fr0.info && fr0.bouton === 'true', JSON.stringify(fr0));
 const attendu = { lutece: [2, 'Lutèce', 100, 4], 1300: [1, 'Paris 1300', 0, 5], 1553: [0, 'Paris 1553', 3000, 6], 1652: [0, 'Paris 1652', 8000, 6], 1741: [0, 'Paris 1741', 9000, 6], 1791: [0, 'Paris 1789', 20000, 7], 1836: [0, 'Paris 1836', 20000, 6] };
 for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
-  // 1789 est un lien vers sa maquette : son calque, que montre la lecture de la frise, se choisit ici sans cliquer
-  if (id === '1791') await page.evaluate(() => { window.__app.ui.setEpoch('1791'); }); else await page.click(`#frise-jalons button[data-id="${id}"]`);
+  // Lutèce et 1789 sont des liens vers leurs maquettes : leur calque, que montre la lecture de la frise, se choisit ici sans cliquer
+  if (id === '1791' || id === 'lutece') await page.evaluate((i) => { window.__app.ui.setEpoch(i); }, id); else await page.click(`#frise-jalons button[data-id="${id}"]`);
   await frames(2);
   const e = await page.evaluate(() => { const a = window.__app, g = a.epochs.group.children[0]; return { on: a.epochU.uEpochOn.value, mode: a.cert.uniforms.uEpochMode.value, tris: g ? g.userData.tris : 0, vis: a.epochs.group.visible, titre: document.querySelector('#brand h1').textContent, dock: document.getElementById('epoch-label').textContent, leg: document.querySelectorAll('#frise-legend li').length, stats: document.getElementById('frise-stats').textContent.length, credit: document.getElementById('frise-credit').textContent, corps: document.body.classList.contains('epoch'), plan: !!a.ui.mini.epoch, lien: a.ui.link() }; });
   const [mode, titre, tris, leg] = attendu[id];
@@ -321,6 +321,8 @@ for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
 // la frise mène à la seconde maquette depuis la date qui en est la plus proche
 const l89 = await page.evaluate(() => { const a = window.__app, p = document.getElementById('frise-1789'), vu = {}; for (const id of ['1741', '1791', '1836']) { a.ui.setEpoch(id); vu[id] = !p.hidden; } return { vu, href: p.querySelector('a').getAttribute('href'), texte: p.querySelector('a').textContent }; });
 check('frise : à la date 1789, un lien ouvre la maquette détaillée', l89.vu['1791'] && !l89.vu['1741'] && !l89.vu['1836'] && l89.href === 'index.html#m=1789' && /1789/.test(l89.texte), JSON.stringify(l89));
+const lLut = await page.evaluate(() => { const a = window.__app, p = document.getElementById('frise-1789'); a.ui.setEpoch('lutece'); const j = document.querySelector('#frise-jalons [data-id="lutece"]'); return { vu: !p.hidden, href: p.querySelector('a').getAttribute('href'), texte: p.querySelector('a').textContent, jalon: [j.tagName, j.getAttribute('href'), j.title] }; });
+check('frise : Lutèce a sa propre maquette, la date et un lien y mènent', lLut.vu && lLut.href === 'index.html#m=lutece' && /Lutèce/.test(lLut.texte) && lLut.jalon[0] === 'A' && lLut.jalon[1] === 'index.html#m=lutece' && /Lutèce/.test(lLut.jalon[2]), JSON.stringify(lLut));
 // la date 1789 figure dans la frise sous ce nom et mène à sa maquette ; les autres dates sont dessinées, sans volumes blancs
 const dess = await page.evaluate(() => {
   const a = window.__app, M = a.materials, lien = document.querySelector('#frise-jalons [data-id="1791"]'), out = { lien: [lien.tagName, lien.getAttribute('href'), lien.textContent], noms: [...document.querySelectorAll('#frise-jalons > *')].map((b) => b.textContent).join(' ') };

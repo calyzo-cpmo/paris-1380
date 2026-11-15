@@ -1,0 +1,137 @@
+<div id="scene" aria-label="Maquette 3D de Lutèce vers 250"></div>
+<div id="labels" aria-hidden="true"></div>
+
+<header id="top">
+  <div id="brand">
+    <p id="brand-site">Paris à travers le temps</p>
+    <h1>Lutèce <span>vers 250</span></h1>
+    <p id="brand-sub">D’après la restitution de Théodore Vacquer</p>
+    <p id="where" hidden></p>
+  </div>
+  <nav id="menu" aria-label="Panneaux">
+    <button type="button" id="btn-places" aria-controls="places" aria-expanded="false">Lieux</button>
+    <button type="button" id="btn-more" aria-controls="menu-more" aria-expanded="false" aria-label="Autres panneaux">Menu</button>
+    <div id="menu-more">
+      <button type="button" id="btn-1380" data-m="1380" title="Ouvrir la maquette de Paris vers 1380">Paris 1380</button>
+      <button type="button" id="btn-1789" data-m="1789" title="Ouvrir la maquette de Paris en 1789">Paris 1789</button>
+      <button type="button" id="btn-sources">Sources</button>
+      <button type="button" id="btn-share">Partager</button>
+      <button type="button" id="btn-help">Aide</button>
+    </div>
+  </nav>
+</header>
+
+<aside id="places" hidden aria-label="Liste des lieux">
+  <div class="panel-head"><h2>Lieux</h2><button type="button" class="x" data-close="places" aria-label="Fermer">×</button></div>
+  <input id="place-search" type="search" placeholder="Chercher un lieu…" autocomplete="off" aria-label="Chercher un lieu">
+  <div id="place-list"></div>
+</aside>
+
+<section id="card" hidden aria-live="polite">
+  <button type="button" id="card-grip" aria-label="Agrandir ou réduire la fiche"></button>
+  <button type="button" class="x" data-close="card" aria-label="Fermer la fiche">×</button>
+  <p id="card-cat"></p>
+  <h2 id="card-name"></h2>
+  <p id="card-text"></p>
+  <div class="row" id="card-actions">
+    <button type="button" id="card-walk" class="primary">S’y promener à pied</button>
+    <button type="button" id="card-view" class="ghost">Recadrer</button>
+  </div>
+</section>
+
+<div id="walkhud" class="row" hidden>
+  <button type="button" id="walk-exit">Reprendre de la hauteur</button>
+</div>
+
+<aside id="nav" aria-label="Se repérer">
+  <div id="map-wrap">
+    <canvas id="minimap" role="img" aria-label="Plan de situation : cliquer pour s’y rendre"></canvas>
+    <button type="button" id="map-zoom" aria-label="Changer l’échelle du plan" title="Plan entier ou quartier">Quartier</button>
+  </div>
+  <div class="row" id="nav-row">
+    <button type="button" id="btn-home" title="Revenir à la vue d’ensemble (touche O)">Vue d’ensemble</button>
+    <button type="button" id="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut (touche N)">
+      <svg viewBox="-12 -12 24 24" width="26" height="26" aria-hidden="true"><g id="compass-rose"><path d="M0-10 3.2 0H-3.2Z" fill="currentColor"/><path d="M0 10 3.2 0H-3.2Z" fill="none" stroke="currentColor" stroke-width="1"/><text x="0" y="-3.2" text-anchor="middle" font-size="5.2" font-weight="700" fill="#101c44">N</text></g></svg>
+    </button>
+  </div>
+</aside>
+
+<div id="toast" hidden role="status"></div>
+
+<div id="stack">
+<div id="hint" hidden role="status"></div>
+<nav id="frise" hidden aria-label="Paris à d’autres dates">
+  <div id="frise-jalons" class="seg"><a class="maquette" aria-current="page" title="La maquette que vous regardez">Lutèce</a><a href="index.html#e=1300" data-e="1300">1300</a><a class="maquette" href="index.html" data-m="1380" title="Passer à la maquette détaillée de Paris vers 1380">1380</a><a href="index.html#e=1553" data-e="1553">1553</a><a href="index.html#e=1652" data-e="1652">1652</a><a href="index.html#e=1741" data-e="1741">1741</a><a class="maquette" href="index.html#m=1789" data-m="1789" title="Passer à la maquette détaillée de Paris en 1789">1789</a><a href="index.html#e=1836" data-e="1836">1836</a></div>
+  <span id="frise-note">en doré : maquettes détaillées</span>
+  <button type="button" class="x" data-close="frise" aria-label="Fermer la frise des dates">×</button>
+</nav>
+</div>
+
+<footer id="dock">
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
+    <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
+  </div>
+  <div id="hour-wrap">
+    <button type="button" id="hour-btn" aria-controls="hour-pop" aria-expanded="false"><span id="hour-label">10 h 30</span></button>
+    <div id="hour-pop">
+      <button type="button" id="hour-play" aria-pressed="false" aria-label="Faire défiler la journée" title="Faire défiler la journée"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M3 1.5v9l7.5-4.5z" fill="currentColor"/><path class="ico-pause" d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg></button>
+      <input id="hour" type="range" min="4.5" max="22.5" step="0.25" value="10.5" aria-label="Heure du jour">
+      <div id="hour-presets" class="chips" role="group" aria-label="Moments de la journée">
+        <button type="button" data-hour="5.25">Aube</button>
+        <button type="button" data-hour="12">Midi</button>
+        <button type="button" data-hour="18.75">Soir</button>
+        <button type="button" data-hour="21.5">Nuit</button>
+      </div>
+    </div>
+  </div>
+  <button type="button" id="btn-epoch" aria-controls="frise" aria-expanded="false" title="Voir Paris à d’autres dates"><span class="long">Époques · </span><b id="epoch-label">Lutèce</b></button>
+</footer>
+
+<div id="sources" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="sources-title">
+  <div class="sheet">
+    <div class="panel-head"><h2 id="sources-title">D’où vient cette maquette</h2><button type="button" class="x" data-close="sources" aria-label="Fermer">×</button></div>
+    <p class="lede">Lutèce n’a laissé aucun plan. Ce que l’on sait de son tracé vient des fouilles, et d’abord de celles de Théodore Vacquer, qui a suivi les grands travaux du XIX<sup>e</sup> siècle. Sa restitution a été numérisée par les chercheurs du SIG historique ALPAGE, qui la diffusent sous licence <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>. La date de 250 est une convention : la ville à son apogée, avant les invasions.</p>
+    <ul class="method" id="sources-list"></ul>
+    <h3>Ce qui est attesté, ce qui est évoqué</h3>
+    <ul class="method">
+      <li><b>Attesté par les fouilles :</b> le tracé des rues retrouvées, les rives du fleuve et ses îles, les ruisseaux, l’ancien bras de la rive droite, l’emplacement et l’emprise au sol du forum, des deux thermes, du théâtre et des arènes.</li>
+      <li><b>Restitué :</b> ces tracés sont une restitution du XIX<sup>e</sup> siècle, que les fouilles récentes ont précisée ou corrigée par endroits. Les rues ne sont connues que par tronçons : le quadrillage est incomplet.</li>
+      <li><b>Décalage de date :</b> le relief est celui du nivellement de Girard (1805-1807). Le sol antique était plus bas, surtout dans l’île et près des rives : il y a été rabattu, par convention, pour retrouver des berges basses. Les grands édifices sont posés sur des terrasses de niveau.</li>
+      <li><b>Évoqué :</b> toutes les maisons. Elles bordent les rues restituées, serrées autour du forum, clairsemées vers les champs ; leur nombre, leur forme, leurs portiques et leurs jardins sont de convention. Il en va de même des bois, des cultures et de l’étendue des prés inondables.</li>
+      <li><b>Monuments :</b> placés et orientés d’après leur emprise ; leur élévation est une évocation, d’après ce que l’on sait de chacun et des édifices semblables — voûtes des thermes, temple et basilique du forum, gradins et mur de scène du théâtre et des arènes.</li>
+      <li><b>Ponts :</b> ils sont placés là où le cardo franchit les deux bras du fleuve ; on les sait de bois, leur forme est de convention.</li>
+      <li><b>Conventionnel :</b> le pilier des Nautes, dont on ignore l’emplacement d’origine, et les tombeaux de la route du sud.</li>
+      <li><b>Habitants :</b> passants, cavaliers et charrettes sont une évocation, en costumes gallo-romains ; ils circulent dans les rues, sur le forum et sur les ponts.</li>
+      <li><b>Pas encore modelé :</b> l’aqueduc, le port, les bateaux, les nécropoles autres que celle du sud.</li>
+    </ul>
+    <p class="group-note">Les couches ont été recalées sur le même repère que les maquettes de 1380 et de 1789 : on passe de l’une à l’autre au même endroit.</p>
+  </div>
+</div>
+
+<div id="help" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sheet narrow">
+    <div class="panel-head"><h2 id="help-title">Se déplacer</h2><button type="button" class="x" data-close="help" aria-label="Fermer">×</button></div>
+    <dl class="keys">
+      <dt>Glisser</dt><dd>déplacer la vue au-dessus de la ville</dd>
+      <dt>Clic droit ou Maj + glisser</dt><dd>pivoter et incliner</dd>
+      <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
+      <dt>Double-clic</dt><dd>descendre à pied à cet endroit</dd>
+      <dt>À pied</dt><dd>glisser pour regarder, cliquer le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir</dd>
+      <dt>Échap</dt><dd>reprendre de la hauteur, fermer un panneau</dd>
+      <dt>/</dt><dd>chercher un lieu</dd>
+      <dt>N, O</dt><dd>nord en haut, vue d’ensemble</dd>
+      <dt>Époques</dt><dd>le bouton « Époques » ouvre la frise des dates. « 1380 » et « 1789 », en doré, mènent aux autres maquettes détaillées sans quitter la page, au même point de vue et à la même heure : la ville s’enfonce, l’autre s’élève. Les autres dates se posent sur la maquette de 1380.</dd>
+    </dl>
+  </div>
+</div>
+
+<div id="loading">
+  <div id="load-box">
+    <p id="load-site">Paris à travers le temps</p>
+    <h1>Lutèce <span>vers 250</span></h1>
+    <p id="load-pitch">La ville gallo-romaine à son apogée, avant les invasions de la fin du III<sup>e</sup> siècle : le forum, les thermes, le théâtre et les arènes sur la colline de la rive gauche, l’île et ses ponts de bois, un fleuve plus large qu’aujourd’hui. Les rues, les rivages et l’emprise des monuments viennent des fouilles ; les maisons sont une évocation.</p>
+    <div id="load-label">Chargement…</div>
+    <div id="load-track"><div id="load-bar"></div></div>
+  </div>
+</div>
