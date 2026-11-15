@@ -20,6 +20,7 @@ const lotToit = (B, col, x, z) => B.at(EN_ARDOISE.has(col) ? 'ardoise' : 'roof',
 function demiLargeur(ex, max) { let lo = 0, hi = max; for (let i = 0; i < 6; i++) { const m = (lo + hi) / 2; if (offsetEx([ex], -m).length) lo = m; else hi = m; } return (lo + hi) / 2; }
 const SOUCHES = [rgb(214, 196, 166), rgb(198, 178, 150), rgb(176, 120, 96), rgb(222, 210, 188)], SUIE = rgb(64, 56, 50);
 const BRISIS = { d: 0.8, h: 2.37 };          // comble brisé : retrait et hauteur du brisis (2,5 m de rampant : un motif de lucarnes)
+const MITRES = rgb(168, 100, 72);
 
 // ---------------------------------------------------------------- volumes
 // Façade le long d'un anneau (aire positive) : u compté en travées (4 par motif), v en étages.
@@ -36,9 +37,12 @@ export function facade(b, r, inward, yb, yt, vBot, vTop, col, u0, s0, s1, bay = 
   }
 }
 
-// Souche de cheminée : une dalle maçonnée, noircie au sommet. (ux, uz) : sens de sa longueur.
+// Souche de cheminée : un mur mince, noirci vers le haut, couronné d'un rang de mitres de terre cuite.
+// (ux, uz) : sens de sa longueur.
 function souche(B, x, z, ux, uz, hl, y0, y1, id) {
-  box(B.at('plain', x, z), { cx: x, cz: z, ux, uz, hl, hw: 0.3 }, y0, y1, { col: SOUCHES[Math.floor(hash(id, 31) * SOUCHES.length)], topCol: SUIE, s0: 0.86, s1: 1 });
+  const b = B.at('plain', x, z), col = SOUCHES[Math.floor(hash(id, 31) * SOUCHES.length)];
+  box(b, { cx: x, cz: z, ux, uz, hl, hw: 0.24 }, y0, y1, { col, topCol: tint(col, 0.7), s0: 0.94, s1: 0.8 });
+  box(b, { cx: x, cz: z, ux, uz, hl: Math.max(0.16, hl - 0.14), hw: 0.11 }, y1, y1 + 0.42, { col: MITRES, topCol: SUIE, s0: 0.96, s1: 0.82 });
 }
 
 // Emprise à quatre côtés ? Rend le quadrilatère convexe (sens positif) qui la résume, sinon null.
@@ -70,23 +74,25 @@ function batiere(B, c, q, eave, pitch, roofCol, wallCol, id, stacks) {
   const rl = Math.hypot(m1[0] - m0[0], m1[1] - m0[1]) || 1, rx = (m1[0] - m0[0]) / rl, rz = (m1[1] - m0[1]) / rl;
   for (let s = 0; s < stacks; s++) {
     const m = s ? m1 : m0, e = s ? [P[2], P[3]] : [P[0], P[1]], gl = Math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]) || 1, gx = (e[1][0] - e[0][0]) / gl, gz = (e[1][1] - e[0][1]) / gl;
-    const off = (hash(id, 33 + s) - 0.5) * hw * 0.9, hl = Math.min(hw * 0.4, 0.55 + hash(id, 35 + s) * 0.6), inn = (s ? -1 : 1) * 0.38;
+    const off = (hash(id, 33 + s) - 0.5) * hw * 0.9, hl = Math.min(hw * 0.4, 0.45 + hash(id, 35 + s) * 0.35), inn = (s ? -1 : 1) * 0.34;
     const x = m[0] + gx * off + rx * inn, z = m[1] + gz * off + rz * inn, yRoof = yr - (Math.abs(off) / hw) * rise;
-    souche(B, x, z, gx, gz, hl, yRoof - 0.9, Math.max(yRoof, yr - 0.4) + 0.9 + hash(id, 37 + s) * 0.7, id + s);
+    souche(B, x, z, gx, gz, hl, yRoof - 0.9, Math.max(yRoof, yr - 0.4) + 0.7 + hash(id, 37 + s) * 0.6, id + s);
   }
   return yr;
 }
 
-// Souches le long des murs d'un corps à comble brisé ou à croupes : dalles perpendiculaires au mur, en retrait.
-function souches(B, outer, holes, eave, rise, inset, id, max) {
+// Souches le long des murs d'un corps à comble brisé ou à croupes : murs minces perpendiculaires à la façade, posés sur
+// le toit à partir du retrait `inset`. hAt(d) : hauteur du toit au-dessus de l'égout à la distance d du mur.
+function souches(B, outer, holes, eave, hAt, inset, id, max) {
   let n = 0;
   for (let i = 0; i < outer.length && n < max; i++) {
     const a = outer[i], b = outer[(i + 1) % outer.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
     if (L < 5 || hash(id * 7 + i, 41) > 0.62) continue;
-    const dx = (b[0] - a[0]) / L, dz = (b[1] - a[1]) / L, t = (0.2 + 0.6 * hash(id * 7 + i, 42)) * L;
-    const x = a[0] + dx * t - dz * inset, z = a[1] + dz * t + dx * inset;      // l'intérieur d'un anneau positif est à gauche du pan
-    if (!pointInPoly(x - dz * 0.8, z + dx * 0.8, outer) || holes.some((h) => pointInPoly(x, z, h) || pointInPoly(x - dz * 0.8, z + dx * 0.8, h))) continue;
-    souche(B, x, z, -dz, dx, 0.6 + hash(id * 7 + i, 43) * 0.5, eave + rise - 0.8, eave + rise + 1.3 + hash(id * 7 + i, 44) * 0.8, id * 7 + i);
+    const dx = (b[0] - a[0]) / L, dz = (b[1] - a[1]) / L, t = (0.2 + 0.6 * hash(id * 7 + i, 42)) * L, hl = 0.45 + hash(id * 7 + i, 43) * 0.3, d = inset + hl;
+    const x = a[0] + dx * t - dz * d, z = a[1] + dz * t + dx * d;              // l'intérieur d'un anneau positif est à gauche du pan
+    const far = [x - dz * (hl + 0.6), z + dx * (hl + 0.6)];                   // la souche tient-elle sur le corps, côté intérieur ?
+    if (!pointInPoly(far[0], far[1], outer) || holes.some((h) => pointInPoly(x, z, h) || pointInPoly(far[0], far[1], h))) continue;
+    souche(B, x, z, -dz, dx, hl, eave + hAt(d - hl) - 0.3, eave + hAt(d + hl) + 1.0 + hash(id * 7 + i, 44) * 0.7, id * 7 + i);
     n++;
   }
 }
@@ -101,14 +107,15 @@ function comble(B, ex, eave, c, id, o) {
   // sur un grand corps, la pente est réglée pour que le toit se ferme en faîte au lieu de finir en plateau
   const r = A > 250 ? demiLargeur(ex, (2.5 * A) / (P || 1)) : 0;
   if (o.mansard && A > 45) {
-    const shade = 0.86 + hash(id, 23) * 0.22, top = skeletonRoof(br, ex, eave, { brisis: { ...BRISIS, b: B.at('comble', c[0], c[1]), us: 1 / BAY, col: tint(0xffffff, shade) }, pitch: r ? clamp(3.2 / Math.max(0.5, r - BRISIS.d), 0.1, 0.42) : 0.42, step: Math.min(2.2, half * 0.9), minStep: 0.45, maxH: BRISIS.h + 3.4, col: tint(o.roof, 1.12), stitch: true });
-    if (!o.light) souches(B, outer, holes, eave, BRISIS.h, 1.25, id, o.kind === 'public' ? Math.min(6, Math.round(P / 30)) : Math.max(1, stacks));
+    const shade = 0.86 + hash(id, 23) * 0.22, pT = r ? clamp(3.2 / Math.max(0.5, r - BRISIS.d), 0.1, 0.42) : 0.42;      // pente du terrasson
+    const top = skeletonRoof(br, ex, eave, { brisis: { ...BRISIS, b: B.at('comble', c[0], c[1]), us: 1 / (4 * BAY), etroit: 1.5, col: tint(0xffffff, shade) }, pitch: pT, step: Math.min(2.2, half * 0.9), minStep: 0.45, maxH: BRISIS.h + 3.4, col: tint(o.roof, 1.12), stitch: true });
+    if (!o.light) souches(B, outer, holes, eave, (d) => BRISIS.h + Math.max(0, d - BRISIS.d) * pT, BRISIS.d + 0.35, id, o.kind === 'public' ? Math.min(6, Math.round(P / 30)) : Math.max(1, stacks));
     return top;
   }
   const q = holes.length ? null : quadOf(outer, A); let pitch = o.pitch ?? 0.95 + hash(id, 24) * 0.3; if (r && !q) pitch = Math.min(pitch, 6.3 / r);
   if (q) return batiere(B, c, q, eave, pitch, o.roof, tint(o.col, 0.97), id, stacks);
-  const top = skeletonRoof(br, ex, eave, { pitch, step: Math.min(2, half), minStep: 0.4, maxH: 6.5, col: o.roof, stitch: true });      // paliers fins : les pans restent plans
-  if (stacks) souches(B, outer, holes, eave, pitch * 1.5, 1.5, id, stacks);
+  const top = skeletonRoof(br, ex, eave, { pitch, step: Math.min(2, half), minStep: 0.4, maxH: 6.5, col: o.roof, stitch: true, refine: o.light ? 0 : 1 });      // sur téléphone : pas d'affinage, pour rester léger      // paliers fins : les pans restent plans
+  if (stacks) souches(B, outer, holes, eave, (d) => Math.min(6.5, d * pitch), 0.9, id, stacks);
   return top;
 }
 
@@ -124,7 +131,7 @@ export function building(app, B, ex, id, o) {
   if (o.kind === 'eglise') {
     const eave = y0 + o.h, b = B.at('nef', c[0], c[1]), vb = -(y0 - yb) / o.h;      // hautes baies cintrées entre pilastres
     facade(b, outer, false, yb, eave, vb, 1, col, 0, 0.8, 1, 5); for (const h of holes) facade(b, h, true, yb, eave, vb, 1, col, 0, 0.7, 0.95, 5);
-    top = skeletonRoof(lotToit(B, o.roof ?? ARDOISE, c[0], c[1]), exN, eave, { pitch: 1.2, step: 2.2, minStep: 0.5, maxH: 10, col: o.roof ?? ARDOISE, stitch: true });
+    top = skeletonRoof(lotToit(B, o.roof ?? ARDOISE, c[0], c[1]), exN, eave, { pitch: 1.2, step: 2.2, minStep: 0.5, maxH: 10, col: o.roof ?? ARDOISE, stitch: true, refine: 1.1 });
   } else {
     const rdcTop = y0 + (o.kind === 'public' ? RDC + 0.9 : RDC), eave = rdcTop + (o.floors - 1) * (o.kind === 'public' ? ETAGE + 0.7 : ETAGE), u0 = Math.floor(hash(id, 5) * 4) * 0.25;
     if (o.floors > 1) {

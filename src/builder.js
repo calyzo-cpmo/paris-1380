@@ -138,11 +138,23 @@ const key = (p) => Math.round(p[0] * 100) + ',' + Math.round(p[1] * 100);
 // anneau et son sommet sur l'autre, si bien que les pans restent plans — une triangulation par oreilles, elle, rabote
 // les angles. Les deux anneaux sont parcourus ensemble, dans l'ordre de l'abscisse curviligne mesurée sur A : chaque
 // sommet de Bq y est rapporté par son point le plus proche, de sorte qu'une arête relie toujours un angle du polygone
-// à l'angle correspondant de son érodé (l'arêtier du toit). Rend des triplets d'indices dans A.concat(Bq).
-function stitch(A, Bq) {
+// à l'angle correspondant de son érodé (l'arêtier du toit). Quand le retrait `st` entre les deux anneaux est connu,
+// un sommet de Bq qui est l'onglet d'un sommet de A (ce sommet déplacé le long de sa bissectrice) prend exactement son
+// abscisse : c'est ce qui apparie les angles rentrants et les menus décrochements, que le point le plus proche
+// rattache au mauvais côté. Rend des triplets d'indices dans A.concat(Bq).
+export function stitch(A, Bq, st = 0) {
   const n = A.length, m = Bq.length, sA = new Float64Array(n + 1), sB = new Float64Array(m), tris = [];
   for (let i = 0; i < n; i++) { const a = A[i], b = A[(i + 1) % n]; sA[i + 1] = sA[i] + Math.hypot(b[0] - a[0], b[1] - a[1]); }
-  const tot = sA[n] || 1;
+  const tot = sA[n] || 1, onglet = [];
+  if (st > 0) {
+    const sg = polyArea(A) >= 0 ? 1 : -1;                    // l'intérieur est à gauche des côtés d'un anneau d'aire positive
+    for (let i = 0; i < n; i++) {
+      const p = A[(i + n - 1) % n], a = A[i], q = A[(i + 1) % n], ax = a[0] - p[0], az = a[1] - p[1], bx = q[0] - a[0], bz = q[1] - a[1], la = Math.hypot(ax, az), lb = Math.hypot(bx, bz);
+      if (la < 1e-9 || lb < 1e-9) { onglet.push(null); continue; }
+      const n1x = (-az / la) * sg, n1z = (ax / la) * sg, n2x = (-bz / lb) * sg, n2z = (bx / lb) * sg, den = 1 + n1x * n2x + n1z * n2z;
+      onglet.push(den < 0.05 ? null : [a[0] + (st * (n1x + n2x)) / den, a[1] + (st * (n1z + n2z)) / den]);
+    }
+  }
   for (let j = 0; j < m; j++) {
     const p = Bq[j]; let best = Infinity;
     for (let i = 0; i < n; i++) {
@@ -150,6 +162,9 @@ function stitch(A, Bq) {
       const d = (a[0] + t * dx - p[0]) ** 2 + (a[1] + t * dz - p[1]) ** 2;
       if (d < best - 1e-9) { best = d; sB[j] = sA[i] + t * Math.sqrt(l2); }
     }
+    let pres = 0.0064, im = -1;                              // onglet à moins de 8 cm
+    for (let i = 0; i < onglet.length; i++) { const o = onglet[i]; if (!o) continue; const d = (o[0] - p[0]) ** 2 + (o[1] - p[1]) ** 2; if (d < pres) { pres = d; im = i; } }
+    if (im >= 0) sB[j] = sA[im];
   }
   const dir = polyArea(A) * polyArea(Bq) >= 0 ? 1 : -1; let j0 = 0;
   for (let j = 1; j < m; j++) if (sB[j] < sB[j0]) j0 = j;
@@ -166,26 +181,34 @@ function stitch(A, Bq) {
 
 // Toit à croupes sur un polygone quelconque : bandes successives du polygone érodé (squelette droit par paliers).
 // o.brisis { d, h, b, col, us } : comble brisé — une première bande raide (retrait d, hauteur h) placée dans le lot b,
-// puis le terrasson à la pente `pitch`. o.minStep : pas en deçà duquel on ferme le faîte par une dalle.
+// dont la texture avance de `us` par mètre le long de l'égout et va de 0 (égout) à 1 (haut du brisis) dans la hauteur,
+// quelle que soit la pente du triangle ; puis le terrasson à la pente `pitch` ; brisis.etroit : largeur (m) sous laquelle un pan du brisis — pan coupé d'un angle, éclat de
+// triangulation — prend une ardoise unie, sans fragment de lucarne. o.stats { cousu, oreilles } : compte des bandes.
+// o.refine : pas minimal auquel un palier est repris quand une aile y disparaît (voir la boucle). o.minStep : pas en deçà duquel on ferme le faîte par une dalle.
 // o.stitch : bandes cousues d'un anneau à l'autre (pans plans) plutôt que triangulées par oreilles.
 export function skeletonRoof(b, exIn, y, o = {}) {
   const pitch = o.pitch ?? 1.1, step0 = o.step ?? 0.9, maxH = o.maxH ?? 1e9, us = o.us ?? 0.33, col = o.col ?? 0xffffff, minStep = o.minStep ?? step0 * 0.26;
   let bd = o.brisis ? o.brisis.d : 0, bh = o.brisis ? o.brisis.h : 0;
   const H = (d) => (d < bd ? (d / bd) * bh : bh + (d - bd) * pitch);
   let cur = o.overhang ? offsetEx([exIn], o.overhang) : [exIn];
-  let t = 0, guard = 0, step = step0;
+  let t = 0, guard = 0, step = step0, retrait = 0;         // retrait : celui de la bande en cours, pour la couture
   let top = y;
-  const emit = (ex, hOuter, hInner, innerKeys, bb = b, cc = col, uu = us) => {
+  // Couture d'une bande : { tris, faux }. Elle n'est gardée (tris) que si elle pave la bande : l'aire signée de ses
+  // triangles égale celle de la bande, et les triangles retournés — un éclat au droit d'un côté de quelques
+  // décimètres — restent infimes ; on les retire. Elle échoue quand l'érosion fait disparaître une aile ou un
+  // décrochement dans ce palier : les sommets ne se répondent plus, et `faux` (double de l'aire retournée) le mesure.
+  const couture = (ex) => {
+    if (!o.stitch || ex.holes.length !== 1) return { tris: null, faux: 0 };
+    const A = ex.outer, Bq = ex.holes[0], n = A.length, at = (i) => (i < n ? A[i] : Bq[i - n]), t = stitch(A, Bq, retrait), band = 2 * (Math.abs(polyArea(A)) - Math.abs(polyArea(Bq))), w = new Float64Array(t.length); let pos = 0, neg = 0;
+    t.forEach((tr, i) => { const a = at(tr[0]), c = at(tr[1]), d = at(tr[2]); w[i] = (c[0] - a[0]) * (d[1] - a[1]) - (c[1] - a[1]) * (d[0] - a[0]); if (w[i] > 0) pos += w[i]; else neg -= w[i]; });
+    const sg = pos >= neg ? 1 : -1, faux = Math.min(pos, neg), ok = faux <= 0.004 * band + 0.4 && Math.abs(Math.abs(pos - neg) - band) <= 0.01 * band + 0.02;
+    return { tris: ok ? (faux > 0 ? t.filter((_, i) => w[i] * sg > 0) : t) : null, faux };
+  };
+  const emit = (ex, hOuter, hInner, innerKeys, bb = b, cc = col, uu = us, brisis = null, plan = null) => {
     const all = ex.outer.concat(...ex.holes);
     const hs = all.map((p) => (innerKeys && innerKeys.has(key(p)) ? hInner : hOuter));
-    // La couture n'est gardée que si elle pave exactement la bande (aucun triangle retourné, aire égale à celle de la
-    // bande) : quand l'érosion fait disparaître un décrochement, elle relierait des sommets qui ne se répondent pas.
-    let tris = null;
-    if (o.stitch && innerKeys && ex.holes.length === 1) {
-      const t = stitch(ex.outer, ex.holes[0]), band = 2 * (Math.abs(polyArea(ex.outer)) - Math.abs(polyArea(ex.holes[0]))); let sum = 0, pos = 0, neg = 0;
-      for (const tr of t) { const a = all[tr[0]], c = all[tr[1]], d = all[tr[2]], w = (c[0] - a[0]) * (d[1] - a[1]) - (c[1] - a[1]) * (d[0] - a[0]); sum += Math.abs(w); if (w > 1e-6) pos++; else if (w < -1e-6) neg++; }
-      if (!(pos && neg) && Math.abs(sum - band) <= 0.01 * band + 0.02) tris = t;
-    }
+    let tris = innerKeys ? (plan || couture(ex)).tris : null;
+    if (o.stats && innerKeys) o.stats[tris ? 'cousu' : 'oreilles']++;
     if (!tris) tris = THREE.ShapeUtils.triangulateShape(ex.outer.map(V2), ex.holes.map((h) => h.map(V2)));
     for (const tr of tris) {
       let i0 = tr[0], i1 = tr[1], i2 = tr[2];
@@ -203,14 +226,16 @@ export function skeletonRoof(b, exIn, y, o = {}) {
       let tx = 1, tz = 0, k = 1;
       if (hl > 0.05) { tx = -nz / hl; tz = nx / hl; k = 1 / Math.max(0.2, ny); }
       const uvu = (p) => (p[0] * tx + p[1] * tz) * uu;
-      const uvv = (p, yy) => (hl > 0.05 ? (yy - y) / hl : p[0] * tz - p[1] * tx) * uu;
-      bb.tri(a[0], ya, a[1], c[0], yc, c[1], d[0], yd, d[1], uvu(a), uvv(a, ya), uvu(c), uvv(c, yc), uvu(d), uvv(d, yd), cc);
+      const uvv = (p, yy) => (brisis ? Math.max(0, Math.min(1, (yy - hOuter) / (hInner - hOuter))) : (hl > 0.05 ? (yy - y) / hl : p[0] * tz - p[1] * tx) * uu);
+      let ua = uvu(a), uc = uvu(c), ud = uvu(d);
+      if (brisis && brisis.etroit && Math.max(ua, uc, ud) - Math.min(ua, uc, ud) < brisis.etroit * uu) ua = uc = ud = 0;      // u = 0 : entre deux lucarnes
+      bb.tri(a[0], ya, a[1], c[0], yc, c[1], d[0], yd, d[1], ua, uvv(a, ya), uc, uvv(c, yc), ud, uvv(d, yd), cc);
     }
   };
-  while (cur.length && guard++ < 80) {
+  while (cur.length && guard++ < 160) {
     const h0 = y + H(t);
     if (H(t) >= maxH) { for (const ex of cur) emit(ex, h0, h0, null); top = h0; break; }
-    const inB = t < bd - 1e-6, st = inB ? bd - t : step;
+    const inB = t < bd - 1e-6, st = inB ? bd - t : step; retrait = st;
     const next = offsetEx(cur, -st);
     if (!next.length) {
       if (inB) { bd = 0; bh = 0; continue; }               // corps trop étroit pour un brisis : simple toit à versants
@@ -218,11 +243,16 @@ export function skeletonRoof(b, exIn, y, o = {}) {
       for (const ex of cur) emit(ex, h0, h0, null);
       top = h0; break;
     }
+    const bands = difference(cur, next), plans = bands.map(couture);
+    // o.refine (pas minimal, en mètres) : si une aile disparaît dans ce palier ou si le corps s'y scinde, on le reprend
+    // deux fois plus fin — l'aile garde ses versants au lieu d'être couverte à plat ; le pas regrandit ensuite.
+    if (o.refine && !inB && st > o.refine * 1.01 && bands.some((ex, i) => ex.holes.length > 1 || (ex.holes.length === 1 && !plans[i].tris && plans[i].faux > 8))) { step = Math.max(o.refine, st / 2); continue; }
     const h1 = y + H(t + st);
     const inner = new Set();
     for (const ex of next) { for (const p of ex.outer) inner.add(key(p)); for (const hh of ex.holes) for (const p of hh) inner.add(key(p)); }
-    for (const ex of difference(cur, next)) { if (inB) emit(ex, h0, h1, inner, o.brisis.b || b, o.brisis.col ?? col, o.brisis.us ?? us); else emit(ex, h0, h1, inner); }
+    bands.forEach((ex, i) => { if (inB) emit(ex, h0, h1, inner, o.brisis.b || b, o.brisis.col ?? col, o.brisis.us ?? us, o.brisis, plans[i]); else emit(ex, h0, h1, inner, b, col, us, null, plans[i]); });
     cur = next; t += st; top = h1;
+    if (o.refine && !inB) step = Math.min(step0, step * 2);
   }
   return top;
 }

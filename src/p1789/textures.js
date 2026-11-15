@@ -65,35 +65,35 @@ function ground(k) {
   return { map: tex(c), emissiveMap: tex(e) };
 }
 
-// Brisis d'un comble à la Mansart : rangs d'ardoises, une lucarne par travée (4 travées, 2,5 m de rampant).
+// Brisis d'un comble à la Mansart : rangs d'ardoises et une lucarne par travée — 4 travées de 2,5 m en largeur, les
+// 2,5 m du rampant en hauteur. La texture ne se répète pas dans la hauteur : la corniche ne bave pas sur le membron.
 function attic(k) {
-  const bw = 128 * k, W = bw * 4, H = 128 * k, [c, x] = canvas(W, H), [e, ex] = canvas(W, H), r = mulberry32(1667);
+  const q = 2 * k, bw = 128 * q, W = bw * 4, H = 128 * q, [c, x] = canvas(W, H), [e, ex] = canvas(W, H), r = mulberry32(1667);
   ex.fillStyle = '#000'; ex.fillRect(0, 0, W, H);
-  const rh = 8 * k;
-  for (let y = 0, row = 0; y < H; y += rh, row++) for (let sx = -(row % 2) * 7 * k; sx < W; sx += 14 * k) {
-    const v = 0.82 + r() * 0.3; x.fillStyle = `rgb(${Math.round(84 * v)},${Math.round(95 * v)},${Math.round(114 * v)})`; x.fillRect(sx, y, 14 * k - 0.6 * k, rh);
+  const rh = 8 * q, tw = 16 * q;                                                                            // ardoises : rangs réguliers, teinte presque unie
+  for (let y = 0, row = 0; y < H; y += rh, row++) {
+    for (let sx = -(row % 2) * (tw / 2); sx < W; sx += tw) { const v = 0.92 + r() * 0.12; x.fillStyle = `rgb(${Math.round(86 * v)},${Math.round(96 * v)},${Math.round(112 * v)})`; x.fillRect(sx, y, tw, rh); x.fillStyle = 'rgba(20,24,36,0.3)'; x.fillRect(sx + tw - 0.6 * q, y, 0.6 * q, rh); }
+    x.fillStyle = 'rgba(14,18,28,0.36)'; x.fillRect(0, y, W, 0.9 * q);
   }
-  for (let y = 0; y < H; y += rh) { x.fillStyle = 'rgba(16,20,30,0.34)'; x.fillRect(0, y, W, 1.4 * k); }
-  x.fillStyle = 'rgba(150,158,164,0.9)'; x.fillRect(0, 0, W, 5 * k);                                     // membron de plomb, en haut du brisis
-  x.fillStyle = 'rgba(244,238,222,0.95)'; x.fillRect(0, H - 7 * k, W, 7 * k); x.fillStyle = 'rgba(60,50,40,0.4)'; x.fillRect(0, H - 8.5 * k, W, 1.5 * k);   // corniche
+  x.fillStyle = 'rgb(142,150,156)'; x.fillRect(0, 0, W, 4 * q); x.fillStyle = 'rgba(40,44,52,0.5)'; x.fillRect(0, 4 * q, W, q);   // membron de plomb, en haut du brisis
+  x.fillStyle = 'rgb(240,234,218)'; x.fillRect(0, H - 6 * q, W, 6 * q); x.fillStyle = 'rgba(60,50,40,0.45)'; x.fillRect(0, H - 7.2 * q, W, 1.2 * q);   // corniche
   for (let b = 0; b < 4; b++) {
-    if (b === 2) continue;                                                                                // une travée sans lucarne
-    const cx = b * bw + bw / 2, ww = 44 * k, wy = 34 * k, wh = 78 * k, wx = cx - ww / 2, round = b === 1;
-    x.fillStyle = 'rgba(20,24,34,0.35)'; x.fillRect(wx - 3 * k, wy - 16 * k, ww + 16 * k, wh + 12 * k);  // ombre portée
-    x.fillStyle = 'rgb(240,234,218)';                                                                     // jouées et fronton
-    x.beginPath(); x.moveTo(wx - 7 * k, wy + wh + 3 * k); x.lineTo(wx - 7 * k, wy);
-    if (round) x.arc(cx, wy, ww / 2 + 7 * k, Math.PI, 0); else { x.lineTo(wx - 10 * k, wy); x.lineTo(cx, wy - 20 * k); x.lineTo(wx + ww + 10 * k, wy); }
-    x.lineTo(wx + ww + 7 * k, wy); x.lineTo(wx + ww + 7 * k, wy + wh + 3 * k); x.closePath(); x.fill();
-    x.fillStyle = 'rgba(70,60,48,0.35)'; x.fillRect(wx - 7 * k, wy - 1.5 * k, ww + 14 * k, 2.5 * k);
-    const lit = r() < 0.4;
-    x.fillStyle = 'rgb(42,48,56)'; x.fillRect(wx, wy + 5 * k, ww, wh - 5 * k);
-    x.strokeStyle = 'rgb(226,222,208)'; x.lineWidth = 2 * k; x.beginPath(); x.moveTo(cx, wy + 5 * k); x.lineTo(cx, wy + wh);
-    for (let q = 1; q < 3; q++) { x.moveTo(wx, wy + 5 * k + ((wh - 5 * k) * q) / 3); x.lineTo(wx + ww, wy + 5 * k + ((wh - 5 * k) * q) / 3); } x.stroke();
-    x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(wx, wy + 5 * k, ww, 4 * k);
-    if (lit) { ex.fillStyle = 'rgb(255,186,104)'; ex.fillRect(wx + 2 * k, wy + 7 * k, ww - 4 * k, wh - 9 * k); ex.fillStyle = '#000'; ex.fillRect(cx - k, wy + 5 * k, 2 * k, wh); }
+    const cx = b * bw + bw / 2, ww = 46 * q, wy = 30 * q, wh = 74 * q, wx = cx - ww / 2, f = 4.5 * q, cintre = b % 2 === 1;
+    x.fillStyle = 'rgba(12,16,26,0.3)'; x.beginPath(); x.moveTo(wx + ww + f, wy - 6 * q); x.lineTo(wx + ww + f + 9 * q, wy + 4 * q); x.lineTo(wx + ww + f + 9 * q, wy + wh + f); x.lineTo(wx + ww + f, wy + wh + f); x.closePath(); x.fill();   // ombre portée sur l'ardoise
+    x.fillStyle = 'rgb(232,226,208)'; x.beginPath();                                                          // fronton, triangulaire ou cintré
+    if (cintre) { x.moveTo(wx - f - 2 * q, wy); x.quadraticCurveTo(cx, wy - 24 * q, wx + ww + f + 2 * q, wy); } else { x.moveTo(wx - f - 3 * q, wy); x.lineTo(cx, wy - 17 * q); x.lineTo(wx + ww + f + 3 * q, wy); }
+    x.closePath(); x.fill();
+    x.fillStyle = 'rgb(236,230,214)'; x.fillRect(wx - f, wy, ww + 2 * f, wh + f);                              // chambranle
+    x.fillStyle = 'rgba(60,50,40,0.5)'; x.fillRect(wx - f - 3 * q, wy - 0.4 * q, ww + 2 * f + 6 * q, 1.5 * q);  // ombre sous le fronton
+    x.fillStyle = 'rgb(40,46,56)'; x.fillRect(wx, wy + 4 * q, ww, wh - 4 * q);                                 // croisée
+    x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(wx, wy + 4 * q, ww, 5 * q);
+    x.strokeStyle = 'rgb(226,222,208)'; x.lineWidth = 1.8 * q; x.beginPath(); x.moveTo(cx, wy + 4 * q); x.lineTo(cx, wy + wh);
+    for (let i = 1; i < 3; i++) { const yy = wy + 4 * q + ((wh - 4 * q) * i) / 3; x.moveTo(wx, yy); x.lineTo(wx + ww, yy); } x.stroke();
+    x.fillStyle = 'rgba(70,60,48,0.4)'; x.fillRect(wx - f, wy + wh + f - 1.5 * q, ww + 2 * f, 1.5 * q);        // appui
+    if (r() < 0.4) { ex.fillStyle = 'rgb(255,186,104)'; ex.fillRect(wx + q, wy + 5 * q, ww - 2 * q, wh - 6 * q); ex.fillStyle = '#000'; ex.fillRect(cx - q, wy + 4 * q, 2 * q, wh); }
   }
-  speckle(x, W, H, r, 260 * k, 0.05);
-  return { map: tex(c), emissiveMap: tex(e) };
+  const map = tex(c), emissiveMap = tex(e); map.wrapT = emissiveMap.wrapT = THREE.ClampToEdgeWrapping; map.anisotropy = 8;
+  return { map, emissiveMap };
 }
 
 // Nef classique : 4 travées de 5 m sur toute la hauteur du mur — pilastres, haute baie cintrée, entablement.
