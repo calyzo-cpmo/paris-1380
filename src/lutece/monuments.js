@@ -63,14 +63,16 @@ function colonnade(B, pts, y, h, ray, pas, col) {
 }
 
 // ---------------------------------------------------------------- forum
-// Une esplanade fermée de deux ailes de boutiques, ouvertes par deux passages ; portique intérieur ; le temple sur
-// son podium dans la moitié ouest ; la basilique civile fermant l'est, du côté du cardo.
+// Une esplanade bordée de portiques sur trois côtés ; à l'ouest, le temple sur son podium ; à l'est, la basilique sur
+// toute la largeur ; des boutiques adossées aux murs extérieurs ; deux portes au milieu des grands côtés.
 function forum(app, B, am) {
-  const T = app.terrain, f = am.f, L = local(f), hl = f.hl, hw = f.hw, E = am.E, G = 3.4, y = base(T, am.m.ring).hi;
-  const aile = (s) => [[s * G, -hw], [s * hl, -hw], [s * hl, hw], [s * G, hw], [s * G, hw - E], [s * (hl - E), hw - E], [s * (hl - E), -hw + E], [s * G, -hw + E]].map(([a, c]) => L(a, c));
-  for (const s of [-1, 1]) building(app, B, { outer: aile(s), holes: [] }, 9100 + s, { kind: 'maison', floors: 2, col: ENDUIT, roof: TUILE, mansard: false, pitch: 0.42, light: true, area: 5000 });
+  const T = app.terrain, f = am.f, L = local(f), hl = f.hl, hw = f.hw, E = am.E, G = 3.4, aBas = hl - am.B, y = base(T, am.m.ring).hi;
+  const aile = { kind: 'maison', floors: 2, col: ENDUIT, roof: TUILE, mansard: false, pitch: 0.42, light: true };
+  // aile ouest en C, du fond de l'esplanade aux deux portes ; au-delà des portes, deux ailes droites jusqu'à la basilique
+  building(app, B, { outer: [[-G, -hw], [-hl, -hw], [-hl, hw], [-G, hw], [-G, hw - E], [-(hl - E), hw - E], [-(hl - E), -hw + E], [-G, -hw + E]].map(([a, c]) => L(a, c)), holes: [] }, 9100, { ...aile, area: 3000 });
+  for (const s of [-1, 1]) building(app, B, { outer: [[G, s * hw], [aBas, s * hw], [aBas, s * (hw - E)], [G, s * (hw - E)]].map(([a, c]) => L(a, c)), holes: [] }, 9101 + s, { ...aile, area: 800 });
   // portique intérieur, sur trois côtés ; il s'arrête à la basilique
-  const aB = 44, aw = hl - E - 4.2, cw = hw - E - 4.2, ai = hl - E, ci = hw - E, yc = colonnade(B, [L(aB, -cw), L(-aw, -cw), L(-aw, cw), L(aB, cw)], y, 4.3, 0.34, 3.5, CALCAIRE);
+  const aB = aBas - 0.5, aw = hl - E - 4.2, cw = hw - E - 4.2, ai = hl - E, ci = hw - E, yc = colonnade(B, [L(aB, -cw), L(-aw, -cw), L(-aw, cw), L(aB, cw)], y, 4.3, 0.34, 3.5, CALCAIRE);
   const br = B.at('roof', f.cx, f.cz), toit = (w0, w1, c0, c1) => pan(br, [c0[0], yc, c0[1]], [c1[0], yc, c1[1]], [w1[0], yc + 1.1, w1[1]], [w0[0], yc + 1.1, w0[1]], Math.hypot(c1[0] - c0[0], c1[1] - c0[1]) * 0.33, 1.5, TUILE2);
   toit(L(aB, -ci), L(-ai, -ci), L(aB, -cw + 0.5), L(-aw + 0.5, -cw + 0.5)); toit(L(-ai, -ci), L(-ai, ci), L(-aw + 0.5, -cw + 0.5), L(-aw + 0.5, cw - 0.5)); toit(L(-ai, ci), L(aB, ci), L(-aw + 0.5, cw - 0.5), L(aB, cw - 0.5));
   // temple
@@ -84,23 +86,23 @@ function forum(app, B, am) {
     const top = gableRoof(B.at('roof', pod.cx, pod.cz), bp, rectL(f, -67.4, -30.8, -10.1, 10.1), yp + 9.5, 3.6, { col: TUILE, overhang: 0.5, gable: { col: MARBRE } });
     app.foot.push({ ring: rectCorners(rectL(f, -68, -25.4, -10.5, 10.5)), top });
     app.monuments.Forum = { x: f.cx, z: f.cz, top: top + 2 }; }
-  // basilique : une nef haute entre deux bas-côtés, en travers de l'esplanade
-  { const nef = rectT(f, 52, 68, -27, 27), top = salle(app, B, nef, y, 11.5, { pente: 0.4 });
-    for (const [a0, a1, s] of [[46, 52, -1], [68, 74, 1]]) {
-      const r = rectT(f, a0, a1, -27, 27), c = rectCorners(r), ext = s < 0 ? a0 : a1, int = s < 0 ? a1 : a0;
-      facade(B.at('arcade', r.cx, r.cz), c, false, y - 1.2, y + 6, 0, 1, PIERRE, 0, 0.8, 1, 4.6);
-      const e0 = L(ext + s * 0.4, -27.4), e1 = L(ext + s * 0.4, 27.4), i0 = L(int, -27.4), i1 = L(int, 27.4);                      // appentis, de la nef vers le dehors
-      pan(B.at('roof', r.cx, r.cz), [e0[0], y + 5.9, e0[1]], [e1[0], y + 5.9, e1[1]], [i1[0], y + 8.1, i1[1]], [i0[0], y + 8.1, i0[1]], 54 * 0.33, 2.2, TUILE2);
+  // basilique : une nef haute entre deux bas-côtés, sur toute la largeur du forum
+  { const top = salle(app, B, rectT(f, aBas + 6, hl - 6, -hw, hw), y, 11.5, { pente: 0.4 });
+    for (const [a0, a1, s] of [[aBas, aBas + 6, -1], [hl - 6, hl, 1]]) {
+      const r = rectT(f, a0, a1, -hw, hw), ext = s < 0 ? a0 : a1, int = s < 0 ? a1 : a0;
+      facade(B.at('arcade', r.cx, r.cz), rectCorners(r), false, y - 1.2, y + 6, 0, 1, PIERRE, 0, 0.8, 1, 4.6);
+      const e0 = L(ext + s * 0.4, -hw - 0.4), e1 = L(ext + s * 0.4, hw + 0.4), i0 = L(int, -hw - 0.4), i1 = L(int, hw + 0.4);                      // appentis, de la nef vers le dehors
+      pan(B.at('roof', r.cx, r.cz), [e0[0], y + 5.9, e0[1]], [e1[0], y + 5.9, e1[1]], [i1[0], y + 8.1, i1[1]], [i0[0], y + 8.1, i0[1]], 2 * hw * 0.33, 2.2, TUILE2);
     }
-    app.foot.push({ ring: rectCorners(rectL(f, 46, 74, -27, 27)), top });
-    app.monuments.Basilique = { x: L(60, 0)[0], z: L(60, 0)[1], top: top + 1 }; }
+    app.foot.push({ ring: rectCorners(rectL(f, aBas, hl, -hw, hw)), top });
+    const c = L((aBas + hl) / 2, 0); app.monuments.Basilique = { x: c[0], z: c[1], top: top + 1 }; }
 }
 
 // ---------------------------------------------------------------- thermes
 // Une enceinte ; du côté du grand axe, le bloc des bains — salle froide voûtée, salle chaude à abside, salles tièdes de
-// part et d'autre ; à l'opposé, la palestre et ses portiques. o.rotonde : étuve ronde sur le flanc.
+// part et d'autre ; à l'opposé, la palestre et ses portiques. o.rotondes : nombre de salles rondes sur les flancs.
 function thermes(app, B, am, nom, o = {}) {
-  const T = app.terrain, f = am.f, L = local(f), hl = f.hl, hw = f.hw, ring = am.m.ring, g = base(T, ring), y = g.hi, bm = B.at('romain', f.cx, f.cz), s = o.miroir ? -1 : 1;
+  const T = app.terrain, f = am.f, L = local(f), hl = f.hl, hw = f.hw, ring = am.m.ring, g = base(T, ring), y = g.hi, bm = B.at('romain', f.cx, f.cz);
   for (let i = 0; i < ring.length; i++) muret(bm, ring[i], ring[(i + 1) % ring.length], g.lo - 1, y + 4.2, 0.45, PIERRE);
   const top = salle(app, B, rectL(f, 8, 30, -9.5, 9.5), y, 9.5, { voute: 5 });                       // frigidarium
   salle(app, B, rectT(f, 30, 43, -11.5, 11.5), y, 8, { voute: 4.6 });                                // caldarium
@@ -110,7 +112,7 @@ function thermes(app, B, am, nom, o = {}) {
     salle(app, B, rectL(f, -4, 30, c > 0 ? 9.5 : -24, c > 0 ? 24 : -9.5), y, 6.8, { voute: 4.2 });     // salles tièdes
     salle(app, B, rectT(f, 30, 41, c > 0 ? 11.5 : -22, c > 0 ? 22 : -11.5), y, 5.4, { pente: 0.36, toit: TUILE2 });
   }
-  if (o.rotonde) { const p = L(14, s * 30.4); cyl(bm, p[0], p[1], 6.2, y - 1.2, y + 7, { seg: 16, col: PIERRE, s0: 0.8 }); cone(B.at('roof', p[0], p[1]), p[0], p[1], 6.7, y + 7, y + 10.4, { seg: 16, col: TUILE }); }
+  for (let k = 0; k < (o.rotondes || 0); k++) { const p = L(14, (k ? -1 : 1) * 29.8); cyl(bm, p[0], p[1], 6.2, y - 1.2, y + 7, { seg: 16, col: PIERRE, s0: 0.8 }); cone(B.at('roof', p[0], p[1]), p[0], p[1], 6.7, y + 7, y + 10.4, { seg: 16, col: TUILE }); }
   // palestre : portiques sur trois côtés, adossés à l'enceinte
   const a0 = -hl + 5.2, a1 = -8, cw = hw - 5.2, yc = colonnade(B, [L(a1, -cw), L(a0, -cw), L(a0, cw), L(a1, cw)], y, 3.4, 0.28, 3.4, CALCAIRE), br = B.at('roof', f.cx, f.cz);
   const toit = (w0, w1, c0, c1) => pan(br, [c0[0], yc, c0[1]], [c1[0], yc, c1[1]], [w1[0], yc + 0.9, w1[1]], [w0[0], yc + 0.9, w0[1]], Math.hypot(c1[0] - c0[0], c1[1] - c0[1]) * 0.33, 1.6, TUILE2);
@@ -226,7 +228,7 @@ export function batirMonuments(app, B) {
   const P = app.plan250, am = P.am;
   forum(app, B, am.forum);
   thermes(app, B, am.thermesN, 'Thermes du Nord');
-  thermes(app, B, am.thermesE, 'Thermes de l’Est', { rotonde: true });
+  thermes(app, B, am.thermesE, 'Thermes de l’Est', { rotondes: 2 });
   theatre(app, B, am.theatre);
   arenes(app, B, am.arenes);
   ponts(app, B, P);

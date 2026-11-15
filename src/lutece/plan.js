@@ -70,8 +70,9 @@ export function rayon(O, c, s, ring) {
 // Aménagement de chaque monument : repères et tracés que partagent la peinture du sol et la construction.
 function amenager(P) {
   const M = P.mons, am = (P.am = {});
-  { const m = M['Forum'], f = repere(m.ring, [1, 0]), L = local(f), E = 12, a = f.hl - E - 0.6, c = f.hw - E - 0.6;      // esplanade : à l'intérieur des ailes de boutiques
-    am.forum = { m, f, E, cour: [L(-a, -c), L(a, -c), L(a, c), L(-a, c)] }; }
+  { const m = M['Forum'], f = repere(m.ring, [1, 0]), L = local(f), E = 12, B = 28, a = f.hl - E - 0.6, c = f.hw - E - 0.6, e = f.hl - B - 0.6;
+    // E : profondeur des ailes de boutiques ; B : celle de la basilique, qui ferme l'est sur toute la largeur ; cour : l'esplanade
+    am.forum = { m, f, E, B, cour: [L(-a, -c), L(e, -c), L(e, c), L(-a, c)] }; }
   for (const [k, nom, vers] of [['thermesN', 'Thermes du Nord', [0, -1]], ['thermesE', 'Thermes de l\'Est', [1, 0]]]) {
     const m = M[nom], f = repere(m.ring, vers), L = local(f);                                                             // les bains du côté du grand axe, la palestre à l'opposé
     am[k] = { m, f, palestre: [L(-f.hl + 1.5, -f.hw + 1.5), L(-7, -f.hw + 1.5), L(-7, f.hw - 1.5), L(-f.hl + 1.5, f.hw - 1.5)] };

@@ -75,7 +75,7 @@ et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent 
   au sol (rues et monuments de Lutèce, îlots de 1300) ; pour les époques postérieures, les quartiers bâtis depuis 1380
   sont dessinés en maisons le long des rues — à pans de bois en 1553, enduites à hautes fenêtres ensuite —, les édifices
   postérieurs et les nouvelles enceintes (Fossés jaunes, Fermiers généraux) en pierre, les établissements religieux en
-  pastilles, et le mini-plan passe à l'échelle de l'agglomération. La date 1789, en doré comme 1380, ouvre sa propre
+  pastilles, et le mini-plan passe à l'échelle de l'agglomération. Lutèce et 1789, en doré comme 1380, ouvrent leur propre
   maquette détaillée. Chaque date a son texte, sa légende, ses chiffres et ses crédits ; un bouton fait défiler toute la
   frise. À pied, les maisons du calque se contournent comme les autres.
 - **Partager** : l'adresse de la page suit la vue, l'heure, la fiche ouverte et l'époque ; le bouton « Partager » la copie.
