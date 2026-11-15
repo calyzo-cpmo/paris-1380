@@ -8,7 +8,7 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--use
 const page = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 1 });
 page.on('console', (m) => console.log('[page]', m.text().slice(0, 300)));
 page.on('pageerror', (e) => console.log('pageerror', String(e.stack || e).slice(0, 600)));
-await page.goto('file://' + join(root, 'dist/index.html') + '#shot');
+await page.goto('file://' + join(root, 'dist/1380.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 120000 });
 console.log('failed?', await page.evaluate(() => window.__failed || null));
 const steps = process.argv.slice(2);

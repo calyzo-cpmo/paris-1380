@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { CADRE, RAW } from './data.js';
 import { CATS, makePlaces } from './places.js';
 import { parseHash, makeHash } from '../state.js';
+import { bindEmbed, askEra, tellHash, shareUrl } from '../embed.js';
+import { suivreBarre } from '../layout.js';
 import { clamp } from '../geom.js';
 
 const HOME = { x: -350, z: -420, dist: 3600, az: -0.45, el: 0.66 };
@@ -103,7 +105,15 @@ export function initUI89(app) {
     if (act && jl.scrollWidth > jl.clientWidth) jl.scrollLeft = act.offsetLeft - jl.offsetLeft - (jl.clientWidth - act.offsetWidth) / 2;
   };
   $('btn-epoch').addEventListener('click', () => toggleFrise($('frise').hidden));
-  $('btn-1380').addEventListener('click', () => { location.href = 'index.html'; });
+  // Passage à la maquette de 1380 (et, par elle, aux autres dates de la frise). Hébergée par la page d'accueil, la
+  // maquette lui demande la transition ; ouverte seule, le lien y mène, à la même vue et à la même heure.
+  const viewHash = () => { const c = rig.mode === 'walk' ? { x: rig.walk.x, z: rig.walk.z, dist: 260, az: rig.walk.yaw, el: 0.5 } : rig.fly ? rig.fly.to : rig.goal; return makeHash({ h: app.sky.hour, c: [c.x, c.z, c.dist, c.az, c.el] }); };
+  const vers1380 = (extra) => 'index.html#' + (extra ? extra + '&' : '') + viewHash().slice(1);
+  $('btn-1380').addEventListener('click', () => { closeMore(); if (!askEra('1380')) location.href = vers1380(''); });
+  for (const a of document.querySelectorAll('#frise-jalons a[href]')) a.addEventListener('click', (e) => {
+    const extra = (a.getAttribute('data-e') ? 'e=' + a.getAttribute('data-e') : '');
+    if (askEra('1380', extra)) { e.preventDefault(); toggleFrise(false); } else a.href = vers1380(extra);
+  });
   for (const b of document.querySelectorAll('[data-close]')) b.addEventListener('click', () => { const id = b.dataset.close; if (id === 'card') closeCard(); else if (id === 'places') togglePlaces(false); else if (id === 'frise') toggleFrise(false); else $(id).hidden = true; });
   for (const m of document.querySelectorAll('.modal')) m.addEventListener('click', (e) => { if (e.target === m) m.hidden = true; });
   { const ul = $('sources-list'), row = (t, c) => { const li = el('li'); li.append(el('b', null, t + ' : '), c); ul.appendChild(li); };
@@ -233,7 +243,7 @@ export function initUI89(app) {
   }
   const openLink = (hash) => applyState(parseHash(hash));
   $('btn-share').addEventListener('click', async () => {
-    closeMore(); const url = location.href.split('#')[0] + link();
+    closeMore(); const url = shareUrl(link());
     try { await navigator.clipboard.writeText(url); toast('Lien copié : il rouvre cette vue.'); } catch (e) { history.replaceState(null, '', link()); toast('Le lien de cette vue est dans la barre d’adresse.'); }
   });
 
@@ -261,7 +271,7 @@ export function initUI89(app) {
     if (hourPlay) { let h = app.sky.hour + dt * 0.9; if (h > 22.5) h = 4.5; setHour(h, true); }
     if (hintTimer > 0 && (hintTimer -= dt) <= 0) $('hint').hidden = true;
     if (toastTimer > 0 && (toastTimer -= dt) <= 0) $('toast').hidden = true;
-    if (hashTimer > 0 && (hashTimer -= dt) <= 0 && !app.shot) { try { history.replaceState(null, '', link()); } catch (e) { /* adresse non modifiable (aperçu) */ } }
+    if (hashTimer > 0 && (hashTimer -= dt) <= 0 && !app.shot) { try { history.replaceState(null, '', link()); } catch (e) { /* adresse non modifiable (aperçu) */ } tellHash(link()); }
     const az = rig.mode === 'walk' ? rig.walk.yaw : rig.cur.az; $('compass-rose').setAttribute('transform', `rotate(${(((az * 180) / Math.PI) % 360).toFixed(1)})`);
     updateLabels(); updateWhere(); drawMini();
   });
@@ -275,4 +285,13 @@ export function initUI89(app) {
   body.classList.add('ready');
   if (!fromLink && !app.shot) hint('Glisser pour se déplacer, molette pour s’approcher · double-clic pour descendre à pied', 10);
   app.ui = { select, openCard, closeCard, setHour, startWalk, goWalk, stopWalk, goHome, link, openLink, currentState, applyState, places, byId, groundPoint, nearestClear, mini, drawMini, updateLabels, togglePlaces, calm };
+  suivreBarre($('dock'));
+  // page d'accueil « Paris à travers le temps » : elle demande la vue, prépare l'arrivée, enfonce ou dresse la ville
+  const quitter = () => { stopWalk(); stopHourPlay(); closeMore(); togglePlaces(false); toggleFrise(false); for (const m of document.querySelectorAll('.modal')) m.hidden = true; };
+  bindEmbed({
+    state: (leave) => { if (leave) quitter(); return viewHash(); },
+    prepare: (hash) => { quitter(); closeCard(); applyState(parseHash(hash)); app.setCityScale(0); rig.update(0); app.renderNow(); },
+    apply: (hash) => applyState(parseHash(hash)),
+    morph: (to, ms) => app.morph(to, ms), pause: () => app.pause(), resume: () => app.resume(),
+  });
 }
