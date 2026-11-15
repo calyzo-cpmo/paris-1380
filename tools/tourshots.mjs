@@ -11,7 +11,7 @@ const only = process.argv.slice(2);
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.log('pageerror', String(e).slice(0, 300)));
-await page.goto('file://' + join(root, 'dist/index.html') + '#shot');
+await page.goto('file://' + join(root, 'dist/1380.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 240000 });
 await page.addStyleTag({ content: '#top,#dock,#card,#nav,#stack{display:none!important}' });
 const tours = await page.evaluate(() => window.__app.ui.tours.map((t) => [t.id, t.stops.length]));

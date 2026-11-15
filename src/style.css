@@ -1,6 +1,8 @@
 /* Mise en page : scène 3D plein cadre ; titre et menus en haut, modes et heure en bas, fiche à gauche, liste et repères à droite,
    messages (parcours, invite, légende) empilés au centre au-dessus de la barre du bas. */
 :root {
+  /* marges de l'écran (encoche, barre d'accueil) : la page d'accueil qui héberge la maquette les impose, car env() vaut zéro dans un cadre */
+  --sat: env(safe-area-inset-top, 0px); --sar: env(safe-area-inset-right, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: env(safe-area-inset-left, 0px);
   color-scheme: dark;
   --lapis: #101c44;        /* bleu d'outremer des Très Riches Heures */
   --lapis-2: #1a2a5e;
@@ -12,8 +14,8 @@
   --display: 'Grenze Gotisch', 'Alegreya', Georgia, serif;
   --serif: 'Alegreya', Georgia, 'Times New Roman', serif;
   --sans: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
-  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
-  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  --gutter-l: max(16px, var(--sal));
+  --gutter-r: max(16px, var(--sar));
   --dock-h: 62px;          /* hauteur réservée à la barre du bas */
   --map-w: 172px;
 }
@@ -47,7 +49,7 @@ h1, h2, h3, p, dl, ul, ol { margin: 0; }
 .vlabel { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ink); text-shadow: 0 0 3px #0b1230, 0 0 6px #0b1230, 0 1px 2px #0b1230; pointer-events: none; will-change: transform; }
 
 /* ---------- haut : titre, « où suis-je », menus */
-#top { position: fixed; inset: 0 0 auto 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: calc(10px + env(safe-area-inset-top, 0px)) var(--gutter-r) 0 var(--gutter-l); pointer-events: none; z-index: 6; }
+#top { position: fixed; inset: 0 0 auto 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: calc(10px + var(--sat)) var(--gutter-r) 0 var(--gutter-l); pointer-events: none; z-index: 6; }
 #top > * { pointer-events: auto; }
 #brand { background: var(--panel); border-bottom: 1px solid var(--gold); padding: 6px 14px 8px; min-width: 0; max-width: min(360px, 62vw); }
 #brand h1, #loading h1 { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1; letter-spacing: 0.01em; }
@@ -79,7 +81,7 @@ button.primary:hover { filter: brightness(1.08); }
 .short { display: none; }
 
 /* ---------- bas : modes, heure, affichage */
-#dock { position: fixed; inset: auto 0 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 14px; padding: 8px var(--gutter-r) calc(10px + env(safe-area-inset-bottom, 0px)) var(--gutter-l); background: linear-gradient(to top, rgba(8, 13, 34, 0.85), rgba(8, 13, 34, 0)); z-index: 7; }
+#dock { position: fixed; inset: auto 0 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 14px; padding: 8px var(--gutter-r) calc(10px + var(--sab)) var(--gutter-l); background: linear-gradient(to top, rgba(8, 13, 34, 0.85), rgba(8, 13, 34, 0)); z-index: 7; }
 .seg { display: flex; }
 .seg button { border-radius: 0; margin-left: -1px; }
 .seg button:first-child { margin-left: 0; border-radius: 2px 0 0 2px; }
@@ -102,7 +104,7 @@ button.primary:hover { filter: brightness(1.08); }
 
 /* ---------- panneaux */
 #card, #places, #tour, #prompt, #legend, #frise, #hint, #inhud { background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
-#card { position: fixed; left: var(--gutter-l); top: calc(84px + env(safe-area-inset-top, 0px)); width: min(360px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 16px); overflow: auto; padding: 14px 16px 16px; z-index: 5; }
+#card { position: fixed; left: var(--gutter-l); top: calc(84px + var(--sat)); width: min(360px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 16px); overflow: auto; padding: 14px 16px 16px; z-index: 5; }
 #card .x { position: absolute; right: 4px; top: 4px; }
 #card-grip { display: none; }
 #card-cat { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 7px; }
@@ -123,7 +125,7 @@ button.primary:hover { filter: brightness(1.08); }
 #card-chrono li.after b { color: var(--ink-2); }
 #card-chrono li.sep { display: block; border: 0; padding: 10px 0 2px; font-family: var(--sans); font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-2); }
 
-#places { position: fixed; right: var(--gutter-r); top: calc(60px + env(safe-area-inset-top, 0px)); bottom: calc(var(--dock-h) + 12px); width: min(320px, calc(100vw - 32px)); display: flex; flex-direction: column; padding: 10px 12px 12px; z-index: 8; }
+#places { position: fixed; right: var(--gutter-r); top: calc(60px + var(--sat)); bottom: calc(var(--dock-h) + 12px); width: min(320px, calc(100vw - 32px)); display: flex; flex-direction: column; padding: 10px 12px 12px; z-index: 8; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .panel-head h2 { font-family: var(--serif); font-size: 20px; }
 #carnet { margin: 4px 0 2px; }
@@ -158,7 +160,7 @@ button.primary:hover { filter: brightness(1.08); }
 body.no-map #map-wrap { display: none; }
 
 /* ---------- pile centrale : légende, parcours, invite, conseil */
-#stack { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--dock-h) + 12px + env(safe-area-inset-bottom, 0px)); width: min(640px, calc(100vw - 2 * (var(--map-w) + 40px))); display: flex; flex-direction: column; gap: 8px; align-items: stretch; z-index: 5; pointer-events: none; }
+#stack { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--dock-h) + 12px + var(--sab)); width: min(640px, calc(100vw - 2 * (var(--map-w) + 40px))); display: flex; flex-direction: column; gap: 8px; align-items: stretch; z-index: 5; pointer-events: none; }
 #stack > * { pointer-events: auto; }
 body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #tour { padding: 10px 16px 12px; }
@@ -197,7 +199,7 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #frise-note { flex: none; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 #frise-jalons button.base:not([aria-pressed="true"]) { color: var(--gold); }
 #frise-more { flex: none; padding: 5px 10px; }
-#frise-info { position: fixed; left: var(--gutter-l); top: calc(84px + env(safe-area-inset-top, 0px)); width: min(330px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 76px); overflow: auto; padding: 12px 14px 12px; z-index: 4; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
+#frise-info { position: fixed; left: var(--gutter-l); top: calc(84px + var(--sat)); width: min(330px, calc(100vw - 32px)); max-height: calc(100% - 84px - var(--dock-h) - 76px); overflow: auto; padding: 12px 14px 12px; z-index: 4; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
 #frise-1789 { margin: 12px 0 2px; display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
 a.cta { display: inline-block; justify-self: start; padding: 7px 13px; background: var(--gold); color: #1b1606; font-weight: 700; text-decoration: none; border-radius: 2px; }
 a.cta:hover, a.cta:focus-visible { filter: brightness(1.08); outline: 2px solid var(--gold); outline-offset: 2px; }
@@ -223,11 +225,11 @@ body.walking #frise-info { max-height: calc(100% - 84px - var(--dock-h) - 130px)
 #legend-list li { display: flex; align-items: center; gap: 7px; font-size: 13.5px; }
 #legend-list i { width: 12px; height: 12px; border-radius: 2px; background: var(--c); flex: none; }
 .legend-note { font-size: 12.5px; color: var(--ink-2); margin-bottom: 4px; }
-#toast { position: fixed; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 16px; background: var(--gold); color: #1b1606; font-weight: 500; border-radius: 2px; z-index: 35; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4); text-align: center; }
+#toast { position: fixed; left: 50%; top: calc(64px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 16px; background: var(--gold); color: #1b1606; font-weight: 500; border-radius: 2px; z-index: 35; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4); text-align: center; }
 
-#walkhud { position: fixed; left: var(--gutter-l); bottom: calc(var(--dock-h) + 12px + env(safe-area-inset-bottom, 0px)); z-index: 6; flex-wrap: nowrap; }
+#walkhud { position: fixed; left: var(--gutter-l); bottom: calc(var(--dock-h) + 12px + var(--sab)); z-index: 6; flex-wrap: nowrap; }
 #walkhud button { padding: 6px 11px; }
-body.walking #stack { bottom: calc(var(--dock-h) + 62px + env(safe-area-inset-bottom, 0px)); }
+body.walking #stack { bottom: calc(var(--dock-h) + 62px + var(--sab)); }
 
 /* ---------- fenêtres */
 .modal { position: fixed; inset: 0; background: rgba(5, 8, 22, 0.7); display: grid; place-items: center; padding: 16px var(--gutter-r) 16px var(--gutter-l); z-index: 30; }
@@ -276,7 +278,7 @@ body.ready #loading { display: none; }
 body:not(.ready) :is(#top, #dock, #nav, #stack, #labels, #card, #places, #walkhud, #toast) { visibility: hidden; }
 
 /* ---------- visite intérieure */
-#inhud { position: fixed; left: var(--gutter-l); top: calc(16px + env(safe-area-inset-top, 0px)); width: min(380px, calc(100vw - 32px)); max-height: calc(100% - 110px); overflow: auto; padding: 14px 16px 14px; z-index: 6; }
+#inhud { position: fixed; left: var(--gutter-l); top: calc(16px + var(--sat)); width: min(380px, calc(100vw - 32px)); max-height: calc(100% - 110px); overflow: auto; padding: 14px 16px 14px; z-index: 6; }
 #in-cat { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); }
 #in-name { font-family: var(--serif); font-size: 23px; font-weight: 700; line-height: 1.15; text-wrap: balance; margin: 2px 0 2px; }
 #in-title { font-family: var(--serif); font-style: italic; color: var(--ink-2); margin-bottom: 8px; }
@@ -303,7 +305,7 @@ body.walking #scene canvas:active { cursor: grabbing; }
 @media (max-width: 900px) {
   :root { --map-w: 132px; }
   #stack, body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
-  #nav { bottom: auto; top: calc(58px + env(safe-area-inset-top, 0px)); flex-direction: column-reverse; }
+  #nav { bottom: auto; top: calc(58px + var(--sat)); flex-direction: column-reverse; }
 }
 
 /* ---------- téléphone */
@@ -319,7 +321,7 @@ body.walking #scene canvas:active { cursor: grabbing; }
   #menu-more { display: none; position: absolute; right: 0; top: calc(100% + 6px); min-width: 150px; padding: 6px; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
   #menu-more.open { display: grid; }
   #menu-more button { text-align: left; border: 0; background: none; }
-  #dock { gap: 6px 8px; padding-top: 6px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  #dock { gap: 6px 8px; padding-top: 6px; padding-bottom: calc(8px + var(--sab)); }
   .seg button { padding: 7px 9px; }
   #hour-wrap { padding: 0; }
   #hour-btn { cursor: pointer; padding: 7px 9px; }
@@ -328,7 +330,7 @@ body.walking #scene canvas:active { cursor: grabbing; }
   #hour-pop { display: none; position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 8px); width: min(300px, calc(100vw - 32px)); flex-wrap: wrap; justify-content: center; gap: 8px 10px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
   #hour-wrap.open #hour-pop { display: flex; }
   #hour { width: 200px; flex: 1 1 160px; }
-  #card { left: 0; right: 0; top: auto; bottom: calc(var(--dock-h) + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 64%; padding: 20px 14px 14px; border-left: 0; border-right: 0; }
+  #card { left: 0; right: 0; top: auto; bottom: calc(var(--dock-h) + var(--sab)); width: auto; max-height: 64%; padding: 20px 14px 14px; border-left: 0; border-right: 0; }
   #card-grip { display: block; position: absolute; left: 0; right: 0; top: 0; height: 20px; padding: 0; border: 0; background: none; border-radius: 0; }
   #card-grip::before { content: ""; position: absolute; left: 50%; top: 8px; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--ink-2); }
   #card .x { top: 14px; }
@@ -339,7 +341,7 @@ body.walking #scene canvas:active { cursor: grabbing; }
   #card.peek #card-date { margin-bottom: 4px; }
   #card-actions { margin: 8px 0 2px; }
   #places { left: var(--gutter-l); width: auto; bottom: calc(var(--dock-h) + 8px); }
-  #nav { top: calc(52px + env(safe-area-inset-top, 0px)); }
+  #nav { top: calc(52px + var(--sat)); }
   #btn-home { padding: 6px 9px; font-size: 13px; }
   #compass { width: 36px; height: 36px; }
   #frise { gap: 5px; padding: 6px; }
@@ -347,14 +349,14 @@ body.walking #scene canvas:active { cursor: grabbing; }
   #frise-jalons button, #frise-jalons a { flex: 0 0 auto; font-size: 13px; padding: 6px 9px; }
   #frise-note { display: none; }
   #frise-more { padding: 5px 7px; font-size: 13px; }
-  #frise-info { left: 0; right: 0; top: auto; bottom: calc(var(--dock-h) + 62px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 44%; border-left: 0; border-right: 0; padding: 10px 14px; }
+  #frise-info { left: 0; right: 0; top: auto; bottom: calc(var(--dock-h) + 62px + var(--sab)); width: auto; max-height: 44%; border-left: 0; border-right: 0; padding: 10px 14px; }
   #frise-text { font-size: 14.5px; }
   #tour { padding: 8px 12px 10px; }
   #tour-text { font-size: 15px; margin-bottom: 8px; }
   #tour-place { font-size: 17px; }
   #tour .row { gap: 6px; }
   #tour .row button { padding: 5px 9px; }
-  #inhud { top: auto; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); max-height: 42%; width: auto; right: var(--gutter-r); padding: 10px 12px; }
+  #inhud { top: auto; bottom: calc(64px + var(--sab)); max-height: 42%; width: auto; right: var(--gutter-r); padding: 10px 12px; }
   #in-spots { margin: 8px 0; }
   #in-name { font-size: 19px; }
   #welcome { grid-template-columns: 1fr; gap: 8px; }
@@ -369,3 +371,6 @@ body.walking #scene canvas:active { cursor: grabbing; }
 }
 @media (pointer: coarse) { #walk-look { display: none; } }
 @media (prefers-reduced-motion: reduce) { #load-bar, #carnet-bar, #compass-rose { transition: none; } }
+
+/* passage d'une époque à l'autre : pendant que la ville s'enfonce ou s'élève, les étiquettes s'effacent */
+body.morph #labels { visibility: hidden; }

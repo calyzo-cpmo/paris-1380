@@ -11,7 +11,7 @@ const errors = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ': ' + m.text().slice(0, 400)); else if (process.env.VERBOSE) console.log('[page]', m.text().slice(0, 300)); });
 page.on('pageerror', (e) => errors.push('pageerror: ' + String(e.stack || e).slice(0, 800)));
 const t0 = Date.now();
-await page.goto('file://' + join(root, 'dist/index.html') + '#shot');
+await page.goto('file://' + join(root, 'dist/1380.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 240000 }).catch((e) => errors.push('timeout: ' + e.message.slice(0, 100)));
 const info = await page.evaluate(([cam, hour, js]) => {
   const app = window.__app; if (!app) return { failed: String(window.__failed || 'no app') };

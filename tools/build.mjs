@@ -1,4 +1,5 @@
-// Assemble une page autonome : dist/index.html (document complet) et dist/paris-1380.artifact.html (fragment publié).
+// Assemble les pages autonomes de dist/ : les maquettes (1380.html, 1789.html), la page d'accueil qui les héberge et
+// orchestre le passage de l'une à l'autre (index.html), et le fragment publié (paris-1380.artifact.html).
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -26,7 +27,7 @@ mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist/paris-1380.artifact.html'), fragment);
 // Document complet pour une mise en ligne : en-tête en règle (titre, description, aperçu de partage), corps et script.
 const desc = 'Maquette 3D interactive de Paris vers 1380 : survol, parcours commentés, promenade dans les rues peuplées, histoire de chaque monument et visite de leurs intérieurs, d’après le plan restitué ALPAGE-CNRS.';
-writeFileSync(join(root, 'dist/index.html'), `<!DOCTYPE html>
+writeFileSync(join(root, 'dist/1380.html'), `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -81,3 +82,31 @@ ${body89}
 `;
 writeFileSync(join(root, 'dist/1789.html'), page89);
 console.log('build 1789 ok', (page89.length / 1024).toFixed(0) + ' Ko');
+
+// ---- page d'accueil : héberge les maquettes et fait la transition entre époques
+const resShell = await build({ entryPoints: [join(root, 'src/shell/main.js')], bundle: true, format: 'iife', write: false, minify: !dev, target: 'es2020', legalComments: 'none' });
+const jsShell = resShell.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+const descShell = 'Paris à huit dates, de Lutèce à 1836, et deux maquettes 3D détaillées — Paris vers 1380 et Paris en 1789 : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
+const shell = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paris à travers le temps</title>
+<meta name="description" content="${descShell}">
+<meta property="og:title" content="Paris à travers le temps — maquettes 3D de Paris en 1380 et en 1789">
+<meta property="og:description" content="${descShell}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta name="theme-color" content="#0b1230">
+${fonts}
+<style>${readFileSync(join(root, 'src/shell/style.css'), 'utf8')}</style>
+</head>
+<body>
+${readFileSync(join(root, 'src/shell/body.html'), 'utf8')}
+<script>${jsShell}</script>
+</body>
+</html>
+`;
+writeFileSync(join(root, 'dist/index.html'), shell);
+console.log('build accueil ok', (shell.length / 1024).toFixed(1) + ' Ko');

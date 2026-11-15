@@ -1,0 +1,20 @@
+/* Page d'accueil « Paris à travers le temps » : elle n'affiche que les maquettes, chacune dans son cadre, et le passage
+   de l'une à l'autre. Toute l'interface visible appartient aux maquettes. */
+html, body { margin: 0; height: 100%; background: #0b1230; overflow: hidden; }
+#scene { position: fixed; inset: 0; }
+.ere { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #0b1230; opacity: 0; visibility: hidden; z-index: 1; transition: opacity 0.9s ease, visibility 0s linear 0.9s; }
+.ere.vue { opacity: 1; visibility: visible; transition: opacity 0.9s ease; }
+.ere.devant { z-index: 2; }
+#voile { position: fixed; inset: 0; z-index: 5; cursor: progress; }
+#attente { position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); top: calc(78px + env(safe-area-inset-top, 0px)); display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; max-width: calc(100vw - 32px); box-sizing: border-box; white-space: nowrap; background: rgba(16, 28, 68, 0.95); color: #f4ecd8; border: 1px solid rgba(220, 184, 102, 0.45); border-top: 2px solid #dcb866; font: 14.5px/1.3 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif; }
+#attente[hidden], #voile[hidden] { display: none; }
+#attente-texte { overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+#attente-piste { flex: none; width: 96px; height: 4px; background: rgba(244, 236, 216, 0.18); }
+#attente-barre { display: block; height: 100%; width: 0; background: #dcb866; transition: width 0.3s; }
+#attente-x { flex: none; width: 28px; height: 28px; padding: 0; border: 1px solid rgba(244, 236, 216, 0.25); border-radius: 2px; background: transparent; color: inherit; font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
+#attente-x:hover { border-color: #dcb866; }
+#attente-x:focus-visible { outline: 2px solid #dcb866; outline-offset: 2px; }
+#sonde { position: fixed; left: 0; top: 0; width: 0; height: 0; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.sans-script { position: fixed; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; color: #f4ecd8; font: 17px/1.5 Georgia, serif; }
+.sans-script a { color: #dcb866; }
+@media (prefers-reduced-motion: reduce) { .ere, .ere.vue { transition: none; } }

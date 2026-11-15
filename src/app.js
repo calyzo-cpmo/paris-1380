@@ -72,6 +72,12 @@ export class App {
 
     this.rig = new CameraRig(camera, renderer.domElement, this);
     await buildCity(this, step);
+    // tout ce qui n'est ni le sol, ni l'eau, ni le ciel — maisons, monuments, arbres, habitants, bateaux — va dans un
+    // groupe que le passage d'une époque à l'autre enfonce dans le sol ou dresse (setCityScale)
+    { const garde = new Set([core, outer, far, this.water, this.sky.mesh, this.sky.sun.target]);
+      this.bati = new THREE.Group(); this.bati.matrixAutoUpdate = false;
+      for (const o of [...scene.children]) if (!o.isLight && !garde.has(o)) this.bati.add(o);
+      scene.add(this.bati); this.bati.updateMatrix(); this.cityScale = 1; }
     this.log('ville construite');
     this.resize();
     this.log('resize ok');
@@ -185,9 +191,39 @@ export class App {
     const dt = Math.min(0.1, raw);
     this.time += dt;
     this.rig.update(dt);
+    this.stepMorph(raw);
     this.emit('frame', dt);
     this.renderNow();
   }
+
+  // ---- passage d'une époque à l'autre (page d'accueil « Paris à travers le temps ») ----
+  // Enfonce la ville dans le sol (k = 0) ou la dresse (k = 1) : tout ce qui est bâti, planté ou vivant est dans this.bati.
+  setCityScale(k) {
+    const b = this.bati; this.cityScale = k;
+    // la ville se tasse autour du niveau moyen du sol (15 m) tout en descendant : les maisons disparaissent peu à peu,
+    // où que soit leur pied, et les plus hauts monuments sont sous terre à la fin
+    const s = 0.12 + 0.88 * k; b.visible = k > 0.004; b.scale.y = s; b.position.y = 15 * (1 - s) - 22 * (1 - k); b.updateMatrix();
+    this.shadowState.hour = -1;                            // les ombres suivent
+    document.body.classList.toggle('morph', k < 0.999);
+  }
+  // Anime l'enfoncement (to = 0) ou l'élévation (to = 1) ; la promesse est tenue à la fin. Sans boucle d'animation
+  // (page en pause, capture), le changement est immédiat.
+  morph(to, ms = 1200) {
+    if (this.morphing) { const m = this.morphing; this.morphing = null; m.done(); }
+    return new Promise((done) => {
+      if (this.paused || this.shot) { this.setCityScale(to); done(); return; }
+      this.morphing = { from: this.cityScale ?? 1, to, t: 0, ms: Math.max(1, ms), done };
+    });
+  }
+  stepMorph(raw) {
+    const m = this.morphing; if (!m) return;
+    m.t += raw * 1000; const u = Math.min(1, m.t / m.ms), e = u * u * (3 - 2 * u);
+    this.setCityScale(m.from + (m.to - m.from) * e);
+    if (u >= 1) { this.morphing = null; m.done(); }
+  }
+  // Hors champ, la maquette ne calcule plus rien ; elle garde sa ville en mémoire.
+  pause() { if (this.paused || this.shot) return; this.paused = true; this.renderer.setAnimationLoop(null); if (this.morphing) { const m = this.morphing; this.morphing = null; this.setCityScale(m.to); m.done(); } }
+  resume() { if (!this.paused) return; this.paused = false; this.clock.getDelta(); if (this.qStat) { this.qStat.skip = 40; this.qStat.n = 0; this.qStat.sum = 0; } this.renderer.setAnimationLoop(() => this.frame()); }
 
   renderNow() {
     if (this.inside) { this.inside.render(); return; }      // visite intérieure : scène à part

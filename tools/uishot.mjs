@@ -10,7 +10,7 @@ const page = await browser.newPage({ viewport: { width: W, height: H }, deviceSc
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.text().slice(0, 300)); });
 page.on('pageerror', (e) => errors.push('pageerror: ' + String(e.stack || e).slice(0, 700)));
-await page.goto('file://' + join(root, 'dist/index.html') + '#shot');
+await page.goto('file://' + join(root, 'dist/1380.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 200000 });
 const frames = (n) => page.evaluate((n) => { const a = window.__app; for (let i = 0; i < n; i++) { a.rig.update(0.05); a.time += 0.05; a.emit('frame', 0.05); } a.renderNow(); }, n);
 await page.evaluate(() => window.__app.setView([-330, 260, 150], [-40, 20, -18])); await frames(4);

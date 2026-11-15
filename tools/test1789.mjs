@@ -206,11 +206,11 @@ check('Échap referme la frise des dates', await page.evaluate(() => document.ge
 const nav = page.waitForURL(/index\.html/, { timeout: 60000 }).then(() => true).catch(() => false);
 await page.click('#btn-1380');
 check('bouton « Paris 1380 » : retour à la première maquette', await nav, page.url().slice(-40));
-// ---------- adresse courte : à la racine du site (GitHub Pages), 1789.html renvoie vers la page et garde le lien partagé
+// ---------- adresse courte : à la racine du site (GitHub Pages), 1789.html mène à la page d'accueil, époque 1789, en gardant le lien partagé
 { const p2 = await browser.newPage();
   await p2.goto('file://' + join(root, '1789.html') + '?x=1#c=-858,-842,700,0.4,0.6&h=18.75', { waitUntil: 'commit' }).catch(() => {});
-  const ok = await p2.waitForURL(/dist\/1789\.html\?x=1#c=-858,-842,700/, { timeout: 60000 }).then(() => true).catch(() => false);
-  check('adresse courte : 1789.html, à la racine du site, renvoie vers la page en gardant le lien partagé', ok, p2.url().slice(-70));
+  const ok = await p2.waitForURL(/dist\/index\.html\?x=1#m=1789&c=-858,-842,700/, { timeout: 60000 }).then(() => true).catch(() => false);
+  check('adresse courte : 1789.html, à la racine du site, mène à la page d’accueil sur 1789 en gardant le lien partagé', ok, p2.url().slice(-70));
   await p2.close(); }
 await page.goto('file://' + join(root, 'dist/1789.html') + '#shot');
 await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 300000 });

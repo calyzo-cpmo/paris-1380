@@ -29,7 +29,7 @@ export const JALONS = [
     texte: 'D’après le plan de Gomboust, qui montre la ville vers 1652. Sur la rive droite, l’enceinte des Fossés jaunes a repoussé la limite de la ville vers l’ouest.' },
   { id: '1741', label: '1741', an: 1741, titre: 'Paris vers 1741', ilots: '1741', egl: 1741, futur: true,
     texte: 'D’après le plan de Delagrive, levé en 1728 avec une triangulation rigoureuse et mis à jour vers 1741. Les anciennes enceintes ne sont plus que des tracés.' },
-  { id: '1791', label: '1789', an: 1789, titre: 'Paris en 1789', ilots: '1791', egl: 1789, eau: '1791', futur: true, page: '1789.html',
+  { id: '1791', label: '1789', an: 1789, titre: 'Paris en 1789', ilots: '1791', egl: 1789, eau: '1791', futur: true, ere: '1789',
     texte: 'Paris à la veille de la Révolution, d’après le plan de Verniquet, levé de 1782 à 1790. Le mur des Fermiers généraux, bâti de 1784 à 1790, entoure la ville. Les établissements religieux sont ceux de 1789, à la veille de leur suppression. Cette date a sa propre maquette, détaillée bâtiment par bâtiment.' },
   { id: '1836', label: '1836', an: 1836, titre: 'Paris vers 1836', ilots: '1836', eau: '1836', futur: true,
     texte: 'D’après l’Atlas par îlots de Philibert Vasserot, dressé de 1810 à 1836 : la ville avant les percées du Second Empire.' },
@@ -154,7 +154,7 @@ const RECT_WIDE = { x: -440 - 4500, z: -460 - 4500, w: 9000, h: 9000 };
 
 export class Epochs {
   constructor(app) {
-    this.app = app; this.current = jalon('1380'); this.volumes = new Map(); this.group = new THREE.Group(); this.group.visible = false; app.scene.add(this.group);
+    this.app = app; this.current = jalon('1380'); this.volumes = new Map(); this.group = new THREE.Group(); this.group.visible = false; (app.bati || app.scene).add(this.group);
     this.rectCity = RECT_CITY; this.rectWide = RECT_WIDE; this.city = null; this.wide = null; this.onChange = null;
     this.foot = null; this.loose = false;
     this.lib = { JALONS, jalon, stats, ilotsOf, enceintes, wallState, eglisesAt, lutece, futur };   // accès aux données du calque (console, tests)

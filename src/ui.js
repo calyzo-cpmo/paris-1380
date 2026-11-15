@@ -8,6 +8,8 @@ import { CERT } from './certainty.js';
 import { MiniMap } from './minimap.js';
 import { makeLocator } from './where.js';
 import { store, parseHash, makeHash } from './state.js';
+import { bindEmbed, askEra, tellHash, shareUrl } from './embed.js';
+import { suivreBarre } from './layout.js';
 import { Epochs, JALONS, EPOQUES, stats as epochStats } from './epochs.js';
 import { clamp } from './geom.js';
 import T from '../data/thumbs.json';
@@ -544,8 +546,8 @@ export function initUI(app) {
   const jl = $('frise-jalons');
   for (const j of JALONS) {
     // une date qui a sa propre maquette (1789) est un lien vers elle ; les autres posent la ville de cette date sur celle-ci
-    const b = el(j.page ? 'a' : 'button', j.page ? 'maquette' : j.base ? 'base' : null, j.label); b.dataset.id = j.id; b.setAttribute('aria-pressed', String(!!j.base));
-    if (j.page) { b.href = j.page; b.title = 'Ouvrir la maquette détaillée de Paris en ' + j.label; b.addEventListener('click', stopEpochPlay); }
+    const b = el(j.ere ? 'a' : 'button', j.ere ? 'maquette' : j.base ? 'base' : null, j.label); b.dataset.id = j.id; b.setAttribute('aria-pressed', String(!!j.base));
+    if (j.ere) { b.href = 'index.html#m=' + j.ere; b.title = 'Passer à la maquette détaillée de Paris en ' + j.label; b.addEventListener('click', (e) => { stopEpochPlay(); goEra(e, j.ere); }); }
     else { b.type = 'button'; b.title = j.titre; b.addEventListener('click', () => { stopEpochPlay(); setEpoch(j.id); }); }
     jl.appendChild(b);
   }
@@ -588,7 +590,7 @@ export function initUI(app) {
     bits.forEach(([n, t], i) => { if (i) st.append(' · '); if (n) st.append(el('b', null, n)); st.append(i === 0 && !n ? t.charAt(0).toUpperCase() + t.slice(1) : t); });
     $('frise-credit').textContent = j.base ? '' : typo([s.source, s.credit, 'licence ODbL'].filter(Boolean).join(' — '));
     $('frise-wide').hidden = !!j.base; $('frise-src').hidden = !!j.base;
-    $('frise-1789').hidden = !j.page;               // la date la plus proche de la seconde maquette
+    $('frise-1789').hidden = !j.ere;               // la date la plus proche de la seconde maquette
     if (j.base) { const li = el('li'); li.textContent = 'Choisissez une date sur la frise : la maquette reste celle de 1380, l’autre époque vient s’y superposer.'; leg.appendChild(li); }
     mini.setEpoch(j.base ? null : { id: j.id, city: epochs.city, wide: epochs.wide, rectCity: epochs.rectCity, rectWide: epochs.rectWide }, !!j.ilots && !j.passe);
     $('map-zoom').textContent = zoomLabel();
@@ -632,9 +634,15 @@ export function initUI(app) {
     return s;
   }
   function queueHash() { hashTimer = 0.8; }
-  function writeHash() { if (app.shot || welcomeSpin) return; try { history.replaceState(null, '', makeHash(currentState())); } catch (e) { /* adresse non modifiable (page intégrée) */ } }
+  function writeHash() { if (app.shot || welcomeSpin) return; const h = makeHash(currentState()); try { history.replaceState(null, '', h); } catch (e) { /* adresse non modifiable (page intégrée) */ } tellHash(h); }
+  // Vue et heure seules, en survol : c'est ce qui passe d'une maquette à l'autre.
+  function viewHash() { const c = rig.mode === 'walk' ? { x: rig.walk.x, z: rig.walk.z, dist: 260, az: rig.walk.yaw, el: 0.5 } : rig.fly ? rig.fly.to : rig.goal; return makeHash({ h: app.sky.hour, c: [c.x, c.z, c.dist, wrapPi(c.az), c.el] }); }
+  // Passage à une autre maquette. Hébergée par la page d'accueil, la maquette lui demande la transition ; ouverte
+  // seule, le lien y mène, à la même vue et à la même heure.
+  function goEra(e, id) { if (askEra(id)) { e.preventDefault(); return; } e.currentTarget.href = 'index.html#m=' + id + '&' + viewHash().slice(1); }
+  $('lien-1789').addEventListener('click', (e) => goEra(e, '1789'));
   async function share() {
-    const url = location.href.split('#')[0] + makeHash(currentState());
+    const url = shareUrl(makeHash(currentState()));
     let ok = false;
     try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(url); ok = true; } } catch (e) { ok = false; }
     if (!ok) { const ta = el('textarea'); ta.value = url; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0'; body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch (e) { ok = false; } ta.remove(); }
@@ -722,4 +730,13 @@ export function initUI(app) {
   // arrivée : un lien partagé rouvre sa vue ; sinon l'accueil propose trois façons d'entrer
   const deep = app.shot ? false : applyState(parseHash(location.hash));
   if (app.shot || deep) body.classList.add('ready'); else showWelcome();
+  suivreBarre($('dock'));
+  // page d'accueil « Paris à travers le temps » : elle demande la vue, prépare l'arrivée, enfonce ou dresse la ville
+  const quitter = () => { if (app.inside) leaveInterior(); stopTour(); stopWalk(); stopHourPlay(); stopEpochPlay(); closePops(); for (const m of document.querySelectorAll('.modal')) m.hidden = true; if (welcomeSpin) endWelcome('fly'); };
+  bindEmbed({
+    state: (leave) => { if (leave) quitter(); return viewHash(); },
+    prepare: (hash) => { const s = parseHash(hash); quitter(); closeCard(); if (!s.e && !epochs.current.base) setEpoch('1380'); applyState(s); app.setCityScale(0); rig.update(0); app.renderNow(); },
+    apply: (hash) => applyState(parseHash(hash)),
+    morph: (to, ms) => app.morph(to, ms), pause: () => app.pause(), resume: () => app.resume(),
+  });
 }

@@ -197,7 +197,8 @@ export async function buildCity89(app, step) {
   app.stats.evoques = evoques;
 
   await step('Quais et ponts…', 0.71);
-  buildQuais(app, B);
+  const BQ = new Builder();                              // quais et flancs de pont : ils restent en place quand la ville s'enfonce
+  buildQuais(app, BQ);
 
   await step('Le mur des Fermiers généraux…', 0.72);
   for (const rings of mur()) {
@@ -213,8 +214,9 @@ export async function buildCity89(app, step) {
   for (const e of enclos()) { const m = ENC_JARDIN.exec(e.nom); if (m) app.gardens.push({ ring: e.rings[0], dens: /Champs/.test(e.nom) ? 0.55 : /Esplanade/.test(e.nom) ? 0.12 : 0.3 }); }
 
   await step('Assemblage de la ville…', 0.78);
-  app.cityMeshes = B.finish(app.scene, mats);
-  app.stats.tris = Math.round(B.tris);
+  app.batiMeshes = B.finish(app.scene, mats); app.quaiMeshes = BQ.finish(app.scene, mats);
+  app.cityMeshes = app.batiMeshes.concat(app.quaiMeshes);
+  app.stats.tris = Math.round(B.tris + BQ.tris);
 
   indexFoot(app);
 
