@@ -74,7 +74,7 @@ const vis = await page.evaluate(() => {
 check('toits : teintes justes (ardoise sombre, tuile), combles à versants, brisis à lucarnes, souches de cheminée', vis.roofMean < 0.3 && vis.flat < 0.3 && vis.by.comble > 50000 && vis.by.plain > 120000 && vis.by.roof > 100000 && vis.by.ardoise > 100000 && vis.by.roof + vis.by.ardoise > 300000, JSON.stringify(vis.by) + ' ' + vis.roofMean + ' ' + vis.flat);
 // ---------- textures : l'ardoise a sa propre matière, lisse ; les textures des maisons gardent leur pleine définition
 const tx = await page.evaluate(() => { const a = window.__app, M = a.materials, w = (k) => M[k].map.image.width; return { ardoise: w('ardoise'), facade: w('facade'), rdc: w('rdc'), comble: w('comble'), roof: w('roof'), sol: a.plan.centre.width, autre: M.ardoise.map !== M.roof.map }; });
-check('textures : ardoise à part, façades et toits en 512 points, sol du centre en 4 096', tx.autre && tx.ardoise === 512 && tx.facade === 512 && tx.rdc === 512 && tx.comble === 512 && tx.roof >= 512 && tx.sol === 4096, JSON.stringify(tx));
+check('textures : ardoise à part, façades et toits en 512 points, lucarnes en 1 024, sol du centre en 4 096', tx.autre && tx.ardoise === 512 && tx.facade === 512 && tx.rdc === 512 && tx.comble === 1024 && tx.roof >= 512 && tx.sol === 4096, JSON.stringify(tx));
 // ---------- lucarnes : une par travée de 2,5 m (le motif de quatre travées couvre 10 m d'égout), sans répétition dans la hauteur
 const luc = await page.evaluate(() => {
   const a = window.__app, M = a.materials, r = []; let vmin = 9, vmax = -9;

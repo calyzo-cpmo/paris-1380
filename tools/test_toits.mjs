@@ -12,7 +12,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const RAW = JSON.parse(readFileSync(join(root, 'data/paris1789.json'), 'utf8')), polys = decodePolys(RAW.bati.g, RAW.bati.q);
 const lot = () => ({ aire: 0, tri(ax, ay, az, bx, by, bz, cx, cy, cz) { this.aire += Math.abs(((bx - ax) * (cz - az) - (bz - az) * (cx - ax)) / 2); } });
 // les deux profils de src/p1789/blocks.js : comble brisé et toit à croupes
-const PROFILS = [['brisé', () => ({ brisis: { d: 0.8, h: 2.37 }, pitch: 0.42, step: 2.2, minStep: 0.45, maxH: 5.8, stitch: true })], ['croupes', () => ({ pitch: 1, step: 2, minStep: 0.4, maxH: 6.5, stitch: true })]];
+const PROFILS = [['brisé', () => ({ brisis: { d: 0.8, h: 2.37 }, pitch: 0.42, step: 2.2, minStep: 0.45, maxH: 5.8, stitch: true })], ['croupes', () => ({ pitch: 1, step: 2, minStep: 0.4, maxH: 6.5, stitch: true, refine: 1 })]];
 let n = 0, cours = 0; const faux = [], stats = { 'brisé': { cousu: 0, oreilles: 0 }, croupes: { cousu: 0, oreilles: 0 } };
 polys.forEach((rings, i) => {
   if (Math.abs(polyArea(rings[0])) < 45) return;
