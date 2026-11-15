@@ -165,8 +165,10 @@ function stitch(A, Bq) {
 }
 
 // Toit à croupes sur un polygone quelconque : bandes successives du polygone érodé (squelette droit par paliers).
-// o.brisis { d, h, b, col, us } : comble brisé — une première bande raide (retrait d, hauteur h) placée dans le lot b,
-// puis le terrasson à la pente `pitch`. o.minStep : pas en deçà duquel on ferme le faîte par une dalle.
+// o.brisis { d, h, b, col, us, vs } : comble brisé — une première bande raide (retrait d, hauteur h) placée dans le lot b,
+// dont la texture avance de `us` par mètre le long de l'égout et de `vs` par mètre de rampant, puis le terrasson à la
+// pente `pitch` ; brisis.etroit : largeur (m) sous laquelle un pan du brisis — pan coupé d'un angle, éclat de
+// triangulation — prend une ardoise unie, sans fragment de lucarne. o.stats { cousu, oreilles } : compte des bandes. o.minStep : pas en deçà duquel on ferme le faîte par une dalle.
 // o.stitch : bandes cousues d'un anneau à l'autre (pans plans) plutôt que triangulées par oreilles.
 export function skeletonRoof(b, exIn, y, o = {}) {
   const pitch = o.pitch ?? 1.1, step0 = o.step ?? 0.9, maxH = o.maxH ?? 1e9, us = o.us ?? 0.33, col = o.col ?? 0xffffff, minStep = o.minStep ?? step0 * 0.26;
@@ -175,7 +177,7 @@ export function skeletonRoof(b, exIn, y, o = {}) {
   let cur = o.overhang ? offsetEx([exIn], o.overhang) : [exIn];
   let t = 0, guard = 0, step = step0;
   let top = y;
-  const emit = (ex, hOuter, hInner, innerKeys, bb = b, cc = col, uu = us) => {
+  const emit = (ex, hOuter, hInner, innerKeys, bb = b, cc = col, uu = us, vv = uu, etroit = 0) => {
     const all = ex.outer.concat(...ex.holes);
     const hs = all.map((p) => (innerKeys && innerKeys.has(key(p)) ? hInner : hOuter));
     // La couture n'est gardée que si elle pave exactement la bande (aucun triangle retourné, aire égale à celle de la
@@ -186,6 +188,7 @@ export function skeletonRoof(b, exIn, y, o = {}) {
       for (const tr of t) { const a = all[tr[0]], c = all[tr[1]], d = all[tr[2]], w = (c[0] - a[0]) * (d[1] - a[1]) - (c[1] - a[1]) * (d[0] - a[0]); sum += Math.abs(w); if (w > 1e-6) pos++; else if (w < -1e-6) neg++; }
       if (!(pos && neg) && Math.abs(sum - band) <= 0.01 * band + 0.02) tris = t;
     }
+    if (o.stats && innerKeys) o.stats[tris ? 'cousu' : 'oreilles']++;
     if (!tris) tris = THREE.ShapeUtils.triangulateShape(ex.outer.map(V2), ex.holes.map((h) => h.map(V2)));
     for (const tr of tris) {
       let i0 = tr[0], i1 = tr[1], i2 = tr[2];
@@ -203,8 +206,10 @@ export function skeletonRoof(b, exIn, y, o = {}) {
       let tx = 1, tz = 0, k = 1;
       if (hl > 0.05) { tx = -nz / hl; tz = nx / hl; k = 1 / Math.max(0.2, ny); }
       const uvu = (p) => (p[0] * tx + p[1] * tz) * uu;
-      const uvv = (p, yy) => (hl > 0.05 ? (yy - y) / hl : p[0] * tz - p[1] * tx) * uu;
-      bb.tri(a[0], ya, a[1], c[0], yc, c[1], d[0], yd, d[1], uvu(a), uvv(a, ya), uvu(c), uvv(c, yc), uvu(d), uvv(d, yd), cc);
+      const uvv = (p, yy) => (hl > 0.05 ? ((yy - y) / hl) * vv : (p[0] * tz - p[1] * tx) * uu);
+      let ua = uvu(a), uc = uvu(c), ud = uvu(d);
+      if (etroit && Math.max(ua, uc, ud) - Math.min(ua, uc, ud) < etroit * uu) ua = uc = ud = 0;      // u = 0 : entre deux lucarnes
+      bb.tri(a[0], ya, a[1], c[0], yc, c[1], d[0], yd, d[1], ua, uvv(a, ya), uc, uvv(c, yc), ud, uvv(d, yd), cc);
     }
   };
   while (cur.length && guard++ < 80) {
@@ -221,7 +226,7 @@ export function skeletonRoof(b, exIn, y, o = {}) {
     const h1 = y + H(t + st);
     const inner = new Set();
     for (const ex of next) { for (const p of ex.outer) inner.add(key(p)); for (const hh of ex.holes) for (const p of hh) inner.add(key(p)); }
-    for (const ex of difference(cur, next)) { if (inB) emit(ex, h0, h1, inner, o.brisis.b || b, o.brisis.col ?? col, o.brisis.us ?? us); else emit(ex, h0, h1, inner); }
+    for (const ex of difference(cur, next)) { if (inB) emit(ex, h0, h1, inner, o.brisis.b || b, o.brisis.col ?? col, o.brisis.us ?? us, o.brisis.vs ?? o.brisis.us ?? us, o.brisis.etroit || 0); else emit(ex, h0, h1, inner); }
     cur = next; t += st; top = h1;
   }
   return top;

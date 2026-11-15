@@ -75,6 +75,21 @@ check('toits : teintes justes (ardoise sombre, tuile), combles à versants, bris
 // ---------- textures : l'ardoise a sa propre matière, lisse ; les textures des maisons gardent leur pleine définition
 const tx = await page.evaluate(() => { const a = window.__app, M = a.materials, w = (k) => M[k].map.image.width; return { ardoise: w('ardoise'), facade: w('facade'), rdc: w('rdc'), comble: w('comble'), roof: w('roof'), sol: a.plan.centre.width, autre: M.ardoise.map !== M.roof.map }; });
 check('textures : ardoise à part, façades et toits en 512 points, sol du centre en 4 096', tx.autre && tx.ardoise === 512 && tx.facade === 512 && tx.rdc === 512 && tx.comble === 512 && tx.roof >= 512 && tx.sol === 4096, JSON.stringify(tx));
+// ---------- lucarnes : une par travée de 2,5 m (le motif de quatre travées couvre 10 m d'égout), sans répétition dans la hauteur
+const luc = await page.evaluate(() => {
+  const a = window.__app, M = a.materials, r = []; let vmin = 9, vmax = -9;
+  for (const m of a.cityMeshes) {
+    if (m.material !== M.comble) continue;
+    const P = m.geometry.attributes.position, U = m.geometry.attributes.uv, I = m.geometry.index, n = I ? I.count : P.count, ix = (k) => (I ? I.getX(k) : k);
+    for (let t = 0; t < n; t += 3) for (let e = 0; e < 3; e++) {
+      const i = ix(t + e), j = ix(t + ((e + 1) % 3)); vmin = Math.min(vmin, U.getY(i)); vmax = Math.max(vmax, U.getY(i));
+      if (r.length < 4000 && Math.abs(P.getY(i) - P.getY(j)) < 0.01) { const L = Math.hypot(P.getX(i) - P.getX(j), P.getZ(i) - P.getZ(j)); if (L > 2) r.push(Math.abs(U.getX(i) - U.getX(j)) / L); }
+    }
+  }
+  r.sort((x, y) => x - y);
+  return { parMetre: +r[r.length >> 1].toFixed(3), vmin: +vmin.toFixed(3), vmax: +vmax.toFixed(3), sansRepetition: M.comble.map.wrapT === 1001, n: r.length };
+});
+check('lucarnes : une par travée, pas de bavure en haut du brisis', Math.abs(luc.parMetre - 0.1) < 0.005 && luc.vmin > -0.01 && luc.vmax < 1.01 && luc.sansRepetition && luc.n > 1000, JSON.stringify(luc));
 // ---------- netteté adaptative : elle baisse quand l'image peine et remonte quand elle redevient fluide
 const nq = await page.evaluate(() => { const a = window.__app, run = (ms, n) => { for (let i = 0; i < n; i++) a.autoQuality(ms); }, out = {}; a.qStat = undefined; run(60, 40 + 50); out.baisse = [a.qStat.level, a.quality]; run(60, 30 + 50); out.baisse2 = [a.qStat.level, a.quality]; run(10, 30 + 150); out.remonte = [a.qStat.level, a.quality]; run(10, 30 + 150); out.fin = [a.qStat.level, a.quality]; run(30, 200); out.stable = a.qStat.level; a.qStat = undefined; a.quality = 1; a.crowdScale = 1; a.resize(); return out; });
 check('netteté adaptative : baisse quand l’image peine, remonte quand elle redevient fluide', nq.baisse[0] === 1 && nq.baisse[1] === 0.85 && nq.baisse2[0] === 2 && nq.remonte[0] === 1 && nq.fin[0] === 0 && nq.fin[1] === 1 && nq.stable === 0, JSON.stringify(nq));
