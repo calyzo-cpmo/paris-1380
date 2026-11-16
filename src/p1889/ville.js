@@ -8,7 +8,7 @@ import { pointInPoly, polylineLength, pointAt } from '../geom.js';
 import { bati, rues, ilots, parcs, dansExpo } from './data.js';
 import { maison } from './bati.js';
 
-const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
+const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
 // Ponts de la Seine : tablier en léger dos d'âne, arches surbaissées sur des piles, parapets.
 function ponts(app, B) {
@@ -16,10 +16,10 @@ function ponts(app, B) {
   for (const r of rues()) {
     // toute voie qui franchit le fleuve est un pont (la base de 1900 ne les signale pas tous) ; ceux d'après 1889 sont écartés
     if (/Alexandre|Mirabeau|Debilly|Rouelle|Bir.Hakeim/i.test(r.nom)) continue;
-    const L = polylineLength(r.pts); if (L < 40) continue;
+    const L = polylineLength(r.pts); if (L < 22) continue;
     let s0 = -1, s1 = -1; for (let s = 0; s <= L; s += 3) { const p = pointAt(r.pts, s); if (T.wetAt(p.x, p.z) > 0.5) { if (s0 < 0) s0 = s; s1 = s; } }
-    if (s0 < 0 || s1 - s0 < 30) continue;
-    { const m = pointAt(r.pts, (s0 + s1) / 2); if (T.wetAt(m.x - m.dz * 28, m.z + m.dx * 28) < 0.5 || T.wetAt(m.x + m.dz * 28, m.z - m.dx * 28) < 0.5) continue; }      // une rue de quai qui mord sur l'eau n'est pas un pont
+    if (s0 < 0 || s1 - s0 < 14) continue;                             // le petit bras n'a qu'une quarantaine de mètres
+    { const m = pointAt(r.pts, (s0 + s1) / 2); if (T.wetAt(m.x - m.dz * 24, m.z + m.dx * 24) < 0.5 || T.wetAt(m.x + m.dz * 24, m.z - m.dx * 24) < 0.5) continue; }      // une rue de quai qui mord sur l'eau n'est pas un pont
     s0 = Math.max(0, s0 - 16); s1 = Math.min(L, s1 + 16);
     const pa = pointAt(r.pts, s0), pb = pointAt(r.pts, s1), a = [pa.x, pa.z], b = [pb.x, pb.z], len = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / len, uz = (b[1] - a[1]) / len, nx = -uz, nz = ux;
     if (out.some((o) => Math.hypot(o.x - (a[0] + b[0]) / 2, o.z - (a[1] + b[1]) / 2) < 25)) continue;      // deux tronçons du même pont
@@ -49,6 +49,40 @@ function ponts(app, B) {
     out.push({ x: cx, z: cz, a, b, w, nom: r.nom, top: yAt(0.5) + 6 });
   }
   return out;
+}
+
+// Quais de la Seine dans Paris : un mur de pierre le long de l'eau, son parapet, et une bande dallée qui recouvre le
+// bord du terrain. Le tracé suit le contour du masque d'eau du terrain (courbe de niveau « moitié eau »).
+function quais(app, B) {
+  const T = app.terrain, C = app.monde.cadre, W = T.W, H = T.H, s = T.soft, cell = (C.x1 - C.x0) / W, env = app.v89.enveloppe.ring; let n = 0;
+  const X = (i) => C.x0 + (i + 0.5) * cell, Z = (k) => C.z0 + (k + 0.5) * cell, t = (u, v) => (127.5 - u) / (v - u), AV = 3, AR = 7.5, EP = 0.55, PAR = 0.95;
+  // face verticale de P à Q, tournée vers (nx, nz)
+  const face = (b, P, Q, y0, y1, nx, nz, col, s0, s1) => { let a = P, c = Q; if (-(c[1] - a[1]) * nx + (c[0] - a[0]) * nz < 0) { a = Q; c = P; } b.quad(a[0], y0, a[1], c[0], y0, c[1], c[0], y1, c[1], a[0], y1, a[1], (a[0] + a[1]) * 0.2, y0 * 0.2, (c[0] + c[1]) * 0.2, y1 * 0.2, col, s0, s1); };
+  // dalle a-b-c-d, tournée vers le ciel
+  const dalle = (b, a, c, d, e, col) => { if ((c[0] - a[0]) * (e[2] - a[2]) - (c[2] - a[2]) * (e[0] - a[0]) > 0) b.quad(a[0], a[1], a[2], e[0], e[1], e[2], d[0], d[1], d[2], c[0], c[1], c[2], 0, 0, 1, 1, col, 1, 1); else b.quad(a[0], a[1], a[2], c[0], c[1], c[2], d[0], d[1], d[2], e[0], e[1], e[2], 0, 0, 1, 1, col, 1, 1); };
+  const mur = (p, q) => {
+    const L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 0.25) return;
+    const mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2; if (!pointInPoly(mx, mz, env)) return;          // hors de Paris, les berges restent naturelles
+    let nx = -(q[1] - p[1]) / L, nz = (q[0] - p[0]) / L; if (T.wetAt(mx + nx * 3, mz + nz * 3) < T.wetAt(mx - nx * 3, mz - nz * 3)) { nx = -nx; nz = -nz; }      // vers l'eau
+    const yq = Math.max(4.2, T.land(mx - nx * 9, mz - nz * 9)), yt = yq + PAR, bs = B.at('stone', mx, mz), bp = B.at('plain', mx, mz);
+    const P = [p[0] + nx * AV, p[1] + nz * AV], Q = [q[0] + nx * AV, q[1] + nz * AV], Pi = [P[0] - nx * EP, P[1] - nz * EP], Qi = [Q[0] - nx * EP, Q[1] - nz * EP], Pa = [p[0] - nx * AR, p[1] - nz * AR], Qa = [q[0] - nx * AR, q[1] - nz * AR];
+    face(bs, P, Q, -2.5, yt, nx, nz, PIERRE_QUAI, 0.7, 1);                                                  // le mur, vu du fleuve
+    dalle(bs, [P[0], yt, P[1]], [Q[0], yt, Q[1]], [Qi[0], yt, Qi[1]], [Pi[0], yt, Pi[1]], PIERRE_QUAI);     // dessus du parapet
+    face(bs, Pi, Qi, yq, yt, -nx, -nz, PIERRE_QUAI, 0.85, 0.95);                                            // le parapet, vu du quai
+    dalle(bp, [Pi[0], yq + 0.05, Pi[1]], [Qi[0], yq + 0.05, Qi[1]], [Qa[0], Math.max(yq, T.land(Qa[0], Qa[1])) + 0.05, Qa[1]], [Pa[0], Math.max(yq, T.land(Pa[0], Pa[1])) + 0.05, Pa[1]], DALLE_QUAI);      // trottoir du quai
+    n++;
+  };
+  for (let k = 0; k < H - 1; k++) for (let i = 0; i < W - 1; i++) {
+    const q = k * W + i, a = s[q], b = s[q + 1], c = s[q + W + 1], d = s[q + W], m = (a > 127 ? 1 : 0) | (b > 127 ? 2 : 0) | (c > 127 ? 4 : 0) | (d > 127 ? 8 : 0);
+    if (m === 0 || m === 15) continue;
+    const pts = [];
+    if ((m & 1) !== ((m >> 1) & 1)) pts.push([X(i) + t(a, b) * cell, Z(k)]);
+    if (((m >> 1) & 1) !== ((m >> 2) & 1)) pts.push([X(i + 1), Z(k) + t(b, c) * cell]);
+    if (((m >> 2) & 1) !== ((m >> 3) & 1)) pts.push([X(i) + t(d, c) * cell, Z(k + 1)]);
+    if (((m >> 3) & 1) !== (m & 1)) pts.push([X(i), Z(k) + t(a, d) * cell]);
+    for (let j = 0; j + 1 < pts.length; j += 2) mur(pts[j], pts[j + 1]);
+  }
+  return n;
 }
 
 export async function construire(app, step) {
@@ -81,7 +115,8 @@ export async function construire(app, step) {
       app.foot.push({ ring: r, top: y });
     } }
 
-  await step('Les ponts de la Seine…', 0.7);
+  await step('Les quais et les ponts de la Seine…', 0.7);
+  app.stats.quais = quais(app, B);
   V.ponts = ponts(app, B);
 
   await step('Assemblage de la ville…', 0.74);

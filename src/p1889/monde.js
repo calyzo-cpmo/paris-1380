@@ -1,7 +1,7 @@
 // Le monde de la page « Paris 1889 » : tout Paris dans l'enceinte de Thiers, l'année de l'Exposition universelle.
 // L'application qui le fait vivre est celle de la page « Paris 1789 » (src/p1789/app.js).
 import { CADRE, COMPTE, eau, relief } from './data.js';
-import { TUILE_SOL, CENTRE_RECT, motifBanlieue, enveloppe, peindre } from './sol.js';
+import { TUILE_SOL, CENTRE_RECT, motifBanlieue, enveloppe, peindre, voirie } from './sol.js';
 import { construire } from './ville.js';
 import { makeFigureAtlas1889, outfit1889 } from './figures.js';
 import { Terrain89 } from '../p1789/terrain.js';
@@ -30,10 +30,17 @@ export const MONDE_1889 = {
   terrain: (app) => {
     const S = eau().filter((e) => e.t === 'S').map((e) => e.rings);
     app.v89 = { ...(app.v89 || {}), seine: S, enveloppe: enveloppe(), monuments: batirExpo, peindreExpo, esplanades: ESPLANADES(), jardins: jardinsExpo };
-    return new Terrain89({ cadre: CADRE, relief: relief(), eau: S, ext: prolongements(S), union: true });
+    // Le relief d'aujourd'hui donne au fleuve sa cote basse et fait remonter le sol en pente sur cinquante mètres : les
+    // nœuds posés sur l'eau ou tout près sont oubliés, et le terrain prolonge jusqu'au bord le niveau des quais.
+    const R = relief(), B = S.map((rings) => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of rings[0]) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return { r: rings[0], x0, z0, x1, z1 }; });
+    const eauEn = (x, z) => B.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && pointInPoly(x, z, b.r)), m = 46, k = 0.7 * m;
+    for (let j = 0; j < R.nz; j++) for (let i = 0; i < R.nx; i++) { const x = R.x0 + i * R.pas, z = R.z0 + j * R.pas;
+      if (eauEn(x, z) || eauEn(x + m, z) || eauEn(x - m, z) || eauEn(x, z + m) || eauEn(x, z - m) || eauEn(x + k, z + k) || eauEn(x - k, z + k) || eauEn(x + k, z - k) || eauEn(x - k, z - k)) R.ok[j * R.nx + i] = 0; }
+    return new Terrain89({ cadre: CADRE, relief: R, eau: S, ext: prolongements(S), union: true, quais: { x0: CADRE.x0 - 400, x1: CADRE.x1 + 400 } });
   },
   motif: () => motifBanlieue(),
   peindre,
+  voirie,
   construire,
   figures: (mobile) => ({ atlas: makeFigureAtlas1889(mobile ? 0.5 : 1), outfit: outfit1889 }),
   lumieres: ['facade', 'rdc', 'comble'],

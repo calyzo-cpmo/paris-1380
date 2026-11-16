@@ -5,7 +5,7 @@
 import { box, cyl, cone, ccw, rgb } from '../builder.js';
 import { facade } from '../p1789/blocks.js';
 import { pointInPoly, polyArea } from '../geom.js';
-import { bati } from './data.js';
+import { bati, ilots } from './data.js';
 
 const PIERRE = rgb(226, 214, 190), PIERRE_BLANCHE = rgb(238, 232, 220), PLOMB = rgb(128, 136, 142), OR = rgb(226, 188, 96), CUIVRE = rgb(118, 152, 134), BRONZE = rgb(74, 84, 72), BOIS = rgb(190, 156, 110), GRANIT = rgb(196, 150, 132), ARDOISE = rgb(84, 92, 106);
 
@@ -99,6 +99,62 @@ function sacreCoeur(app, B) {
   app.monuments.SacreCoeur = { x, z, top: y0 + 52 };
 }
 
+// Halles centrales de Baltard : dix pavillons de fonte, de brique et de verre en 1889 (les deux derniers ne seront
+// bâtis qu'en 1936). Chacun occupe son îlot de la base de 1900 ; deux groupes, de part et d'autre de la rue Baltard,
+// réunis par des rues couvertes. Emprises réelles ; l'élévation — arcades, comble à lanterneau — est une évocation.
+function halles(app, B) {
+  const V = app.v89, T = app.terrain, FONTE = rgb(168, 180, 176), BRIQUE = rgb(178, 106, 84), ZINC = rgb(150, 158, 164), VERRE = rgb(176, 196, 202), pav = [];
+  for (const i of ilots()) { const r = i.rings[0]; if (i.c !== 'B' || r.length !== 4) continue; const a = Math.abs(polyArea(r)), cx = (r[0][0] + r[2][0]) / 2, cz = (r[0][1] + r[2][1]) / 2; if (a > 2100 && a < 3000 && Math.hypot(cx + 330, cz + 1005) < 200) pav.push({ r, cx, cz }); }
+  if (pav.length < 8) return;
+  const y0 = pav.reduce((s, p) => s + T.height(p.cx, p.cz), 0) / pav.length, groupes = [[], []];
+  for (const p of pav) {
+    const r = ccw(p.r), bp = B.at('plain', p.cx, p.cz), R2 = (k, f) => [p.cx + (r[k][0] - p.cx) * f, p.cz + (r[k][1] - p.cz) * f];
+    facade(B.at('stone', p.cx, p.cz), r, false, y0 - 1, y0 + 2.6, 0, 0.6, BRIQUE, 0, 0.9, 1, 6);                 // soubassement de brique
+    facade(B.at('nef', p.cx, p.cz), r, false, y0 + 2.6, y0 + 10, 0, 1, FONTE, 0, 0.9, 1, 6);                      // arcades de fonte vitrées
+    // comble : un versant de zinc, le lanterneau vitré, son toit
+    const pans = (f0, ya, f1, yb, col, s0, s1) => { for (let k = 0; k < 4; k++) { const a = R2(k, f0), c = R2((k + 1) % 4, f0), a2 = R2(k, f1), c2 = R2((k + 1) % 4, f1); bp.quad(c[0], y0 + ya, c[1], a[0], y0 + ya, a[1], a2[0], y0 + yb, a2[1], c2[0], y0 + yb, c2[1], 0, 0, 1, 1, col, s0, s1); } };
+    pans(1.02, 10, 0.62, 13, ZINC, 0.9, 1); pans(0.62, 13, 0.62, 15.4, VERRE, 0.95, 1); pans(0.64, 15.4, 0.05, 18, ZINC, 0.95, 1.05);
+    app.foot.push({ ring: r, top: y0 + 18 });
+    let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const q of r) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); z0 = Math.min(z0, q[1]); z1 = Math.max(z1, q[1]); }
+    V.reserves.push({ ring: r.map((q) => [p.cx + (q[0] - p.cx) * 1.12, p.cz + (q[1] - p.cz) * 1.12]), x0: x0 - 6, z0: z0 - 6, x1: x1 + 6, z1: z1 + 6 });
+    groupes[p.cx * 0.946 + p.cz * 0.324 < -662 ? 0 : 1].push(p);                                                      // à l'ouest ou à l'est de la rue Baltard
+  }
+  // rues couvertes : une toiture basse d'un pavillon à l'autre, dans chaque groupe
+  const e1 = [0.946, 0.324], e2 = [0.324, -0.946];
+  for (const g of groupes) { if (!g.length) continue; let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
+    for (const p of g) for (const q of p.r) { const u = q[0] * e1[0] + q[1] * e1[1], v = q[0] * e2[0] + q[1] * e2[1]; u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
+    const P = (u, v) => [u * e1[0] + v * e2[0], u * e1[1] + v * e2[1]], a = P(u0 + 2, v0 + 2), b = P(u1 - 2, v0 + 2), c = P(u1 - 2, v1 - 2), d = P(u0 + 2, v1 - 2), bp = B.at('plain', a[0], a[1]);
+    bp.quad(a[0], y0 + 9.6, a[1], d[0], y0 + 9.6, d[1], c[0], y0 + 9.6, c[1], b[0], y0 + 9.6, b[1], 0, 0, 1, 1, VERRE, 0.9, 0.9); bp.quad(a[0], y0 + 9.6, a[1], b[0], y0 + 9.6, b[1], c[0], y0 + 9.6, c[1], d[0], y0 + 9.6, d[1], 0, 0, 1, 1, VERRE, 0.9, 0.9); }
+  const m = pav.reduce((s, p) => [s[0] + p.cx / pav.length, s[1] + p.cz / pav.length], [0, 0]);
+  app.monuments.Halles = { x: m[0], z: m[1], top: y0 + 30, pavillons: pav.length };
+}
+
+// Palais de l'Industrie (1855-1897) : 250 m sur 108 m le long des Champs-Élysées, là où passent aujourd'hui l'avenue
+// Winston-Churchill et une partie des Grand et Petit Palais, qui le remplaceront en 1900 (ils sont écartés).
+// Emplacement d'après l'axe de l'avenue et celui des Invalides ; élévation évoquée : deux rangs d'arcades, pavillons
+// d'angle, porche monumental, nef vitrée de 35 m.
+function industrie(app, B) {
+  const V = app.v89, T = app.terrain, O = [-2677.6, -1522], ax = [0.902, 0.432], n = [-0.432, 0.902], HL = 125, HW = 54, y0 = T.height(O[0], O[1]), VERRE = rgb(166, 190, 202), ZINC = rgb(150, 158, 164);
+  const P = (u, v) => [O[0] + ax[0] * u + n[0] * v, O[1] + ax[1] * u + n[1] * v], rect = (hl, hw, cu = 0, cv = 0) => [P(cu - hl, cv - hw), P(cu + hl, cv - hw), P(cu + hl, cv + hw), P(cu - hl, cv + hw)];
+  { const r = rect(HL + 22, HW + 22); let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const q of r) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); z0 = Math.min(z0, q[1]); z1 = Math.max(z1, q[1]); } V.reserves.push({ ring: r, x0, z0, x1, z1 }); }
+  reserver(V, -2864, -1458, 10);                                                                                      // une aile du Grand Palais, sans année dans les données
+  const corps = ccw(rect(HL, HW)), bp = B.at('plain', O[0], O[1]), bs = B.at('stone', O[0], O[1]);
+  facade(B.at('nef', O[0], O[1]), corps, false, y0 - 1, y0 + 18, 0, 2, PIERRE, 0, 0.84, 1, 8.9);
+  box(bs, { cx: O[0], cz: O[1], ux: ax[0], uz: ax[1], hl: HL + 0.6, hw: HW + 0.6 }, y0 + 18, y0 + 19.4, { col: PIERRE, s0: 0.92 });      // corniche et bas-côtés couverts de zinc
+  { const a = P(-HL, -HW), b = P(HL, -HW), c = P(HL, HW), d = P(-HL, HW); bp.quad(a[0], y0 + 19.45, a[1], d[0], y0 + 19.45, d[1], c[0], y0 + 19.45, c[1], b[0], y0 + 19.45, b[1], 0, 0, 1, 1, ZINC, 1, 1); bp.quad(a[0], y0 + 19.45, a[1], b[0], y0 + 19.45, b[1], c[0], y0 + 19.45, c[1], d[0], y0 + 19.45, d[1], 0, 0, 1, 1, ZINC, 1, 1); }
+  // nef vitrée : un berceau de 72 m de large sur toute la longueur
+  { const N = 10, L = HL - 14, w = 36, prof = (s) => 19.4 + 15.6 * Math.pow(Math.sin(Math.PI * s), 0.8);
+    for (let k = 0; k < N; k++) { const s0 = k / N, s1 = (k + 1) / N, va = -w + 2 * w * s0, vb = -w + 2 * w * s1, ya = y0 + prof(s0), yb = y0 + prof(s1), sh = 0.86 + 0.14 * Math.sin((Math.PI * (s0 + s1)) / 2);
+      const a = P(-L, va), b = P(L, va), c = P(L, vb), d = P(-L, vb);
+      bp.quad(a[0], ya, a[1], b[0], ya, b[1], c[0], yb, c[1], d[0], yb, d[1], 0, 0, 1, 1, VERRE, sh, sh); bp.quad(b[0], ya, b[1], a[0], ya, a[1], d[0], yb, d[1], c[0], yb, c[1], 0, 0, 1, 1, VERRE, sh, sh);
+      for (const [p, q] of [[a, d], [b, c]]) { bp.quad(p[0], y0 + 19.4, p[1], q[0], y0 + 19.4, q[1], q[0], yb, q[1], p[0], ya, p[1], 0, 0, 1, 1, VERRE, 0.95, 1); bp.quad(q[0], y0 + 19.4, q[1], p[0], y0 + 19.4, p[1], p[0], ya, p[1], q[0], yb, q[1], 0, 0, 1, 1, VERRE, 0.95, 1); } } }
+  // pavillons d'angle, porche monumental face aux Champs-Élysées (au nord)
+  for (const su of [-1, 1]) for (const sv of [-1, 1]) { const c = P(su * (HL - 9), sv * (HW - 9)); box(bs, { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 11, hw: 11 }, y0 - 1, y0 + 24, { col: PIERRE, s0: 0.84 }); cone(bp, c[0], c[1], 15.5, y0 + 24, y0 + 30, { col: ZINC, seg: 4, a0: Math.atan2(ax[1], ax[0]) + Math.PI / 4 }); }
+  { const c = P(0, -(HW + 5)); box(bs, { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 24, hw: 9 }, y0 - 1, y0 + 30, { col: PIERRE, s0: 0.84 }); box(bs, { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 12, hw: 7 }, y0 + 30, y0 + 35, { col: PIERRE, s0: 0.95 }); }
+  app.foot.push({ ring: corps, top: y0 + 35 });
+  app.monuments.Industrie = { x: O[0], z: O[1], top: y0 + 46 };
+}
+
 export function batirMonuments(app, B) {
   const V = app.v89, M = app.monuments, T = app.terrain, H = (x, z) => T.height(x, z);
   // ---- dôme des Invalides : l'église carrée, deux étages de tambour, la coupole dorée (107 m). Son tambour est dans les données : il est remplacé.
@@ -138,4 +194,6 @@ export function batirMonuments(app, B) {
     app.foot.push({ ring: [[x - 2.4, z - 2.4], [x + 2.4, z - 2.4], [x + 2.4, z + 2.4], [x - 2.4, z + 2.4]], top: y0 + 27.6 }); M.Obelisque = { x, z, top: y0 + 27.6 }; }
   arc(app, B);
   sacreCoeur(app, B);
+  halles(app, B);
+  industrie(app, B);
 }

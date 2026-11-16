@@ -292,6 +292,17 @@ def main():
             if part >= seuil: b['st'] = 'P'
     n = {k: sum(1 for b in B if b['st'] == k) for k in 'RPAN'}
     print('  réels', n['R'], '; probables', n['P'], '; écartés faute de date', n['A'], '; postérieurs à 1889', n['N'])
+    # Un bâtiment tenu pour ancien mais posé dans une rue de 1900 n'y était pas en 1889 : il est mal daté, ou la rue a
+    # été bâtie depuis. On le reconnaît à ses points (centre et milieux des côtés) qui tombent hors de tout îlot, dans
+    # la ville. Les bois, hors de l'enceinte, ne sont pas découpés en îlots : leurs pavillons sont gardés.
+    def dans_un_ilot(x, z): return any(dans(i['rings'][0], x, z) for i in gi.en(x, z))
+    def en_ville(q): return not au_bord(q, 60)
+    dans_rue = 0
+    for b in B:
+        if b['st'] not in 'RP': continue
+        r = b['rings'][0]; pts = [b['c']] + [((r[k][0] + r[(k + 1) % len(r)][0]) / 2, (r[k][1] + r[(k + 1) % len(r)][1]) / 2) for k in range(0, len(r), max(1, len(r) // 6))]
+        if en_ville(b['c']) and sum(1 for q in pts if dans_un_ilot(q[0], q[1])) < 0.4 * len(pts): b['st'] = 'N'; dans_rue += 1
+    print('  écartés parce qu’ils sont dans une rue de 1900 :', dans_rue)
 
     # ---- bâtiments disparus : l'atlas de Vasserot, là où il n'y a ni bâtiment réel ni probable
     gb = Grille(60); garde = [b for b in B if b['st'] in 'RP']

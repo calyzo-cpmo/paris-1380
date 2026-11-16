@@ -1,7 +1,7 @@
 // Sol de Paris en 1889 : banlieue maraîchère, zone et talus de l'enceinte de Thiers, rues et îlots de la base
 // « Paris 1900 », jardins, cimetières, canaux. Peint deux fois : plan d'ensemble et toile fine autour de l'Exposition.
-import { fill, stroke, lines } from '../p1789/outils.js';
-import { ilots, rues, eau, parcs, cimetieres, CADRE } from './data.js';
+import { fill, stroke, ring } from '../p1789/outils.js';
+import { ilots, eau, parcs, cimetieres, CADRE, EXPO, expoXZ } from './data.js';
 import { mulberry32 } from '../geom.js';
 
 export const TUILE_SOL = 1600;                           // côté du motif de banlieue (m)
@@ -51,10 +51,43 @@ export function peindre(x, T, tile, app) {
   fill(x, T, parcs().filter((p) => !/Champ De Mars/i.test(p.nom)).map((p) => p.rings), '#86a568');
   fill(x, T, eau().filter((e) => e.t !== 'S').map((e) => e.rings), '#62828f');
   for (const rings of V.seine) fill(x, T, [rings], '#5c706c');            // un par un : ils se recouvrent par endroits
-  // rues : trottoirs clairs, chaussée ; sur le plan d'ensemble, un seul trait
-  const R = rues(), par = new Map();
-  for (const r of R) { const w = Math.max(r.l || 8, 6), k = Math.round(w / 2) * 2; if (!par.has(k)) par.set(k, []); par.get(k).push(r.pts); }
-  for (const [w, ls] of par) lines(x, T, ls, '#c4beb0', Math.max(1, w * T.s));
-  if (fin) for (const [w, ls] of par) if (w >= 10) lines(x, T, ls, '#b2ab9c', (w - Math.min(8, w * 0.36)) * T.s);
   if (V.peindreExpo) V.peindreExpo(x, T, fin);
+}
+
+// Distance « au chanfrein » : chaque point prend la plus petite distance à un point déjà connu (deux balayages).
+function chanfrein(d, w, h) {
+  const b = Math.SQRT2;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; let v = d[i]; if (v < 0.5) continue;
+    if (x > 0 && d[i - 1] + 1 < v) v = d[i - 1] + 1;
+    if (y > 0) { if (d[i - w] + 1 < v) v = d[i - w] + 1; if (x > 0 && d[i - w - 1] + b < v) v = d[i - w - 1] + b; if (x < w - 1 && d[i - w + 1] + b < v) v = d[i - w + 1] + b; }
+    d[i] = v; }
+  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) { const i = y * w + x; let v = d[i]; if (v < 0.5) continue;
+    if (x < w - 1 && d[i + 1] + 1 < v) v = d[i + 1] + 1;
+    if (y < h - 1) { if (d[i + w] + 1 < v) v = d[i + w] + 1; if (x < w - 1 && d[i + w + 1] + b < v) v = d[i + w + 1] + b; if (x > 0 && d[i + w - 1] + b < v) v = d[i + w - 1] + b; }
+    d[i] = v; }
+}
+
+// Voirie : la rue est ce qui reste de la ville quand on en retire les îlots de 1900, les jardins, les cimetières, l'eau
+// et l'emprise de l'Exposition. Rend, pour chaque point d'une grille, la distance signée au bord de la rue (positive
+// dans la rue), codée sur un octet entre -D et +D mètres : le shader du sol y trace trottoirs, bordures et chaussée.
+export function voirie(app, taille) {
+  const V = app.v89, fw = CADRE.x1 - CADRE.x0, fh = CADRE.z1 - CADRE.z0, w = taille, s = w / fw, h = Math.round(fh * s), D = 12;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const x = cv.getContext('2d', { willReadFrequently: true }), T = { s, x: (v) => (v - CADRE.x0) * s, y: (v) => (v - CADRE.z0) * s };
+  x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
+  fill(x, T, [[V.enveloppe.ring]], '#fff');
+  x.fillStyle = '#000';
+  const plein = (r) => { x.beginPath(); ring(x, T, r); x.fill(); };
+  for (const i of ilots()) plein(i.rings[0]);
+  for (const p of parcs()) plein(p.rings[0]);
+  for (const c of cimetieres()) plein(c[0]);
+  for (const e of eau()) plein(e.rings[0]);
+  plein([[EXPO.u0, EXPO.v0], [EXPO.u1, EXPO.v0], [EXPO.u1, EXPO.v1], [EXPO.u0, EXPO.v1]].map((p) => expoXZ(p[0], p[1])));
+  const im = x.getImageData(0, 0, w, h).data, n = w * h, A = new Float32Array(n), B = new Float32Array(n);
+  // amorces : la couverture d'un point de bord dit où passe le bord (0,5 : en son centre)
+  for (let i = 0; i < n; i++) { const c = im[i * 4] / 255; A[i] = c > 0.98 ? 1e6 : c - 0.5; B[i] = c < 0.02 ? 1e6 : 0.5 - c; }
+  chanfrein(A, w, h); chanfrein(B, w, h);
+  const data = new Uint8Array(n), k = 1 / (s * 2 * D);
+  for (let i = 0; i < n; i++) { const c = im[i * 4] / 255, f = c > 0.98 ? A[i] : c < 0.02 ? -B[i] : c - 0.5; data[i] = Math.max(0, Math.min(255, Math.round((0.5 + f * k) * 255))); }
+  return { data, w, h, D };
 }

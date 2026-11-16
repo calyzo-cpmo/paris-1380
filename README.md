@@ -178,8 +178,13 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   Saint-Vincent-de-Paul, colonnes Vendôme et de Juillet, obélisque), l'Arc de triomphe est bâti entier, le Sacré-Cœur
   est montré en chantier. Les passants sont en costumes de 1889 : blouse bleue, redingote et haut-de-forme, canotier,
   robe à tournure, fantassin en pantalon garance.
-- **Ce qui manque encore** : les Halles, le palais de l'Industrie, l'Hôtel-Dieu, les gares et les voies ferrées, la
-  banlieue ; les autres édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
+- **Disparus depuis** : les dix pavillons des Halles de Baltard, chacun sur son îlot de 1900, et le palais de
+  l'Industrie le long des Champs-Élysées (le Grand et le Petit Palais, de 1900, sont écartés).
+- **Rues et quais** : la rue est l'espace laissé libre par les îlots de 1900 ; le sol y dessine trottoirs, bordures et
+  chaussée pavée, nets à toute échelle (carte de distance lue par le shader). La Seine coule entre des murs de quai ;
+  une cinquantaine de ponts.
+- **Ce qui manque encore** : l'Hôtel-Dieu, les gares et les voies ferrées, les ports bas de la Seine, la banlieue ; les
+  autres édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
   tablette ; sur téléphone, les toits sont simplifiés.
 
 ## Sources
@@ -327,12 +332,12 @@ src/lutece/places.js         repères de Lutèce et leurs notices
 src/lutece/monde.js          le monde de Lutèce
 src/body1889.html            page Paris 1889 (mêmes styles, plus le curseur du chantier)
 src/p1889/data.js            accès aux données de Paris 1889 ; repère de l'Exposition
-src/p1889/sol.js             sol peint : banlieue, zone et talus de l'enceinte, rues, îlots, jardins, canaux
+src/p1889/sol.js             sol peint : banlieue, zone et talus de l'enceinte, îlots, jardins, canaux ; carte de distance de la voirie
 src/p1889/bati.js            bâtiments légers : un mur par côté, comble brisé ou toit à croupes
-src/p1889/ville.js           bâti de toute la ville, enceinte, ponts de la Seine, arbres, trame des passants
+src/p1889/ville.js           bâti de toute la ville, enceinte, murs de quai et ponts de la Seine, arbres, trame des passants
 src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, étages, échafaudages, grues, date
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
-src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier
+src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier, Halles, palais de l'Industrie
 src/p1889/figures.js         visages et costumes de 1889
 src/p1889/places.js          repères de Paris 1889 et leurs notices
 src/p1889/monde.js           le monde de Paris 1889
