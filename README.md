@@ -182,8 +182,9 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   l'Industrie le long des Champs-Élysées (le Grand et le Petit Palais, de 1900, sont écartés).
 - **Rues et quais** : la rue est l'espace laissé libre par les îlots de 1900 ; le sol y dessine trottoirs, bordures et
   chaussée pavée, nets à toute échelle (carte de distance lue par le shader) ; le trottoir prend un cinquième environ
-  de la largeur de la voie. Quarante-trois mille arbres d'alignement bordent les boulevards, les avenues et les quais
-  (voies de 24 m et plus : une évocation). La Seine coule entre des murs de quai ; une cinquantaine de ponts.
+  de la largeur de la voie. Trente-neuf mille arbres d'alignement bordent les boulevards, les avenues et les quais
+  (voies de 24 m et plus : une évocation ; les places restent minérales). La Seine coule entre des murs de quai ; une
+  trentaine de ponts, chacun bâti d'une rive à l'autre quel que soit le découpage de la base de 1900.
 - **Ce qui manque encore** : l'Hôtel-Dieu, les gares et les voies ferrées, les ports bas de la Seine, la banlieue ; les
   autres édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
   tablette ; sur téléphone, les toits sont simplifiés.

@@ -3,8 +3,8 @@
 // front des îlots : on en déduit la largeur de la voie d'une façade à l'autre. Là où elle est assez large — 24 m
 // pour un boulevard, une avenue, un cours ou un quai, 28 m pour une autre voie —, un arbre est planté tous les dix
 // mètres sur chaque trottoir, à 1,3 m de la bordure ; les trottoirs de 7,5 m et plus reçoivent un second rang. Les
-// terre-pleins plantés (îlots « p » de la base de 1900) sont bordés d'arbres, sauf les places et les abords des
-// monuments, qui restent minéraux.
+// terre-pleins plantés (îlots « p » de la base de 1900) sont bordés d'arbres. Les places, les parvis, les ronds-points
+// et les abords des monuments restent minéraux (plusieurs places étaient pourtant plantées : c'est une convention).
 // Ces seuils sont de convention, proches de l'usage du temps (une rangée par trottoir sur les voies de 26 m environ,
 // deux sur les plus larges) ; quelle voie était réellement plantée en 1889 n'est pas connu rue par rue : c'est une
 // évocation. Paris comptait alors près de 90 000 arbres d'alignement.
@@ -32,15 +32,20 @@ export function planter(app) {
     const o = { r, x0, z0, x1, z1, nu: /^Place\b/i.test(i.nom) || Math.abs(polyArea(r)) < 150 || monuments.some((m) => m.x >= x0 - 60 && m.x <= x1 + 60 && m.z >= z0 - 60 && m.z <= z1 + 60 && (pointInPoly(m.x, m.z, r) || r.some((p) => Math.hypot(p[0] - m.x, p[1] - m.z) < 60))) };      // le terre-plein d'une place est souvent en plusieurs morceaux autour du monument
     for (let a = Math.floor(x0 / CASE); a <= Math.floor(x1 / CASE); a++) for (let b = Math.floor(z0 / CASE); b <= Math.floor(z1 / CASE); b++) { const k = a * 4096 + b; let l = cases.get(k); if (!l) cases.set(k, (l = [])); l.push(o); } }
   const terrePlein = (x, z) => { const l = cases.get(Math.floor(x / CASE) * 4096 + Math.floor(z / CASE)); if (l) for (const o of l) if (x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1 && pointInPoly(x, z, o.r)) return o; return null; };
+  // places : les voies nommées « place », « parvis », « rond-point »… ne sont pas plantées, ni, à moins d'une
+  // trentaine de mètres d'elles, les rues qui les traversent
+  const PL = 20, places = new Set(), clePlace = (x, z) => Math.floor(x / PL) * 8192 + Math.floor(z / PL);
+  for (const r of rues()) if (/^(Place|Parvis|Rond|Carrefour|Esplanade)\b/i.test(r.nom)) for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 8)); for (let j = 0; j <= n; j++) places.add(clePlace(a[0] + ((b[0] - a[0]) * j) / n, a[1] + ((b[1] - a[1]) * j) / n)); }
+  const placeEn = (x, z) => { for (let i = -1; i <= 1; i++) for (let k = -1; k <= 1; k++) if (places.has(clePlace(x + i * PL, z + k * PL))) return true; return false; };
   const vus = new Set(), tuiles = new Map(), cle = (x, z) => Math.round(x / 6) * 8192 + Math.round(z / 6);
   let n = 0;
   const poser = (x, z, surTerrePlein) => {
     const k = cle(x, z); if (vus.has(k) || vus.has(k + 1) || vus.has(k - 1) || vus.has(k + 8192) || vus.has(k - 8192)) return;      // un boulevard à deux chaussées est décrit deux fois
-    if ((!surTerrePlein && sd(x, z) < 0.8) || T.wetAt(x, z) > 0.05 || app.footAt(x, z)) return;
+    if ((!surTerrePlein && sd(x, z) < 0.8) || T.wetAt(x, z) > 0.05 || app.footAt(x, z) || placeEn(x, z)) return;
     vus.add(k); const t = Math.floor(x / TUILE) * 64 + Math.floor(z / TUILE); let l = tuiles.get(t); if (!l) tuiles.set(t, (l = [])); l.push(x, T.height(x, z), z); n++;
   };
   for (const r of rues()) {
-    if (r.pont) continue;
+    if (r.pont || /^(Place|Parvis|Rond|Carrefour|Esplanade)\b/i.test(r.nom)) continue;                                              // les places restent minérales
     const mini = /^(Boulevard|Avenue|Cours|Quai)\b/i.test(r.nom) ? 24 : 28;
     let reste = pas / 2;
     for (let i = 0; i + 1 < r.pts.length; i++) {
@@ -49,6 +54,7 @@ export function planter(app) {
       for (; reste < L; reste += pas) {
         const x = a[0] + tx * reste, z = a[1] + tz * reste; if (sd(x, z) < 2) continue;                                             // sur un pont, dans un îlot : pas une rue
         const dg = jusquAuFront(x, z, nx, nz), dd = jusquAuFront(x, z, -nx, -nz); if (dg === Infinity && dd === Infinity) continue;
+
         const pg = dg === Infinity ? null : terrePlein(x + nx * (dg + 3), z + nz * (dg + 3)), pd = dd === Infinity ? null : terrePlein(x - nx * (dd + 3), z - nz * (dd + 3));
         const larg = dg + dd, boulevard = pg || pd; if (larg < mini && !boulevard) continue;                                      // une chaussée le long d'un terre-plein : c'est un boulevard
         const tw = Math.max(boulevard ? 5 : 0, trottoir(demi(x, z)));
@@ -80,5 +86,6 @@ export function planter(app) {
     mesh.castShadow = !app.mobile; mesh.receiveShadow = true; mesh.matrixAutoUpdate = false; mesh.computeBoundingSphere(); app.scene.add(mesh); meshes.push(mesh);
   }
   const echantillon = []; { let k = 0; for (const l of tuiles.values()) for (let i = 0; i < l.length; i += 3) if (k++ % 40 === 0) echantillon.push([l[i], l[i + 2]]); }
-  return { n, meshes, tris: (n * idx.length) / 3, echantillon };
+  const tous = () => { const o = []; for (const l of tuiles.values()) for (let i = 0; i < l.length; i += 3) o.push([l[i], l[i + 2]]); return o; };
+  return { n, meshes, tris: (n * idx.length) / 3, echantillon, tous };
 }

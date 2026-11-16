@@ -19,7 +19,15 @@ const watch = (page) => {
 };
 const cadre = (page, ere) => page.frames().find((f) => new RegExp('/' + ere + '\\.html').test(f.url()));
 const pret = async (page, ere) => { const t = Date.now(); for (;;) { const f = cadre(page, ere); if (f) { const r = await f.evaluate(() => window.__ready === true || (window.__failed ? 'échec : ' + window.__failed : false)).catch(() => false); if (r === true) return f; if (r) throw new Error(r); } if (Date.now() - t > LONG) throw new Error('maquette ' + ere + ' pas prête'); await new Promise((r) => setTimeout(r, 500)); } };
-const arrive = (page, ere) => page.waitForFunction((e) => window.__shell.ere === e && !window.__shell.occupe, ere, { timeout: LONG, polling: 250 });
+// La page d'accueil rend la main quand la ville d'arrivée a fini de s'élever — ou après un délai de sécurité de 6 s, pour
+// qu'un passage ne reste jamais bloqué. En rendu logiciel, la première élévation d'une ville fraîchement construite
+// prend 4 à 6 s (1,3 s sur une vraie carte graphique) : on attend donc aussi, au plus 30 s, que la ville soit dressée.
+// Les vérifications qui suivent exigent toujours une ville debout, visible et hors transition.
+const arrive = async (page, ere) => {
+  await page.waitForFunction((e) => window.__shell.ere === e && !window.__shell.occupe, ere, { timeout: LONG, polling: 250 });
+  const f = page.frames().find((x) => new RegExp('/' + ere + '\\.html').test(x.url()));
+  if (f) await f.waitForFunction(() => window.__app && window.__app.cityScale === 1 && !window.__app.morphing && !document.body.classList.contains('morph'), null, { timeout: 30000, polling: 100 }).catch(() => {});
+};
 const etat = (f) => f.evaluate(() => { const a = window.__app, g = a.rig.goal; return { x: Math.round(g.x), z: Math.round(g.z), dist: Math.round(g.dist), az: +g.az.toFixed(2), el: +g.el.toFixed(2), h: a.sky.hour, k: a.cityScale, vis: a.bati.visible, pause: !!a.paused, mode: a.rig.mode, heberge: document.documentElement.classList.contains('heberge'), morph: document.body.classList.contains('morph'), accueil: document.body.classList.contains('welcome'), epoque: a.epochs ? a.epochs.current.id : null }; });
 const shell = (page) => page.evaluate(() => ({ ere: window.__shell.ere, occupe: window.__shell.occupe, hash: location.hash, titre: document.title, cadres: [...document.querySelectorAll('iframe.ere')].map((f) => f.getAttribute('src').split('#')[0] + (f.classList.contains('vue') ? ' (vue)' : '')), attente: !document.getElementById('attente').hidden, texte: document.getElementById('attente-texte').textContent, voile: !document.getElementById('voile').hidden }));
 const meme = (v, w) => Math.abs(v.x - w.x) <= 2 && Math.abs(v.z - w.z) <= 2 && Math.abs(v.dist - w.dist) <= 2 && Math.abs(v.az - w.az) <= 0.02 && Math.abs(v.el - w.el) <= 0.02;
