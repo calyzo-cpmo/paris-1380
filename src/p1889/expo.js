@@ -8,6 +8,7 @@ import { Builder, box, cyl, cone, rgb } from '../builder.js';
 import { EXPO, VC, expoXZ } from './data.js';
 import { couper, JOUR, FIN, batirTour } from './tour.js';
 import { fill } from '../p1789/outils.js';
+import { batirMonuments } from './monuments.js';
 
 const CREME = rgb(228, 216, 190), OCRE = rgb(206, 170, 120), VERRE = rgb(166, 190, 202), VERRE_CLAIR = rgb(190, 208, 216), BLEU = rgb(74, 116, 156), OR = rgb(214, 176, 84), BRIQUE = rgb(186, 110, 84), PIERRE = rgb(226, 214, 188), ARDOISE = rgb(92, 102, 118);
 const Q = (u, v) => expoXZ(u, v + VC);                    // le Champ-de-Mars est centré sur VC, entre ses deux avenues
@@ -88,6 +89,7 @@ export async function batirExpo(app, B) {
   V.mobiles = [];
   batirTour(app);
   trocadero(app, B);
+  batirMonuments(app, B);
   // Galerie des machines : une seule nef de 115 m de portée, longue de 420 m, entre deux galeries basses
   ensemble(app, y0, JOUR(1887, 7, 5), JOUR(1889, 2, 20), 46, (bm, bv) => {
     halle(bm, bv, y0, 700, 815, -210, 210, 11, 43.5, 'v');

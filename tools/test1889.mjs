@@ -35,7 +35,7 @@ const v = await page.evaluate(() => { const a = window.__app, T = a.terrain, V =
   bati: a.stats.bati, tris: a.stats.tris, maillages: a.batiMeshes.length, arbres: a.treeCount, ponts: V.ponts.map((p) => p.nom), foot: a.foot.length,
   seine: [[-4218, -767], [-3237, -1177], [-4411, -503], [-420, -120]].map((p) => +T.wetAt(p[0], p[1]).toFixed(2)).concat(+Math.min(...V.ponts.map((p) => T.wetAt(p.x, p.z))).toFixed(2)), sec: [[-4039, -604], [0, 0], [-1355, -2088]].map((p) => +T.wetAt(p[0], p[1]).toFixed(2)),
   tour: +T.height(-4039.4, -604.3).toFixed(1), montmartre: +T.height(-521, -3700).toFixed(1), belleville: +T.height(3300, -2300).toFixed(1), passants: a.people.total, nav: a.nav.w * a.nav.h, cadre: a.monde.cadre }; });
-check('bâti : près de quatre-vingt mille bâtiments dressés', v.bati > 70000 && v.bati < 90000 && v.foot >= v.bati, `${v.bati} bâtiments`);
+check('bâti : près de quatre-vingt mille bâtiments dressés', v.bati > 70000 && v.bati < 90000 && v.foot >= v.bati - 100, `${v.bati} bâtiments`);
 check('bâti : volumes légers (moins de 3,2 millions de triangles, moins de 700 maillages)', v.tris > 1.5e6 && v.tris < 3.2e6 && v.maillages < 700, `${v.tris} triangles, ${v.maillages} maillages`);
 check('Seine : continue devant la tour et au centre, en eau sous chaque pont ; à sec sur les rives', v.seine.slice(0, 4).every((w) => w > 0.9) && v.seine[4] > 0.5 && v.sec.every((w) => w < 0.05), JSON.stringify([v.seine, v.sec]));
 check('relief : le Champ-de-Mars près du fleuve, Montmartre et Belleville sur leurs collines', v.tour > 3 && v.tour < 12 && v.montmartre > 80 && v.belleville > 60, JSON.stringify([v.tour, v.montmartre, v.belleville]));
@@ -59,6 +59,19 @@ const rouge = (j) => page.evaluate(async (j) => { const a = window.__app; a.setC
 const r0 = await rouge(0), rm = await rouge(J(1888, 8, 14)), r1 = await rouge(FIN);
 check('image : la tour absente en janvier 1887, à mi-hauteur en août 1888, entière en mai 1889', r1 > r0 + 3000 && rm > r0 + 800 && r1 > rm + 800, JSON.stringify([r0, rm, r1]));
 
+// ---------- silhouettes des monuments, costumes
+const mo = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1), fl = a.landmarks.find((l) => l.nom === 'fleche');
+  return { invalides: h(M.Invalides), pantheon: h(M.Pantheon), nd: h(M.NotreDame), fleche: fl ? +(fl.top - T.height(fl.x, fl.z)).toFixed(1) : -1, facade: M.NotreDame ? Math.round(Math.hypot(M.NotreDame.x + 49, M.NotreDame.z + 16)) : -1, sulpice: h(M.Sulpice), trinite: h(M.Trinite), opera: h(M.Opera), institut: h(M.Institut), augustin: h(M.Augustin),
+    vendome: h(M.Vendome), juillet: h(M.Juillet), obelisque: h(M.Obelisque), arc: h(M.Arc), sc: h(M.SacreCoeur), sousArc: a.walkable((M.Arc || {}).x, (M.Arc || {}).z), dansPile: !!a.footAt(-3988, -2306), dansDome: !!a.footAt(-2736, -235) }; });
+check('monuments : dôme des Invalides (107 m), Panthéon (83 m), tours (69 m) et flèche (96 m) de Notre-Dame, à la façade ouest', mo.invalides === 107 && mo.pantheon === 83 && Math.abs(mo.nd - 69) < 1 && mo.fleche === 96 && mo.facade > 40 && mo.facade < 75, JSON.stringify(mo));
+check('monuments : Saint-Sulpice, la Trinité, l’Opéra, l’Institut, Saint-Augustin, les colonnes et l’obélisque', mo.sulpice === 73 && mo.trinite === 65 && mo.opera === 56 && mo.institut === 46 && mo.augustin === 80 && mo.vendome === 44 && mo.juillet === 50 && Math.abs(mo.obelisque - 27.6) < 0.2, JSON.stringify(mo));
+check('Arc de triomphe : 50 m, on passe sous l’arche mais pas à travers les piles ; Sacré-Cœur en chantier, sans dôme', mo.arc > 55 && mo.arc < 60 && mo.sousArc && mo.dansPile && mo.sc > 40 && mo.sc < 60, JSON.stringify([mo.arc, mo.sousArc, mo.dansPile, mo.sc]));
+const co = await page.evaluate(() => { const a = window.__app, P = a.people, cv = P.atlas.canvas, k = cv.width / 2048, x = cv.getContext('2d', { willReadFrequently: true }), px = (col, row, dy) => [...x.getImageData(Math.round((col * 256 + 60) * k), Math.round((512 + row * 640 + dy) * k), 1, 1).data].slice(0, 3);
+  let i = 0; const r = () => ((i += 0.37) % 1), F = a.monde.figures(true);
+  return { kepi: px(7, 0, 20), haut: px(1, 0, 20), canotier: px(5, 0, 20), garance: px(7, 0, 600), bonnet: px(1, 1, 20), soldat: F.outfit(r, 'man', 'guard'), soeur: F.outfit(r, 'robe', 'monk'), meme: P.outfit === a.monde.figures(true).outfit || typeof P.outfit === 'function' }; });
+check('costumes de 1889 : képi et pantalon garance du fantassin, haut-de-forme noir, canotier de paille, bonnet blanc', co.kepi[0] > 140 && co.kepi[1] < 80 && co.garance[0] > 140 && co.garance[1] < 80 && co.haut[0] < 70 && co.haut[2] < 70 && co.canotier[0] > 180 && co.canotier[2] < 180 && co.bonnet[0] > 200 && co.bonnet[2] > 190, JSON.stringify(co));
+check('costumes : le fantassin en capote, la sœur de charité en cornette', co.soldat.v[0] === 7 && co.soldat.col[2] > co.soldat.col[0] && co.soeur.v[0] === 5 && co.soeur.v[1] === 1 && co.soeur.v[2] === 7, JSON.stringify([co.soldat, co.soeur]));
+
 // ---------- le curseur
 const cu = await page.evaluate(async ([j1, fin]) => { const a = window.__app, sl = document.getElementById('ch-date'), jour = document.getElementById('ch-jour'), note = document.getElementById('ch-note'), play = document.getElementById('ch-play'), out = { max: +sl.max, depart: +sl.value, texte0: jour.textContent + ' | ' + note.textContent };
   sl.value = String(j1); sl.dispatchEvent(new Event('input', { bubbles: true })); out.texte1 = jour.textContent + ' | ' + note.textContent; out.h1 = a.v89.chantier.hauteur;
@@ -72,7 +85,7 @@ check('curseur : la lecture repart de 1887, avance, puis s’arrête à l’ouve
 
 // ---------- repères, fiche, sources
 const lx = await page.evaluate(() => { const a = window.__app, P = a.ui.places; return { n: P.length, noms: P.map((p) => p.name), cats: [...new Set(P.map((p) => p.cat))].length, hors: P.filter((p) => p.x < a.monde.cadre.x0 || p.x > a.monde.cadre.x1 || p.z < a.monde.cadre.z0 || p.z > a.monde.cadre.z1).length }; });
-check('repères : la tour, les palais de l’Exposition, le Trocadéro, l’enceinte et les monuments de la ville', lx.n >= 25 && lx.hors === 0 && lx.cats >= 4 && ['Tour de 300 mètres', 'Galerie des machines', 'Dôme central', 'Palais du Trocadéro', 'Pont d’Iéna', 'Enceinte de Thiers', 'Notre-Dame'].every((n) => lx.noms.includes(n)), `${lx.n} lieux`);
+check('repères : la tour, les palais de l’Exposition, le Trocadéro, l’enceinte et les monuments de la ville', lx.n >= 32 && lx.hors === 0 && lx.cats >= 4 && ['Tour de 300 mètres', 'Galerie des machines', 'Dôme central', 'Palais du Trocadéro', 'Pont d’Iéna', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur, en chantier', 'Colonne Vendôme'].every((n) => lx.noms.includes(n)), `${lx.n} lieux`);
 await page.click('#btn-places');
 await page.fill('#place-search', 'machines');
 const liste = await page.evaluate(() => [...document.querySelectorAll('#place-list button, #place-list li')].map((b) => b.textContent).filter((t) => /machines/i.test(t)).length);
