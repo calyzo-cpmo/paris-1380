@@ -3,6 +3,7 @@
 import { fill, stroke, ring } from '../p1789/outils.js';
 import { ilots, eau, parcs, cimetieres, CADRE, EXPO, expoXZ } from './data.js';
 import { mulberry32 } from '../geom.js';
+import { peindreVoies, ilotsFerres } from './fer.js';
 
 export const TUILE_SOL = 1600;                           // côté du motif de banlieue (m)
 export const CENTRE_RECT = { x: -5000, z: -1900, w: 2600, h: 2600 };      // toile fine : du Trocadéro aux Invalides
@@ -43,10 +44,11 @@ export function peindre(x, T, tile, app) {
   stroke(x, T, [[V.enveloppe.ring]], '#8c8a6c', 44 * T.s);                    // le fossé
   fill(x, T, [[V.enveloppe.ring]], '#bfb9ab');                                 // rues, places, boulevards : macadam et pavé clair
   // îlots : cours et terrains ; vers les fortifications, jardins et terrains vagues
-  const pres = [], loin = [], plantes = [], talus = [];
-  for (const i of I) { if (i.c === 'F') talus.push(i.rings); else if (i.c === 'p') plantes.push(i.rings); else (Math.hypot(i.rings[0][0][0] - V.enveloppe.cx, i.rings[0][0][1] - V.enveloppe.cz) < 3300 ? pres : loin).push(i.rings); }
-  fill(x, T, pres, '#a99f88'); fill(x, T, loin, '#a6a380'); fill(x, T, plantes, '#a8b586');
+  const pres = [], loin = [], plantes = [], talus = [], gares = [], F = ilotsFerres();
+  I.forEach((i, k) => { if (i.c === 'F') talus.push(i.rings); else if (F.has(k)) gares.push(i.rings); else if (i.c === 'p') plantes.push(i.rings); else (Math.hypot(i.rings[0][0][0] - V.enveloppe.cx, i.rings[0][0][1] - V.enveloppe.cz) < 3300 ? pres : loin).push(i.rings); });
+  fill(x, T, pres, '#a99f88'); fill(x, T, loin, '#a6a380'); fill(x, T, plantes, '#a8b586'); fill(x, T, gares, '#aaa28e');      // cours et faisceaux des gares : terre battue et mâchefer
   fill(x, T, talus, '#8f9f6c'); stroke(x, T, talus, '#7d7867', Math.max(1, 2.6 * T.s));
+  peindreVoies(x, T);                                                     // ballast des voies ferrées, sur les îlots qu'elles traversent
   fill(x, T, cimetieres(), '#a5ae8e');
   fill(x, T, parcs().filter((p) => !/Champ De Mars/i.test(p.nom)).map((p) => p.rings), '#86a568');
   fill(x, T, eau().filter((e) => e.t !== 'S').map((e) => e.rings), '#62828f');

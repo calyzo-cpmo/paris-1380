@@ -1,13 +1,15 @@
 // Construction de Paris en 1889 : le bâti de toute la ville, les ponts de la Seine, les jardins, la trame des passants
-// autour de l'Exposition. La tour et les palais viennent de src/p1889/tour.js et src/p1889/expo.js.
+// autour de l'Exposition. La tour et les palais viennent de src/p1889/tour.js et src/p1889/expo.js ; les gares et les
+// voies ferrées, de src/p1889/gares.js et src/p1889/fer.js.
 import { Builder, box, walls, cap, ccw, rgb } from '../builder.js';
 import { makeMaterials89 } from '../p1789/textures.js';
 import { ring, fill, lines, indexFoot, buildTrees } from '../p1789/outils.js';
 import { hex, hash } from '../p1789/blocks.js';
 import { pointInPoly, polylineLength, pointAt } from '../geom.js';
-import { bati, rues, ilots, parcs, dansExpo } from './data.js';
+import { bati, rues, ilots, parcs, dansExpo, FER } from './data.js';
 import { maison } from './bati.js';
 import { planter } from './arbres.js';
+import { materiauVoie, poserVoies, ilotsFerres } from './fer.js';
 
 const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
@@ -108,6 +110,7 @@ function quais(app, B) {
 
 export async function construire(app, step) {
   const V = app.v89, B = new Builder(1100), mats = (app.materials = makeMaterials89(app.mobile ? 0.5 : 1));
+  mats.voie = materiauVoie();
   app.foot = []; app.landmarks = []; app.gardens = []; app.monuments = {}; app.stats = {};
   const pause = () => new Promise((r) => setTimeout(r, 0)), R = app.navRect;
   const pres = (x, z) => x > R.x && x < R.x + R.w && z > R.z && z < R.z + R.h;
@@ -140,8 +143,14 @@ export async function construire(app, step) {
   app.stats.quais = quais(app, B);
   V.ponts = ponts(app, B);
 
+  // les voies passent sur les ponts qui viennent d'être bâtis ; leurs viaducs s'ajoutent aux emprises infranchissables
+  await step('Les voies ferrées et leurs viaducs…', 0.72);
+  const BR = new Builder(2750);
+  V.fer = poserVoies(app, B, BR); V.fer.statuts = FER; app.stats.voies = V.fer.n;
+
   await step('Assemblage de la ville…', 0.74);
   app.batiMeshes = B.finish(app.scene, mats); app.quaiMeshes = []; app.cityMeshes = app.batiMeshes;
+  { const rubans = BR.finish(app.scene, mats); for (const m of rubans) m.castShadow = false; app.batiMeshes.push(...rubans); B.tris += BR.tris; }      // un ruban posé au sol ne porte pas d'ombre
   if (V.mobiles) app.batiMeshes.push(...V.mobiles);              // échafaudages, grues, palais en chantier : ils suivent la date
   app.stats.tris = Math.round(B.tris);
   indexFoot(app);
@@ -150,8 +159,9 @@ export async function construire(app, step) {
   // les jardins de la ville d'abord, les bois ensuite : le nombre d'arbres est compté
   const P = parcs().slice().sort((a, b) => Math.hypot(a.rings[0][0][0] + 3900, a.rings[0][0][1] + 500) - Math.hypot(b.rings[0][0][0] + 3900, b.rings[0][0][1] + 500));
   for (const p of P) { if (/Champ De Mars/i.test(p.nom)) continue; const bois = /Bois De/i.test(p.nom); app.gardens.push({ ring: p.rings[0], dens: bois ? 0.1 : 0.34, ok: p.rings.length > 1 ? (x, z) => !p.rings.slice(1).some((h) => pointInPoly(x, z, h)) : null }); }
-  for (const i of ilots()) if (i.c === 'p' && pres(i.rings[0][0][0], i.rings[0][0][1]) && !i.rings[0].some((p) => dansExpo(p[0], p[1]))) app.gardens.push({ ring: i.rings[0], dens: 0.3 });
+  { const F = ilotsFerres(); ilots().forEach((i, k) => { if (i.c === 'p' && !F.has(k) && pres(i.rings[0][0][0], i.rings[0][0][1]) && !i.rings[0].some((p) => dansExpo(p[0], p[1]))) app.gardens.push({ ring: i.rings[0], dens: 0.3 }); }); }
   if (V.jardins) V.jardins(app);
+  for (const g of app.gardens) { const ok = g.ok; g.ok = (x, z) => (!ok || ok(x, z)) && !V.fer.pres(x, z, 3.2); }      // pas d'arbre sur une voie ferrée
   app.trees = buildTrees(app);
   // alignements des boulevards, des avenues et des quais
   { const A = planter(app); V.alignements = A; app.stats.alignements = A.n; app.batiMeshes.push(...A.meshes); }
