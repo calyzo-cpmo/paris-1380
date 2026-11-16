@@ -183,6 +183,20 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #hint { align-self: center; max-width: 100%; padding: 7px 14px; font-size: 14px; color: var(--ink); border-top-width: 1px; border-radius: 999px; text-align: center; }
 #btn-epoch b { font-family: var(--serif); font-variant-numeric: tabular-nums; color: var(--gold); }
 #btn-epoch[aria-expanded="true"] b { color: #1b1606; }
+/* Paris 1889 : la date du chantier de la tour et de l'Exposition */
+#chantier { display: flex; align-items: center; gap: 12px; padding: 8px 14px 7px 10px; background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--gold); backdrop-filter: blur(6px); }
+#ch-play { display: grid; place-items: center; flex: none; width: 34px; height: 34px; padding: 0; border-radius: 50%; }
+#ch-play .ico-pause, #ch-play[aria-pressed="true"] .ico-play { display: none; }
+#ch-play[aria-pressed="true"] .ico-pause { display: inline; }
+#ch-corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#ch-texte { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+#ch-jour { font-family: var(--serif); color: var(--gold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+#ch-note { font-size: 13.5px; color: var(--ink); opacity: 0.9; }
+#ch-date { width: 100%; accent-color: var(--gold); margin: 0; }
+#ch-reperes { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.6; padding: 0 2px; }
+#ch-reperes span:nth-child(2) { position: relative; left: -6.5%; }
+#ch-reperes span:nth-child(3) { visibility: hidden; }
+body.morph #chantier { visibility: hidden; }
 #frise { display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 10px; }
 #frise-play { flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 50%; }
 #frise-play .ico-pause, #frise-play[aria-pressed="true"] .ico-play { display: none; }
