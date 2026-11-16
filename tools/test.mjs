@@ -307,8 +307,8 @@ await page.keyboard.press('Escape');
 // ---------- calque des époques : frise, données ALPAGE recalées, volumes, marche, lien
 await page.evaluate(() => { window.__app.ui.stopTour(); window.__app.ui.select(null); }); await overview(); await frames(3);
 await page.click('#btn-epoch'); await frames(2);
-const fr0 = await page.evaluate(() => { const a = window.__app; return { ids: [...document.querySelectorAll('#frise-jalons > *')].map((b) => b.dataset.id).join(' '), actif: document.querySelector('#frise-jalons [aria-pressed="true"]').dataset.id, on: a.epochU.uEpochOn.value, info: !document.getElementById('frise-info').hidden, bouton: document.getElementById('btn-epoch').getAttribute('aria-expanded') }; });
-check('frise des époques : huit jalons, 1380 au repos', (await visible('#frise')) && fr0.ids === 'lutece 1300 1380 1553 1652 1741 1791 1836' && fr0.actif === '1380' && fr0.on === 0 && fr0.info && fr0.bouton === 'true', JSON.stringify(fr0));
+const fr0 = await page.evaluate(() => { const a = window.__app; return { ids: [...document.querySelectorAll('#frise-jalons > [data-id]')].map((b) => b.dataset.id).join(' '), l89: (document.querySelector('#frise-jalons > a[data-m="1889"]') || {}).href || '', actif: document.querySelector('#frise-jalons [aria-pressed="true"]').dataset.id, on: a.epochU.uEpochOn.value, info: !document.getElementById('frise-info').hidden, bouton: document.getElementById('btn-epoch').getAttribute('aria-expanded') }; });
+check('frise des époques : huit jalons, 1380 au repos, et le lien vers la maquette de 1889', (await visible('#frise')) && fr0.ids === 'lutece 1300 1380 1553 1652 1741 1791 1836' && /index\.html#m=1889$/.test(fr0.l89) && fr0.actif === '1380' && fr0.on === 0 && fr0.info && fr0.bouton === 'true', JSON.stringify(fr0));
 const attendu = { lutece: [2, 'Lutèce', 100, 4], 1300: [1, 'Paris 1300', 0, 5], 1553: [0, 'Paris 1553', 3000, 6], 1652: [0, 'Paris 1652', 8000, 6], 1741: [0, 'Paris 1741', 9000, 6], 1791: [0, 'Paris 1789', 20000, 7], 1836: [0, 'Paris 1836', 20000, 6] };
 for (const id of ['lutece', '1300', '1553', '1652', '1741', '1791', '1836']) {
   // Lutèce et 1789 sont des liens vers leurs maquettes : leur calque, que montre la lecture de la frise, se choisit ici sans cliquer
@@ -333,7 +333,7 @@ const dess = await page.evaluate(() => {
   }
   a.ui.setEpoch('1380'); return out;
 });
-check('frise : « 1789 » y figure et mène à sa maquette', dess.lien[0] === 'A' && dess.lien[1] === 'index.html#m=1789' && dess.lien[2] === '1789' && dess.noms === 'Lutèce 1300 1380 1553 1652 1741 1789 1836', JSON.stringify([dess.lien, dess.noms]));
+check('frise : « 1789 » y figure et mène à sa maquette', dess.lien[0] === 'A' && dess.lien[1] === 'index.html#m=1789' && dess.lien[2] === '1789' && dess.noms === 'Lutèce 1300 1380 1553 1652 1741 1789 1836 1889', JSON.stringify([dess.lien, dess.noms]));
 check('dates dessinées : en 1553, maisons à pans de bois sur les quartiers nouveaux, aucun volume blanc', dess['1553'].maisons > 300 && dess['1553'].by.houses > 20000 && dess['1553'].by.roof > 5000 && !dess['1553'].blanc && !dess['1553'].by.facade, JSON.stringify(dess['1553']));
 check('dates dessinées : en 1741, maisons enduites à combles, édifices de pierre, une seule date en mémoire', dess['1741'].maisons > 1500 && dess['1741'].by.facade > 50000 && dess['1741'].by.comble > 2000 && dess['1741'].by.stonefx > 100 && !dess['1741'].blanc && dess['1741'].cache === 1, JSON.stringify(dess['1741']));
 // les chiffres racontent la croissance ; les enceintes se succèdent ; le masque de 1300 laisse en pointillé ce qui n'existe pas encore

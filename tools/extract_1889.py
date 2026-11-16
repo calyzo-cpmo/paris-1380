@@ -231,10 +231,19 @@ def main():
                 if selon_v and -100 < u < 900 and abs(v) < 400: vals.append(v)
                 if not selon_v and abs(v) < 180 and 600 < u < 1300: vals.append(u)
         return mediane(vals)
+    # l'axe estimé d'après le Trocadéro et l'École militaire est affiné sur la direction des deux avenues qui bordent le champ
+    suu = suv = 0.0
+    for motif in ('bourdonnais', 'suffren'):
+        pts = [uv(q[0], q[1]) for l, k in zip(lignes, idx) if k >= 0 and re.search(motif, noms[k], re.I) for q in l]
+        pts = [q for q in pts if -150 < q[0] < 900 and abs(q[1]) < 400]
+        if len(pts) < 4: raise SystemExit('Champ-de-Mars : avenues introuvables dans la base de 1900')
+        mu = sum(q[0] for q in pts) / len(pts); mv = sum(q[1] for q in pts) / len(pts)
+        suu += sum((q[0] - mu) ** 2 for q in pts); suv += sum((q[0] - mu) * (q[1] - mv) for q in pts)
+    ang = math.atan(suv / suu); U = (U[0] * math.cos(ang) + Vv[0] * math.sin(ang), U[1] * math.cos(ang) + Vv[1] * math.sin(ang)); Vv = (-U[1], U[0])
     v0, v1, u1 = bord('bourdonnais', True), bord('suffren', True), bord('motte.picquet', False)
     if v0 is None or v1 is None or u1 is None: raise SystemExit('Champ-de-Mars : avenues introuvables dans la base de 1900')
     if v0 > v1: v0, v1 = v1, v0
-    expo = {'tour': [tour[0], tour[1]], 'u': [round(U[0], 5), round(U[1], 5)], 'u0': -230, 'u1': round(u1 - 14, 1), 'v0': round(v0 + 13, 1), 'v1': round(v1 - 13, 1)}
+    expo = {'tour': [tour[0], tour[1]], 'u': [round(U[0], 5), round(U[1], 5)], 'u0': -230, 'u1': round(u1 - 14, 1), 'v0': round(v0 + 13, 1), 'v1': round(v1 - 13, 1), 'vc': round((v0 + v1) / 2, 1)}
     data['meta']['expo'] = expo
     def dans_expo(x, z): u, v = uv(x, z); return expo['u0'] < u < expo['u1'] and expo['v0'] < v < expo['v1']
     print('Champ-de-Mars de 1889 :', expo)
@@ -251,7 +260,7 @@ def main():
     for path in sorted(glob.glob(os.path.join(SRC, 'emprise_batie_paris_*.json'))):
         for f in json.load(open(path))['features']:
             at = f['attributes']
-            for rings in polys_de(anneaux_esri(f.get('geometry')), 0.6, 16.0, 14.0):
+            for rings in polys_de(anneaux_esri(f.get('geometry')), 0.9, 22.0, 30.0):
                 r = rings[0]; a = abs(aire_signee(r)); bb = boite(r)
                 if dans_expo((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2): continue          # la tour elle-même, et ce qui a poussé depuis sur le Champ-de-Mars
                 h = at.get('h_med') or at.get('h_moy') or 0

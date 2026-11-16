@@ -1,0 +1,143 @@
+<div id="scene" aria-label="Maquette 3D de Paris en 1889"></div>
+<div id="labels" aria-hidden="true"></div>
+
+<header id="top">
+  <div id="brand">
+    <p id="brand-site">Paris à travers le temps</p>
+    <h1>Paris <span>1889</span></h1>
+    <p id="brand-sub">L’année de l’Exposition universelle et de la tour de 300 mètres</p>
+    <p id="where" hidden></p>
+  </div>
+  <nav id="menu" aria-label="Panneaux">
+    <button type="button" id="btn-places" aria-controls="places" aria-expanded="false">Lieux</button>
+    <button type="button" id="btn-more" aria-controls="menu-more" aria-expanded="false" aria-label="Autres panneaux">Menu</button>
+    <div id="menu-more">
+      <button type="button" id="btn-lutece" data-m="lutece" title="Ouvrir la maquette de Lutèce, vers 250">Lutèce</button>
+      <button type="button" id="btn-1380" data-m="1380" title="Ouvrir la maquette de Paris vers 1380">Paris 1380</button>
+      <button type="button" id="btn-1789" data-m="1789" title="Ouvrir la maquette de Paris en 1789">Paris 1789</button>
+      <button type="button" id="btn-sources">Sources</button>
+      <button type="button" id="btn-share">Partager</button>
+      <button type="button" id="btn-help">Aide</button>
+    </div>
+  </nav>
+</header>
+
+<aside id="places" hidden aria-label="Liste des lieux">
+  <div class="panel-head"><h2>Lieux</h2><button type="button" class="x" data-close="places" aria-label="Fermer">×</button></div>
+  <input id="place-search" type="search" placeholder="Chercher un lieu…" autocomplete="off" aria-label="Chercher un lieu">
+  <div id="place-list"></div>
+</aside>
+
+<section id="card" hidden aria-live="polite">
+  <button type="button" id="card-grip" aria-label="Agrandir ou réduire la fiche"></button>
+  <button type="button" class="x" data-close="card" aria-label="Fermer la fiche">×</button>
+  <p id="card-cat"></p>
+  <h2 id="card-name"></h2>
+  <p id="card-text"></p>
+  <div class="row" id="card-actions">
+    <button type="button" id="card-walk" class="primary">S’y promener à pied</button>
+    <button type="button" id="card-view" class="ghost">Recadrer</button>
+  </div>
+</section>
+
+<div id="walkhud" class="row" hidden>
+  <button type="button" id="walk-exit">Reprendre de la hauteur</button>
+</div>
+
+<aside id="nav" aria-label="Se repérer">
+  <div id="map-wrap">
+    <canvas id="minimap" role="img" aria-label="Plan de situation : cliquer pour s’y rendre"></canvas>
+    <button type="button" id="map-zoom" aria-label="Changer l’échelle du plan" title="Plan entier ou quartier">Quartier</button>
+  </div>
+  <div class="row" id="nav-row">
+    <button type="button" id="btn-home" title="Revenir à la vue d’ensemble (touche O)">Vue d’ensemble</button>
+    <button type="button" id="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut (touche N)">
+      <svg viewBox="-12 -12 24 24" width="26" height="26" aria-hidden="true"><g id="compass-rose"><path d="M0-10 3.2 0H-3.2Z" fill="currentColor"/><path d="M0 10 3.2 0H-3.2Z" fill="none" stroke="currentColor" stroke-width="1"/><text x="0" y="-3.2" text-anchor="middle" font-size="5.2" font-weight="700" fill="#101c44">N</text></g></svg>
+    </button>
+  </div>
+</aside>
+
+<div id="toast" hidden role="status"></div>
+
+<div id="stack">
+<div id="chantier" role="group" aria-label="Chantier de la tour et de l’Exposition">
+  <button type="button" id="ch-play" aria-pressed="false" aria-label="Voir la tour se monter" title="Voir la tour se monter, de 1887 à 1889"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M3 1.5v9l7.5-4.5z" fill="currentColor"/><path class="ico-pause" d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg></button>
+  <div id="ch-corps">
+    <div id="ch-texte"><b id="ch-jour">6 mai 1889</b><span id="ch-note">Ouverture de l’Exposition universelle</span></div>
+    <input id="ch-date" type="range" min="0" max="856" step="1" value="856" aria-label="Date du chantier, de janvier 1887 à mai 1889">
+    <div id="ch-reperes" aria-hidden="true"><span>1887</span><span>1888</span><span>1889</span></div>
+  </div>
+</div>
+<div id="hint" hidden role="status"></div>
+<nav id="frise" hidden aria-label="Paris à d’autres dates">
+  <div id="frise-jalons" class="seg"><a class="maquette" href="index.html#m=lutece" data-m="lutece" title="Passer à la maquette détaillée de Lutèce, vers 250">Lutèce</a><a href="index.html#e=1300" data-e="1300">1300</a><a class="maquette" href="index.html" data-m="1380" title="Passer à la maquette détaillée de Paris vers 1380">1380</a><a href="index.html#e=1553" data-e="1553">1553</a><a href="index.html#e=1652" data-e="1652">1652</a><a href="index.html#e=1741" data-e="1741">1741</a><a class="maquette" href="index.html#m=1789" data-m="1789" title="Passer à la maquette détaillée de Paris en 1789">1789</a><a href="index.html#e=1836" data-e="1836">1836</a><a class="maquette" aria-current="page" title="La maquette que vous regardez">1889</a></div>
+  <span id="frise-note">en doré : maquettes détaillées</span>
+  <button type="button" class="x" data-close="frise" aria-label="Fermer la frise des dates">×</button>
+</nav>
+</div>
+
+<footer id="dock">
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
+    <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
+  </div>
+  <div id="hour-wrap">
+    <button type="button" id="hour-btn" aria-controls="hour-pop" aria-expanded="false"><span id="hour-label">10 h 30</span></button>
+    <div id="hour-pop">
+      <button type="button" id="hour-play" aria-pressed="false" aria-label="Faire défiler la journée" title="Faire défiler la journée"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M3 1.5v9l7.5-4.5z" fill="currentColor"/><path class="ico-pause" d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg></button>
+      <input id="hour" type="range" min="4.5" max="22.5" step="0.25" value="10.5" aria-label="Heure du jour">
+      <div id="hour-presets" class="chips" role="group" aria-label="Moments de la journée">
+        <button type="button" data-hour="5.25">Aube</button>
+        <button type="button" data-hour="12">Midi</button>
+        <button type="button" data-hour="18.75">Soir</button>
+        <button type="button" data-hour="21.5">Nuit</button>
+      </div>
+    </div>
+  </div>
+  <button type="button" id="btn-epoch" aria-controls="frise" aria-expanded="false" title="Voir Paris à d’autres dates"><span class="long">Époques · </span><b id="epoch-label">1889</b></button>
+</footer>
+
+<div id="sources" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="sources-title">
+  <div class="sheet">
+    <div class="panel-head"><h2 id="sources-title">D’où vient cette maquette</h2><button type="button" class="x" data-close="sources" aria-label="Fermer">×</button></div>
+    <p class="lede">Aucune base de données ne décrit Paris en 1889 maison par maison. La ville est donc recomposée : les bâtiments d’aujourd’hui que l’Atelier parisien d’urbanisme date de 1889 ou d’avant sont à leur place ; les autres sont restitués d’après l’atlas de Vasserot ou évoqués le long des rues. Îlots, rues et enceinte viennent de la base « Paris 1900 » des Projets Time Machine. Toutes ces données sont ouvertes, sous licence <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>.</p>
+    <ul class="method" id="sources-list"></ul>
+    <h3>Ce qui est réel, ce qui est évoqué</h3>
+    <ul class="method">
+      <li><b>Réel :</b> l’emprise et la hauteur des bâtiments encore debout, le tracé de la Seine et des canaux, le relief, l’emplacement de la tour et le contour du Champ-de-Mars de 1889.</li>
+      <li><b>Probable :</b> les bâtiments de la période 1851-1914 dont l’année n’est pas connue, quand leur voisinage est antérieur à 1890.</li>
+      <li><b>Décalage de date :</b> îlots, rues et enceinte sont ceux de 1900 ; le relief, la Seine et les jardins sont ceux d’aujourd’hui ; les bâtiments disparus du centre sont ceux de 1810-1836.</li>
+      <li><b>Évoqué :</b> les maisons des faubourgs, presque toutes rebâties depuis ; la forme des toits, les façades, les couleurs ; l’élévation de la tour, des palais de l’Exposition et du Trocadéro, d’après leurs cotes ; les échafaudages et les grues du chantier.</li>
+      <li><b>Chantier :</b> les dates sont celles du montage de la tour (28 janvier 1887, 1<sup>er</sup> juillet et 7 décembre 1887, 1<sup>er</sup> avril et 14 août 1888, 31 mars 1889) ; entre deux dates, la hauteur est interpolée. Les palais s’élèvent à vitesse régulière entre le début et la fin de leurs travaux.</li>
+      <li><b>Pas encore modelé :</b> le détail des monuments de la ville (dômes, tours, flèches : ils sont rendus par leur volume), les Halles, le palais de l’Industrie, le Sacré-Cœur en chantier, les gares et les voies ferrées, les pavillons de l’esplanade des Invalides, la banlieue. Les passants portent encore les costumes de la maquette de 1789.</li>
+    </ul>
+    <p class="group-note">Les couches ont été recalées sur le même repère que les maquettes de 1380 et de 1789 : on passe de l’une à l’autre au même endroit.</p>
+  </div>
+</div>
+
+<div id="help" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sheet narrow">
+    <div class="panel-head"><h2 id="help-title">Se déplacer</h2><button type="button" class="x" data-close="help" aria-label="Fermer">×</button></div>
+    <dl class="keys">
+      <dt>Glisser</dt><dd>déplacer la vue au-dessus de la ville</dd>
+      <dt>Clic droit ou Maj + glisser</dt><dd>pivoter et incliner</dd>
+      <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
+      <dt>Double-clic</dt><dd>descendre à pied à cet endroit</dd>
+      <dt>À pied</dt><dd>glisser pour regarder, cliquer le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir</dd>
+      <dt>Échap</dt><dd>reprendre de la hauteur, fermer un panneau</dd>
+      <dt>/</dt><dd>chercher un lieu</dd>
+      <dt>N, O</dt><dd>nord en haut, vue d’ensemble</dd>
+      <dt>Époques</dt><dd>le bouton « Époques » ouvre la frise des dates. « 1380 » et « 1789 », en doré, mènent aux autres maquettes détaillées sans quitter la page, au même point de vue et à la même heure : la ville s’enfonce, l’autre s’élève. Les autres dates se posent sur la maquette de 1380.</dd>
+    </dl>
+  </div>
+</div>
+
+<div id="loading">
+  <div id="load-box">
+    <p id="load-site">Paris à travers le temps</p>
+    <h1>Paris <span>1889</span></h1>
+    <p id="load-pitch">La ville gallo-romaine à son apogée, avant les invasions de la fin du III<sup>e</sup> siècle : le forum, les thermes, le théâtre et les arènes sur la colline de la rive gauche, l’île et ses ponts de bois, un fleuve plus large qu’aujourd’hui. Les rues, les rivages et l’emprise des monuments viennent des fouilles ; les maisons sont une évocation.</p>
+    <div id="load-label">Chargement…</div>
+    <div id="load-track"><div id="load-bar"></div></div>
+  </div>
+</div>

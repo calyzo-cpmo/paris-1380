@@ -89,11 +89,15 @@ await maquette({
   entree: 'src/lutece/main.js', corps: 'src/bodylutece.html', sortie: 'lutece.html', titre: 'Paris à travers le temps — Lutèce vers 250 en maquette 3D',
   description: 'Maquette 3D interactive de Lutèce vers 250 : le forum, les thermes, le théâtre et les arènes de la ville gallo-romaine, l’île et ses ponts de bois, d’après la restitution de Théodore Vacquer.',
 });
+await maquette({
+  entree: 'src/p1889/main.js', corps: 'src/body1889.html', sortie: '1889.html', titre: 'Paris à travers le temps — Paris 1889 en maquette 3D',
+  description: 'Maquette 3D interactive de Paris en 1889, l’année de l’Exposition universelle : tout Paris dans son enceinte, et la tour Eiffel qui se monte de 1887 à 1889.',
+});
 
 // ---- page d'accueil : héberge les maquettes et fait la transition entre époques
 const resShell = await build({ entryPoints: [join(root, 'src/shell/main.js')], bundle: true, format: 'iife', write: false, minify: !dev, target: 'es2020', legalComments: 'none' });
 const jsShell = resShell.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-const descShell = 'Paris à huit dates, de Lutèce à 1836, et trois maquettes 3D détaillées — Lutèce vers 250, Paris vers 1380 et Paris en 1789 : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
+const descShell = 'Paris de Lutèce à 1889 : huit dates et quatre maquettes 3D détaillées — Lutèce vers 250, Paris vers 1380, Paris en 1789 et Paris en 1889, avec la tour Eiffel qui se monte : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
 const shell = `<!DOCTYPE html>
 <html lang="fr">
 <head>

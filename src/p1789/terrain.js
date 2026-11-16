@@ -19,7 +19,7 @@ export class Terrain89 {
   // moyenne du terrain sous leur contour) et raccordé à la pente en `marge` mètres, berges { niveau, part } : à moins
   // d'une centaine de mètres de l'eau, le sol est rabattu vers `niveau` (m au-dessus de l'eau) — de `part` au bord de
   // l'eau à rien au-delà, et partout dans les îles (berges.iles : leurs contours) ; c'est ainsi qu'un relief moderne,
-  // remblayé le long du fleuve, retrouve des rives basses }.
+  // remblayé le long du fleuve, retrouve des rives basses, union : les polygones de l'eau peuvent se recouvrir }.
   // Le terrain ne connaît aucune ville : celle qui s'en sert lui donne ses données.
   constructor(o) {
     const CADRE = (this.cadre = o.cadre), eau = () => o.eau;
@@ -57,8 +57,10 @@ export class Terrain89 {
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d', { willReadFrequently: true });
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.beginPath();
-    for (const rings of eau()) for (const r of rings) { r.forEach((p, i) => { const x = (p[0] - CADRE.x0) / CELL, y = (p[1] - CADRE.z0) / CELL; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.closePath(); }
-    ctx.fill('evenodd');
+    // o.union : les polygones peuvent se recouvrir (biefs et ports d'une base moderne) ; chacun est alors rempli à part,
+    // faute de quoi leurs recouvrements s'annuleraient
+    for (const rings of eau()) { if (o.union) ctx.beginPath(); for (const r of rings) { r.forEach((p, i) => { const x = (p[0] - CADRE.x0) / CELL, y = (p[1] - CADRE.z0) / CELL; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.closePath(); } if (o.union) ctx.fill('evenodd'); }
+    if (!o.union) ctx.fill('evenodd');
     const im = ctx.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H);
     for (let i = 0; i < m.length; i++) m[i] = im[i * 4] > 127 ? 255 : 0;
     this.sharp = m;

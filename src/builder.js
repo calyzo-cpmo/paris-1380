@@ -66,9 +66,10 @@ export class Batch {
 }
 
 export class Builder {
-  constructor() { this.batches = new Map(); this.tris = 0; }
+  // chunk : côté des dalles qui regroupent les volumes (une très grande ville en prend de plus larges)
+  constructor(chunk = CHUNK) { this.batches = new Map(); this.tris = 0; this.chunk = chunk; }
   at(mat, x, z) {
-    const key = mat + '|' + Math.floor(x / CHUNK) + '|' + Math.floor(z / CHUNK);
+    const key = mat + '|' + Math.floor(x / this.chunk) + '|' + Math.floor(z / this.chunk);
     let b = this.batches.get(key);
     if (!b) { b = new Batch(); b.mat = mat; this.batches.set(key, b); }
     return b;
