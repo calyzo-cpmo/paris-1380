@@ -181,8 +181,9 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
 - **Disparus depuis** : les dix pavillons des Halles de Baltard, chacun sur son îlot de 1900, et le palais de
   l'Industrie le long des Champs-Élysées (le Grand et le Petit Palais, de 1900, sont écartés).
 - **Rues et quais** : la rue est l'espace laissé libre par les îlots de 1900 ; le sol y dessine trottoirs, bordures et
-  chaussée pavée, nets à toute échelle (carte de distance lue par le shader). La Seine coule entre des murs de quai ;
-  une cinquantaine de ponts.
+  chaussée pavée, nets à toute échelle (carte de distance lue par le shader) ; le trottoir prend un cinquième environ
+  de la largeur de la voie. Quarante-trois mille arbres d'alignement bordent les boulevards, les avenues et les quais
+  (voies de 24 m et plus : une évocation). La Seine coule entre des murs de quai ; une cinquantaine de ponts.
 - **Ce qui manque encore** : l'Hôtel-Dieu, les gares et les voies ferrées, les ports bas de la Seine, la banlieue ; les
   autres édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
   tablette ; sur téléphone, les toits sont simplifiés.
@@ -339,6 +340,7 @@ src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, 
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
 src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier, Halles, palais de l'Industrie
 src/p1889/figures.js         visages et costumes de 1889
+src/p1889/arbres.js          alignements d'arbres des boulevards, des avenues et des quais, d'après la largeur des voies
 src/p1889/places.js          repères de Paris 1889 et leurs notices
 src/p1889/monde.js           le monde de Paris 1889
 ```

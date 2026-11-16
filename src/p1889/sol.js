@@ -71,7 +71,7 @@ function chanfrein(d, w, h) {
 // et l'emprise de l'Exposition. Rend, pour chaque point d'une grille, la distance signée au bord de la rue (positive
 // dans la rue), codée sur un octet entre -D et +D mètres : le shader du sol y trace trottoirs, bordures et chaussée.
 export function voirie(app, taille) {
-  const V = app.v89, fw = CADRE.x1 - CADRE.x0, fh = CADRE.z1 - CADRE.z0, w = taille, s = w / fw, h = Math.round(fh * s), D = 12;
+  const V = app.v89, fw = CADRE.x1 - CADRE.x0, fh = CADRE.z1 - CADRE.z0, w = taille, s = w / fw, h = Math.round(fh * s), D = 20;
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const x = cv.getContext('2d', { willReadFrequently: true }), T = { s, x: (v) => (v - CADRE.x0) * s, y: (v) => (v - CADRE.z0) * s };
   x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
@@ -89,5 +89,16 @@ export function voirie(app, taille) {
   chanfrein(A, w, h); chanfrein(B, w, h);
   const data = new Uint8Array(n), k = 1 / (s * 2 * D);
   for (let i = 0; i < n; i++) { const c = im[i * 4] / 255, f = c > 0.98 ? A[i] : c < 0.02 ? -B[i] : c - 0.5; data[i] = Math.max(0, Math.min(255, Math.round((0.5 + f * k) * 255))); }
-  return { data, w, h, D };
+  // Demi-largeur des voies, à gros grain : la plus grande distance au bord dans le voisinage (celle de l'axe de la rue,
+  // reportée sur toute sa largeur). Le sol en tire la largeur des trottoirs, les alignements d'arbres leur recul.
+  const G = 4, lw = Math.ceil(w / G), lh = Math.ceil(h / G); let L = new Uint8Array(lw * lh);
+  for (let y = 0; y < h; y++) { const ly = (y / G) | 0; for (let xx = 0; xx < w; xx++) { const q = ly * lw + ((xx / G) | 0), v = data[y * w + xx]; if (v > L[q]) L[q] = v; } }
+  for (let passe = 0; passe < 2; passe++) { const M = new Uint8Array(lw * lh);
+    for (let y = 0; y < lh; y++) for (let xx = 0; xx < lw; xx++) { let v = 0; for (let j = Math.max(0, y - 1); j <= Math.min(lh - 1, y + 1); j++) for (let i = Math.max(0, xx - 1); i <= Math.min(lw - 1, xx + 1); i++) { const c = L[j * lw + i]; if (c > v) v = c; } M[y * lw + xx] = v; }
+    L = M; }
+  return { data, w, h, D, large: { data: L, w: lw, h: lh } };
 }
+
+// Largeur de convention d'un trottoir (m) pour une voie de demi-largeur H : un cinquième de la voie environ, de 1,4 m
+// dans une ruelle à 8 m sur un grand boulevard. La même règle est écrite dans le shader du sol (src/p1789/app.js).
+export const trottoir = (H) => Math.max(1.4, Math.min(8, 0.44 * H - 0.2));
