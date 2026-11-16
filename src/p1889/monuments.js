@@ -58,6 +58,13 @@ function colonne(app, B, x, z, r, h, col, statue) {
   app.foot.push({ ring: [[x - r * 2.2, z - r * 2.2], [x + r * 2.2, z - r * 2.2], [x + r * 2.2, z + r * 2.2], [x - r * 2.2, z + r * 2.2]], top: y0 + h });
   return y0 + h;
 }
+// Une colonne ou un fût isolé figure dans les données comme un petit bâtiment très haut : on le retrouve près du point
+// attendu, on l'écarte et l'on rend son centre, où poser le monument modelé.
+function ancre(V, x, z, rayon = 30) {
+  let best = null;
+  for (const e of bati()) { const r = e.rings[0]; if (e.h < 25 || Math.abs(polyArea(r)) > 320) continue; let cx = 0, cz = 0; for (const p of r) { cx += p[0]; cz += p[1]; } cx /= r.length; cz /= r.length; const d = Math.hypot(cx - x, cz - z); if (d < rayon && (!best || d < best.d)) best = { d, x: cx, z: cz }; }
+  const c = best ? [best.x, best.z] : [x, z]; reserver(V, c[0], c[1], 6); return c;
+}
 const reserver = (V, x, z, d = 5) => V.reserves.push({ ring: [[x - d, z - d], [x + d, z - d], [x + d, z + d], [x - d, z + d]], x0: x - d, z0: z - d, x1: x + d, z1: z + d });
 
 // Arc de triomphe de l'Étoile : 45 m de large, 22 m d'épaisseur, 50 m de haut ; la grande arche a 29 m sous clef.
@@ -187,8 +194,8 @@ export function batirMonuments(app, B) {
   { const R = repere(-1371, -2680, [0.276, 0.961], [0.3, 1]); if (R) { const p = R.P(6); M.Trinite = { x: p[0], z: p[1], top: tour(app, B, p[0], p[1], R.f[0], R.f[1], 5, 0, 52, { baies: 34, fleche: 65, toit: PLOMB }) }; } }
   { const R = repere(118, -2870, [0.174, -0.985], [-0.17, 0.985]); if (R) for (const s of [-1, 1]) { const p = R.P(6, s * 12.8); tour(app, B, p[0], p[1], R.f[0], R.f[1], 4.6, 0, 54, { baies: 36 }); } }
   // ---- colonnes et obélisque
-  M.Vendome = { x: -1512, z: -1596, top: colonne(app, B, -1512, -1596, 1.9, 44, BRONZE, BRONZE) };
-  M.Juillet = { x: 1355, z: -25, top: colonne(app, B, 1355, -25, 2, 50, BRONZE, OR) };
+  { const c = ancre(V, -1512, -1596); M.Vendome = { x: c[0], z: c[1], top: colonne(app, B, c[0], c[1], 1.9, 44, BRONZE, BRONZE) }; }
+  { const c = ancre(V, 1355, -25); M.Juillet = { x: c[0], z: c[1], top: colonne(app, B, c[0], c[1], 2, 50, BRONZE, OR) }; }
   { const x = -2108, z = -1387, y0 = H(x, z), bp = B.at('plain', x, z); box(B.at('stone', x, z), { cx: x, cz: z, ux: 1, uz: 0, hl: 2.4, hw: 2.4 }, y0 - 0.5, y0 + 4.5, { col: PIERRE });
     cyl(bp, x, z, 1.7, y0 + 4.5, y0 + 26, { col: GRANIT, seg: 4, r1: 1.05, s0: 0.9 }); cone(bp, x, z, 1.05, y0 + 26, y0 + 27.6, { col: OR, seg: 4 });
     app.foot.push({ ring: [[x - 2.4, z - 2.4], [x + 2.4, z - 2.4], [x + 2.4, z + 2.4], [x - 2.4, z + 2.4]], top: y0 + 27.6 }); M.Obelisque = { x, z, top: y0 + 27.6 }; }

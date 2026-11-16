@@ -13,18 +13,38 @@ const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0
 
 // Ponts de la Seine : tablier en léger dos d'âne, arches surbaissées sur des piles, parapets.
 function ponts(app, B) {
-  const T = app.terrain, out = [];
+  const T = app.terrain, out = [], mouille = (x, z) => T.wetAt(x, z) > 0.5;
+  // 1. Toute voie qui passe au-dessus du fleuve désigne un franchissement (la base de 1900 ne signale pas tous les
+  //    ponts) ; ceux d'après 1889 sont écartés. La base décrit souvent un pont en deux moitiés, ou en deux chaussées :
+  //    on ne retient du tronçon que son milieu au-dessus de l'eau et sa direction, puis on cherche la rive de chaque
+  //    côté, dans cet axe. Le pont va ainsi toujours d'une rive à l'autre, quel que soit le découpage.
+  const cand = [];
   for (const r of rues()) {
-    // toute voie qui franchit le fleuve est un pont (la base de 1900 ne les signale pas tous) ; ceux d'après 1889 sont écartés
-    if (/Alexandre|Mirabeau|Debilly|Rouelle|Bir.Hakeim/i.test(r.nom)) continue;
-    const L = polylineLength(r.pts); if (L < 22) continue;
-    let s0 = -1, s1 = -1; for (let s = 0; s <= L; s += 3) { const p = pointAt(r.pts, s); if (T.wetAt(p.x, p.z) > 0.5) { if (s0 < 0) s0 = s; s1 = s; } }
-    if (s0 < 0 || s1 - s0 < 14) continue;                             // le petit bras n'a qu'une quarantaine de mètres
-    { const m = pointAt(r.pts, (s0 + s1) / 2); if (T.wetAt(m.x - m.dz * 24, m.z + m.dx * 24) < 0.5 || T.wetAt(m.x + m.dz * 24, m.z - m.dx * 24) < 0.5) continue; }      // une rue de quai qui mord sur l'eau n'est pas un pont
-    s0 = Math.max(0, s0 - 16); s1 = Math.min(L, s1 + 16);
-    const pa = pointAt(r.pts, s0), pb = pointAt(r.pts, s1), a = [pa.x, pa.z], b = [pb.x, pb.z], len = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / len, uz = (b[1] - a[1]) / len, nx = -uz, nz = ux;
-    if (out.some((o) => Math.hypot(o.x - (a[0] + b[0]) / 2, o.z - (a[1] + b[1]) / 2) < 25)) continue;      // deux tronçons du même pont
-    const w = Math.min(30, Math.max(11, r.l || 16)) / 2, ya = Math.max(T.land(a[0], a[1]), 5.2), yb = Math.max(T.land(b[0], b[1]), 5.2);
+    if (/Alexandre|Mirabeau|Debilly|Rouelle|Bir.Hakeim/i.test(r.nom) || /^(All.e|Quai|Port|Berge)\b/i.test(r.nom)) continue;      // l'allée des Cygnes court sur son île, au milieu du fleuve
+    const L = polylineLength(r.pts); if (L < 8) continue;
+    let s0 = -1, s1 = -1; for (let s = 0; s <= L; s += 2) { const p = pointAt(r.pts, s); if (mouille(p.x, p.z)) { if (s0 < 0) s0 = s; s1 = s; } }
+    if (s0 < 0 || s1 - s0 < 6) continue;
+    const p0 = pointAt(r.pts, s0), p1 = pointAt(r.pts, s1), m = pointAt(r.pts, (s0 + s1) / 2);
+    let dx = p1.x - p0.x, dz = p1.z - p0.z; const l = Math.hypot(dx, dz); if (l < 5 || !mouille(m.x, m.z)) continue; dx /= l; dz /= l;
+    if (!mouille(m.x - dz * 24, m.z + dx * 24) || !mouille(m.x + dz * 24, m.z - dx * 24)) continue;      // une rue de quai qui mord sur l'eau n'est pas un pont
+    const rive = (sg) => { for (let d = 0; d <= 420; d += 2) if (!mouille(m.x + dx * sg * d, m.z + dz * sg * d)) return d; return -1; };
+    const ra = rive(-1), rb = rive(1); if (ra < 0 || rb < 0 || ra + rb < 16) continue;                    // une voie qui longe le fleuve (île aux Cygnes) n'atteint aucune rive
+    cand.push({ nom: r.nom, a: [m.x - dx * (ra + 14), m.z - dz * (ra + 14)], b: [m.x + dx * (rb + 14), m.z + dz * (rb + 14)], w: Math.min(30, Math.max(11, r.l || 16)) / 2 });
+  }
+  // 2. Les tronçons d'un même pont sont réunis : même axe, milieux à moins de 34 m (les ponts de Paris sont bien plus
+  //    espacés). Le pont réuni prend l'axe moyen ; deux chaussées jumelles l'élargissent.
+  const groupes = [];
+  for (const c of cand) {
+    const cx = (c.a[0] + c.b[0]) / 2, cz = (c.a[1] + c.b[1]) / 2, l = Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1]), ux = (c.b[0] - c.a[0]) / l, uz = (c.b[1] - c.a[1]) / l;
+    const g = groupes.find((o) => Math.hypot(o.cx - cx, o.cz - cz) < 34 && Math.abs(o.ux * ux + o.uz * uz) > 0.8);
+    if (!g) groupes.push({ cx, cz, ux, uz, m: [c] }); else { if (g.ux * ux + g.uz * uz < 0) { const t = c.a; c.a = c.b; c.b = t; } g.m.push(c); }
+  }
+  for (const g of groupes) {
+    const n = g.m.length, a = [0, 0], b = [0, 0]; for (const c of g.m) { a[0] += c.a[0] / n; a[1] += c.a[1] / n; b[0] += c.b[0] / n; b[1] += c.b[1] / n; }
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / len, uz = (b[1] - a[1]) / len, nx = -uz, nz = ux;
+    let w = 0; for (const c of g.m) w = Math.max(w, Math.abs(((c.a[0] + c.b[0]) / 2 - a[0]) * nx + ((c.a[1] + c.b[1]) / 2 - a[1]) * nz) + c.w); w = Math.min(w, 21);
+    const nom = (g.m.find((c) => /^(Pont|Passerelle|Viaduc)/i.test(c.nom)) || g.m[0]).nom;
+    const ya = Math.max(T.land(a[0], a[1]), 5.2), yb = Math.max(T.land(b[0], b[1]), 5.2);
     const yAt = (t) => ya + (yb - ya) * t + 0.9 * Math.sin(Math.PI * t), cx = (a[0] + b[0]) / 2, cz = (a[1] + b[1]) / 2;
     const bs = B.at('stone', cx, cz), bp = B.at('plain', cx, cz), nA = Math.max(2, Math.round(len / 30)), SEG = 6;
     for (let k = 0; k < nA; k++) {
@@ -47,7 +67,7 @@ function ponts(app, B) {
       if (k > 0) { const t = k / nA; box(bs, { cx: a[0] + ux * len * t, cz: a[1] + uz * len * t, ux, uz, hl: 1.9, hw: w + 1.3 }, -4, yAt(t) - 1.2, { col: PIERRE_PONT, s0: 0.7 }); }
     }
     for (let s = 0; s <= len; s += 1) { const t = s / len, y = yAt(t); for (let o = -w; o <= w; o += 1) app.deckSet(a[0] + ux * s + nx * o, a[1] + uz * s + nz * o, y); }
-    out.push({ x: cx, z: cz, a, b, w, nom: r.nom, top: yAt(0.5) + 6 });
+    out.push({ x: cx, z: cz, a, b, w, nom, troncons: n, top: yAt(0.5) + 6 });
   }
   return out;
 }
