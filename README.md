@@ -1,6 +1,6 @@
-# Paris à travers le temps — maquettes 3D interactives de Lutèce, de Paris en 1380 et en 1789
+# Paris à travers le temps — maquettes 3D interactives de Lutèce, de Paris en 1380, en 1789 et en 1889
 
-Paris à huit dates, de Lutèce à 1836, dont trois maquettes détaillées : Lutèce vers 250, 1380 et 1789. La première page est une restitution
+Paris de Lutèce à 1889 : huit dates et quatre maquettes détaillées — Lutèce vers 250, 1380, 1789 et 1889. La première page est une restitution
 en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
 survol libre, cinq parcours commentés, promenade à pied dans des rues peuplées et jusque dans la campagne, histoire de
 chaque monument, visite de leurs intérieurs, mini-plan et boussole, heure du jour réglable, calque montrant ce qui est
@@ -14,12 +14,16 @@ Une troisième page, **Lutèce**, montre la ville gallo-romaine vers 250 : le fo
 arènes sur la colline de la rive gauche, l'île et ses deux ponts de bois, un fleuve plus large qu'aujourd'hui, d'après
 la restitution de Théodore Vacquer.
 
-Une **page d'accueil** héberge les trois maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
-« Lutèce », « 1380 » ou « 1789 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
+Une quatrième page, **Paris 1889**, montre tout Paris dans l'enceinte de Thiers l'année de l'Exposition universelle :
+près de quatre-vingt mille bâtiments, et un curseur de date qui fait monter la tour Eiffel et les palais du
+Champ-de-Mars, de janvier 1887 au 6 mai 1889.
+
+Une **page d'accueil** héberge les quatre maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
+« Lutèce », « 1380 », « 1789 » ou « 1889 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
 et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent et l'autre ville s'élève.
 
-**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce. Les trois adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html` et `dist/1789.html`.
-**Les ouvrir sur son ordinateur :** `dist/index.html` (les quatre fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
+**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889. Les quatre adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html` et `dist/1889.html`.
+**Les ouvrir sur son ordinateur :** `dist/index.html` (les cinq fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
 
 ## Ce que montre la maquette
@@ -154,6 +158,25 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   (cadre, terrain, sol peint, construction, habitants). Elle ne transporte que ses propres données : 810 Ko, une ville
   bâtie en quelques secondes, cinquante mille triangles.
 
+## Paris 1889 — la quatrième maquette
+
+- **Ce qu'elle montre** : tout Paris dans l'enceinte de Thiers (12,4 × 10 km), l'année de l'Exposition universelle :
+  79 000 bâtiments, la Seine et une quarantaine de ponts, les canaux, les jardins, les bastions de l'enceinte, le
+  relief des collines. Sur le Champ-de-Mars, la tour de 300 mètres, la Galerie des machines, le Dôme central, les
+  palais des Beaux-Arts et des Arts libéraux ; en face, le palais du Trocadéro de 1878.
+- **La tour se monte** : un curseur de date va du 1er janvier 1887 au 6 mai 1889. Fondations, piles inclinées sur leurs
+  échafaudages de bois, jonction du premier étage (7 décembre 1887), deuxième étage (14 août 1888), sommet
+  (31 mars 1889) ; les palais s'élèvent en même temps. Un bouton fait défiler tout le chantier en 45 secondes.
+- **D'où vient la ville** : aucune base ne décrit le bâti de 1889 maison par maison. La ville est recomposée, et chaque
+  bâtiment garde la trace de ce qui le justifie : **réel** (42 000 bâtiments d'aujourd'hui que l'APUR date de 1889 ou
+  d'avant, avec leur emprise et leur hauteur), **probable** (6 800 bâtiments de 1851-1914 sans année, dans un
+  voisinage ancien), **disparu** (4 600 emprises de l'atlas de Vasserot, là où le bâtiment actuel est plus récent),
+  **évoqué** (25 600 maisons, sur l'emprise actuelle ou le long des rues de 1900, d'autant plus serrées que le
+  voisinage garde de bâtiments anciens). Îlots, rues et enceinte viennent de la base « Paris 1900 ».
+- **Ce qui manque encore** : le détail des monuments de la ville (ils sont rendus par leur volume), les Halles, le
+  palais de l'Industrie, le Sacré-Cœur en chantier, les gares et les voies ferrées, la banlieue ; les passants portent
+  encore les costumes de 1789. La maquette vise l'ordinateur et la tablette ; sur téléphone, les toits sont simplifiés.
+
 ## Sources
 
 Le tracé (rues, îlots, enceintes, emprises des édifices) provient intégralement du
@@ -226,7 +249,11 @@ tools/fetch_alpage.py        télécharge les vingt et une couches GeoPackage du
 tools/extract_epochs.py      GeoPackage → data/epoques.json (recalage sur la maquette, simplification, codage compact)
 tools/extract_1789.py        GeoPackage → data/paris1789.json (même recalage, relief en grille, repères projetés en Lambert-93)
 tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, géométries WKB)
-tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html)
+data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, disparu, évoqué), îlots et rues de 1900, eau, jardins, relief (ODbL 1.0)
+tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
+tools/extract_1889.py        recompose la ville de 1889 à partir de ces sources et de l'atlas de Vasserot
+tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, tour et chantier, curseur, repères, téléphone
+tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
 tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
@@ -293,6 +320,15 @@ src/lutece/monuments.js      forum (temple, basilique, portiques), thermes voût
 src/lutece/figures.js        visages et costumes gallo-romains
 src/lutece/places.js         repères de Lutèce et leurs notices
 src/lutece/monde.js          le monde de Lutèce
+src/body1889.html            page Paris 1889 (mêmes styles, plus le curseur du chantier)
+src/p1889/data.js            accès aux données de Paris 1889 ; repère de l'Exposition
+src/p1889/sol.js             sol peint : banlieue, zone et talus de l'enceinte, rues, îlots, jardins, canaux
+src/p1889/bati.js            bâtiments légers : un mur par côté, comble brisé ou toit à croupes
+src/p1889/ville.js           bâti de toute la ville, enceinte, ponts de la Seine, arbres, trame des passants
+src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, étages, échafaudages, grues, date
+src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
+src/p1889/places.js          repères de Paris 1889 et leurs notices
+src/p1889/monde.js           le monde de Paris 1889
 ```
 
 ## Reconstruire
@@ -303,8 +339,8 @@ npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
 npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (40 Mo)
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
-npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html et dist/lutece.html
-npm test          # toits, puis Paris 1380, Paris 1789, Lutèce et la page d'accueil, dans Chromium (Playwright requis) ; une vingtaine de minutes en rendu logiciel
+npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html et dist/1889.html
+npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
 ```
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),
@@ -321,7 +357,8 @@ esbuild (outil de build). Toute la géométrie et toutes les textures sont gén�
   couches du SIG ALPAGE. Toute réutilisation doit créditer « © ALPAGE » suivi des auteurs de chaque couche (tableau
   ci-dessus ; les données de C. Bourlet se citent « © ALPAGE : IRHT (C. Bourlet) »), et toute base dérivée rendue
   publique doit l'être sous la même licence.
-- **Pages construites** (`dist/index.html`, `dist/1380.html`, `dist/1789.html`, `dist/lutece.html`) : elles réunissent le code et les données. Elles se
+- **Paris 1889** (`data/paris1889.json`) : [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/), base dérivée des données ouvertes de l'Atelier parisien d'urbanisme (emprise bâtie, eau, équipements), de la base « Paris 1900 — les îlots, les voies et les adresses » (Projets Time Machine, DOI 10.34847/nkl.cbf5ecd0) et de l'atlas de Vasserot (ALPAGE) ; relief : RGE ALTI® de l'IGN, licence ouverte Etalab 2.0.
+- **Pages construites** (`dist/index.html`, `dist/1380.html`, `dist/1789.html`, `dist/lutece.html`, `dist/1889.html`) : elles réunissent le code et les données. Elles se
   redistribuent librement à condition de laisser visibles les attributions du plan et des couches ALPAGE, qui figurent
   dans leur panneau « Sources ».
 - **Vignettes des sources** (`data/thumbs.json`) : reproductions d'œuvres du domaine public.
