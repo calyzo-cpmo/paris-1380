@@ -7,6 +7,7 @@ import { hex, hash } from '../p1789/blocks.js';
 import { pointInPoly, polylineLength, pointAt } from '../geom.js';
 import { bati, rues, ilots, parcs, dansExpo } from './data.js';
 import { maison } from './bati.js';
+import { planter } from './arbres.js';
 
 const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
@@ -132,6 +133,8 @@ export async function construire(app, step) {
   for (const i of ilots()) if (i.c === 'p' && pres(i.rings[0][0][0], i.rings[0][0][1]) && !i.rings[0].some((p) => dansExpo(p[0], p[1]))) app.gardens.push({ ring: i.rings[0], dens: 0.3 });
   if (V.jardins) V.jardins(app);
   app.trees = buildTrees(app);
+  // alignements des boulevards, des avenues et des quais
+  { const A = planter(app); V.alignements = A; app.stats.alignements = A.n; app.batiMeshes.push(...A.meshes); }
 
   // nom de la rue où l'on marche : tronçons rangés par cases de 120 m
   { const C = 120, cases = new Map(), key = (i, k) => (i + 512) * 2048 + k + 512;

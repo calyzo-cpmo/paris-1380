@@ -44,5 +44,5 @@ export const MONDE_1889 = {
   construire,
   figures: (mobile) => ({ atlas: makeFigureAtlas1889(mobile ? 0.5 : 1), outfit: outfit1889 }),
   lumieres: ['facade', 'rdc', 'comble'],
-  bilan: (app) => `${app.stats.bati} bâtiments (${COMPTE.R} réels, ${COMPTE.P} probables, ${COMPTE.V} disparus, ${COMPTE.E + COMPTE.G} évoqués), ${app.v89.ponts.length} ponts, ${app.stats.tris} triangles, ${app.treeCount} arbres, ${app.people.total} passants possibles`,
+  bilan: (app) => `${app.stats.bati} bâtiments (${COMPTE.R} réels, ${COMPTE.P} probables, ${COMPTE.V} disparus, ${COMPTE.E + COMPTE.G} évoqués), ${app.v89.ponts.length} ponts, ${app.stats.tris} triangles, ${app.treeCount} arbres de jardin, ${app.stats.alignements} arbres d’alignement, ${app.people.total} passants possibles`,
 };

@@ -23,10 +23,10 @@ function makeGround89(wide, centre, detail, cobble, pave, rect, voirie) {
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uDetail = { value: detail }; sh.uniforms.uCentre = { value: centre }; sh.uniforms.uCobble = { value: cobble }; sh.uniforms.uPave = pave;
     sh.uniforms.uRect = { value: new THREE.Vector4(rect.x, rect.z, rect.w, rect.h) };
-    if (voirie) { const C = voirie.cadre; sh.uniforms.uVoirie = { value: voirie.tex }; sh.uniforms.uCadre = { value: new THREE.Vector4(C.x0, C.z0, C.x1 - C.x0, C.z1 - C.z0) }; sh.uniforms.uVD = { value: voirie.D };
+    if (voirie) { const C = voirie.cadre; sh.uniforms.uVoirie = { value: voirie.tex }; sh.uniforms.uLargeur = { value: voirie.large }; sh.uniforms.uCadre = { value: new THREE.Vector4(C.x0, C.z0, C.x1 - C.x0, C.z1 - C.z0) }; sh.uniforms.uVD = { value: voirie.D };
       sh.uniforms.uTrottoir = { value: new THREE.Color('#d9d4c8') }; sh.uniforms.uBordure = { value: new THREE.Color('#99937f') }; sh.uniforms.uChaussee = { value: new THREE.Color('#a69f8f') }; sh.uniforms.uRueLoin = { value: new THREE.Color('#bfb9ab') }; }
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWxz = (modelMatrix * vec4(position, 1.0)).xz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail; uniform sampler2D uCentre; uniform sampler2D uCobble; uniform sampler2D uPave; uniform vec4 uRect;' + (voirie ? '\nuniform sampler2D uVoirie; uniform vec4 uCadre; uniform float uVD; uniform vec3 uTrottoir; uniform vec3 uBordure; uniform vec3 uChaussee; uniform vec3 uRueLoin;' : ''))
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D uDetail; uniform sampler2D uCentre; uniform sampler2D uCobble; uniform sampler2D uPave; uniform vec4 uRect;' + (voirie ? '\nuniform sampler2D uVoirie; uniform sampler2D uLargeur; uniform vec4 uCadre; uniform float uVD; uniform vec3 uTrottoir; uniform vec3 uBordure; uniform vec3 uChaussee; uniform vec3 uRueLoin;' : ''))
       .replace('#include <map_fragment>', `#include <map_fragment>
         vec2 cu = (vWxz - uRect.xy) / uRect.zw;
         float cin = smoothstep(0.0, 0.012, min(min(cu.x, 1.0 - cu.x), min(cu.y, 1.0 - cu.y)));
@@ -36,7 +36,8 @@ function makeGround89(wide, centre, detail, cobble, pave, rect, voirie) {
         if (vu.x > 0.0 && vu.x < 1.0 && vu.y > 0.0 && vu.y < 1.0) {
           float sd = (texture2D(uVoirie, vu).r - 0.5) * 2.0 * uVD;                 // distance au bord de la rue (m)
           float px = max(length(dFdx(vWxz)), length(dFdy(vWxz))), e = max(px, 0.12);      // taille d'un point d'écran au sol
-          float rue = smoothstep(-e, e, sd - 0.1), k1 = smoothstep(2.5 - e, 2.5 + e, sd), k2 = smoothstep(2.9 - e, 2.9 + e, sd);
+          float H = max(0.0, (texture2D(uLargeur, vu).r - 0.5) * 2.0 * uVD), tw = clamp(0.44 * H - 0.2, 1.4, 8.0);      // demi-largeur de la voie, largeur du trottoir
+          float rue = smoothstep(-e, e, sd - 0.1), k1 = smoothstep(tw - e, tw + e, sd), k2 = smoothstep(tw + 0.35 - e, tw + 0.35 + e, sd);
           vec3 c = mix(mix(uTrottoir, uBordure, k1), uChaussee, k2);
           c = mix(c, uRueLoin, smoothstep(1.5, 5.0, px));                           // de loin, la rue redevient un aplat
           diffuseColor.rgb = mix(diffuseColor.rgb, c, rue); chaussee = rue * k2;
@@ -55,7 +56,8 @@ export class App89 {
   // monde : { cadre { x0, z0, x1, z1 }, centre { x, z, w, h } (sol peint finement, trame des passants), vue (vue
   // d'ensemble), tuile (côté du motif de campagne), etapes [3 libellés], terrain(app), motif(), peindre(ctx, T, tuile,
   // app), construire(app, step), figures(mobile), lumieres [matières éclairées la nuit], bilan(app), et, facultatif,
-  // voirie(app, taille) → { data, w, h, D } : carte de distance aux bords des rues, pour des trottoirs et des chaussées nets }
+  // voirie(app, taille) → { data, w, h, D, large { data, w, h } } : carte de distance aux bords des rues et carte, plus
+  // grossière, de la demi-largeur des voies, pour des trottoirs et des chaussées nets }
   constructor(container, monde) { this.container = container; this.monde = monde; this.onProgress = () => {}; this.listeners = []; this.deck = new Map(); }
 
   async start() {
@@ -103,7 +105,7 @@ export class App89 {
     const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); blank.needsUpdate = true;
     this.pave = { value: blank };
     let voirie = null;
-    if (monde.voirie) { const v = monde.voirie(this, Math.min(gl, mobile ? 2048 : 4096)), t = new THREE.DataTexture(v.data, v.w, v.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; voirie = { tex: t, cadre: CADRE, D: v.D }; this.voirie = v; }
+    if (monde.voirie) { const v = monde.voirie(this, Math.min(gl, mobile ? 2048 : 4096)), t = new THREE.DataTexture(v.data, v.w, v.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; const l = new THREE.DataTexture(v.large.data, v.large.w, v.large.h, THREE.RedFormat); l.minFilter = l.magFilter = THREE.LinearFilter; l.unpackAlignment = 1; l.needsUpdate = true; voirie = { tex: t, large: l, cadre: CADRE, D: v.D }; this.voirie = v; }
     this.groundMat = makeGround89(wideTex, centreTex, detail, makeCobbleTexture(), this.pave, CENTRE_RECT, voirie);
     const coreMesh = new THREE.Mesh(core, this.groundMat), outerMesh = new THREE.Mesh(outer, makeGroundMaterial(fields, detail));
     coreMesh.receiveShadow = true; outerMesh.receiveShadow = true; coreMesh.matrixAutoUpdate = false; outerMesh.matrixAutoUpdate = false;
