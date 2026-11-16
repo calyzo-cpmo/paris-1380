@@ -173,9 +173,14 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   voisinage ancien), **disparu** (4 600 emprises de l'atlas de Vasserot, là où le bâtiment actuel est plus récent),
   **évoqué** (25 600 maisons, sur l'emprise actuelle ou le long des rues de 1900, d'autant plus serrées que le
   voisinage garde de bâtiments anciens). Îlots, rues et enceinte viennent de la base « Paris 1900 ».
-- **Ce qui manque encore** : le détail des monuments de la ville (ils sont rendus par leur volume), les Halles, le
-  palais de l'Industrie, le Sacré-Cœur en chantier, les gares et les voies ferrées, la banlieue ; les passants portent
-  encore les costumes de 1789. La maquette vise l'ordinateur et la tablette ; sur téléphone, les toits sont simplifiés.
+- **Monuments** : le corps de chaque édifice vient des données ; dômes, tours, flèches et colonnes y sont ajoutés à leur
+  hauteur connue (Invalides, Panthéon, Notre-Dame, Saint-Sulpice, Opéra, Institut, Saint-Augustin, la Trinité,
+  Saint-Vincent-de-Paul, colonnes Vendôme et de Juillet, obélisque), l'Arc de triomphe est bâti entier, le Sacré-Cœur
+  est montré en chantier. Les passants sont en costumes de 1889 : blouse bleue, redingote et haut-de-forme, canotier,
+  robe à tournure, fantassin en pantalon garance.
+- **Ce qui manque encore** : les Halles, le palais de l'Industrie, l'Hôtel-Dieu, les gares et les voies ferrées, la
+  banlieue ; les autres édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
+  tablette ; sur téléphone, les toits sont simplifiés.
 
 ## Sources
 
@@ -327,6 +332,8 @@ src/p1889/bati.js            bâtiments légers : un mur par côté, comble bris
 src/p1889/ville.js           bâti de toute la ville, enceinte, ponts de la Seine, arbres, trame des passants
 src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, étages, échafaudages, grues, date
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
+src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier
+src/p1889/figures.js         visages et costumes de 1889
 src/p1889/places.js          repères de Paris 1889 et leurs notices
 src/p1889/monde.js           le monde de Paris 1889
 ```

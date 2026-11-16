@@ -1,0 +1,141 @@
+// Silhouettes des monuments de Paris en 1889 : dômes, tours, flèches, colonnes, et l'Arc de triomphe.
+// Les corps de bâtiment viennent des données (emprise et hauteur réelles, src/p1889/bati.js) ; ce fichier leur ajoute ce
+// qui se voit de loin. Les positions sont lues dans ces mêmes données (tambours des Invalides et du Panthéon, piles de
+// l'Arc, emprises des églises, îlots des places) ; les hauteurs sont celles des édifices ; le détail est une évocation.
+import { box, cyl, cone, ccw, rgb } from '../builder.js';
+import { facade } from '../p1789/blocks.js';
+import { pointInPoly, polyArea } from '../geom.js';
+import { bati } from './data.js';
+
+const PIERRE = rgb(226, 214, 190), PIERRE_BLANCHE = rgb(238, 232, 220), PLOMB = rgb(128, 136, 142), OR = rgb(226, 188, 96), CUIVRE = rgb(118, 152, 134), BRONZE = rgb(74, 84, 72), BOIS = rgb(190, 156, 110), GRANIT = rgb(196, 150, 132), ARDOISE = rgb(84, 92, 106);
+
+// Coupole : tambour de pierre, calotte en six assises, lanternon et flèche. Cotes en mètres au-dessus du sol.
+function coupole(app, B, x, z, r, yTambour0, yTambour1, yDome, yLanterne, yFleche, col, o = {}) {
+  const y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), bp = B.at('plain', x, z), N = 6, seg = o.seg || 20, rd = r * (o.debord || 1.02);
+  cyl(bs, x, z, r, y0 + yTambour0, y0 + yTambour1, { col: o.pierre || PIERRE, seg, s0: 0.82 });
+  for (let k = 0; k < N; k++) {
+    const a0 = ((k / N) * Math.PI) / 2, a1 = (((k + 1) / N) * Math.PI) / 2, h = yDome - yTambour1;
+    cyl(bp, x, z, rd * Math.cos(a0), y0 + yTambour1 + h * Math.sin(a0), y0 + yTambour1 + h * Math.sin(a1), { col, seg, r1: Math.max(0.6, rd * Math.cos(a1)), s0: 0.86 + 0.14 * (k / N), s1: 0.9 + 0.14 * (k / N) });
+  }
+  cyl(bs, x, z, r * 0.2, y0 + yDome - 1, y0 + yLanterne, { col: o.lanterne || o.pierre || PIERRE, seg: 8, s0: 0.9 });
+  cone(bp, x, z, r * 0.24, y0 + yLanterne, y0 + yFleche, { col: o.fleche || col, seg: 8 });
+  app.landmarks.push({ x, z, top: y0 + yFleche });
+  return y0 + yFleche;
+}
+// Emprise du bâtiment qui couvre le point (la plus vaste) et repère le long de son axe, façade du côté `vers` :
+// P(recul, travers) rend le point situé à `recul` mètres en arrière de la façade et à `travers` mètres de l'axe.
+function repere(x, z, ax, vers) {
+  let ring = null, A = 0;
+  for (const e of bati()) { const r = e.rings[0]; if (pointInPoly(x, z, r)) { const a = Math.abs(polyArea(r)); if (a > A) { A = a; ring = r; } } }
+  if (!ring) return null;
+  const s = ax[0] * vers[0] + ax[1] * vers[1] < 0 ? -1 : 1, fx = ax[0] * s, fz = ax[1] * s, nx = -fz, nz = fx;
+  let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
+  for (const p of ring) { const u = p[0] * fx + p[1] * fz, v = p[0] * nx + p[1] * nz; if (u < u0) u0 = u; if (u > u1) u1 = u; if (v < v0) v0 = v; if (v > v1) v1 = v; }
+  const vm = (v0 + v1) / 2;
+  return { f: [fx, fz], L: u1 - u0, l: v1 - v0, P: (recul, travers = 0) => [fx * (u1 - recul) + nx * (vm + travers), fz * (u1 - recul) + nz * (vm + travers)] };
+}
+// Tour carrée de demi-côté h, de la cote ya à yb ; o.baies : cote où commence l'étage du beffroi, à hautes baies ;
+// o.fleche : cote du sommet d'une flèche.
+function tour(app, B, x, z, ux, uz, h, ya, yb, o = {}) {
+  const y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), col = o.col || PIERRE;
+  if (o.baies) {
+    box(bs, { cx: x, cz: z, ux, uz, hl: h, hw: h }, y0 + ya, y0 + o.baies, { col, s0: 0.84 });
+    const nx = -uz, nz = ux, r = ccw([[x - ux * h - nx * h, z - uz * h - nz * h], [x + ux * h - nx * h, z + uz * h - nz * h], [x + ux * h + nx * h, z + uz * h + nz * h], [x - ux * h + nx * h, z - uz * h + nz * h]]);
+    facade(B.at('nef', x, z), r, false, y0 + o.baies, y0 + yb - 2, 0, 1, col, 0, 0.9, 1, h);
+    box(bs, { cx: x, cz: z, ux, uz, hl: h + 0.4, hw: h + 0.4 }, y0 + yb - 2, y0 + yb, { col, s0: 0.95 });
+  } else box(bs, { cx: x, cz: z, ux, uz, hl: h, hw: h }, y0 + ya, y0 + yb, { col, s0: 0.84 });
+  if (o.fleche) cone(B.at('plain', x, z), x, z, h * 1.42, y0 + yb, y0 + o.fleche, { col: o.toit || ARDOISE, seg: 4, a0: Math.atan2(uz, ux) + Math.PI / 4 });
+  app.landmarks.push({ x, z, top: y0 + (o.fleche || yb) });
+  return y0 + (o.fleche || yb);
+}
+// Colonne : socle, fût, statue.
+function colonne(app, B, x, z, r, h, col, statue) {
+  const y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), bp = B.at('plain', x, z);
+  box(bs, { cx: x, cz: z, ux: 1, uz: 0, hl: r * 2.2, hw: r * 2.2 }, y0 - 0.5, y0 + h * 0.12, { col: PIERRE });
+  cyl(bp, x, z, r, y0 + h * 0.12, y0 + h * 0.9, { col, seg: 12, r1: r * 0.88, s0: 0.85 });
+  box(bp, { cx: x, cz: z, ux: 1, uz: 0, hl: r * 1.25, hw: r * 1.25 }, y0 + h * 0.9, y0 + h * 0.93, { col });
+  cyl(bp, x, z, r * 0.5, y0 + h * 0.93, y0 + h, { col: statue, seg: 6, r1: r * 0.18 });
+  app.foot.push({ ring: [[x - r * 2.2, z - r * 2.2], [x + r * 2.2, z - r * 2.2], [x + r * 2.2, z + r * 2.2], [x - r * 2.2, z + r * 2.2]], top: y0 + h });
+  return y0 + h;
+}
+const reserver = (V, x, z, d = 5) => V.reserves.push({ ring: [[x - d, z - d], [x + d, z - d], [x + d, z + d], [x - d, z + d]], x0: x - d, z0: z - d, x1: x + d, z1: z + d });
+
+// Arc de triomphe de l'Étoile : 45 m de large, 22 m d'épaisseur, 50 m de haut ; la grande arche a 29 m sous clef.
+function arc(app, B) {
+  const V = app.v89, A = [-3988, -2306], C = [-4003, -2276], cx = (A[0] + C[0]) / 2, cz = (A[1] + C[1]) / 2, d = Math.hypot(C[0] - A[0], C[1] - A[1]), lx = (C[0] - A[0]) / d, lz = (C[1] - A[1]) / d, dx = -lz, dz = lx;
+  const y0 = app.terrain.height(cx, cz), bs = B.at('stone', cx, cz), W = 22.4, E = 11.1, a = 7.3, HA = 29.2, HT = 49.5, col = PIERRE_BLANCHE;
+  reserver(V, A[0], A[1], 6); reserver(V, C[0], C[1], 6);
+  for (const s of [-1, 1]) { const px = cx + lx * s * (a + (W - a) / 2), pz = cz + lz * s * (a + (W - a) / 2), hl = (W - a) / 2;
+    box(bs, { cx: px, cz: pz, ux: lx, uz: lz, hl, hw: E }, y0 - 1, y0 + 36.5, { col, s0: 0.82 });
+    app.foot.push({ ring: [[px - lx * hl - dx * E, pz - lz * hl - dz * E], [px + lx * hl - dx * E, pz + lz * hl - dz * E], [px + lx * hl + dx * E, pz + lz * hl + dz * E], [px - lx * hl + dx * E, pz - lz * hl + dz * E]], top: y0 + HT }); }
+  box(bs, { cx, cz, ux: lx, uz: lz, hl: W + 0.8, hw: E + 0.8 }, y0 + 36.5, y0 + 38.6, { col, s0: 0.9 });           // corniche
+  box(bs, { cx, cz, ux: lx, uz: lz, hl: W, hw: E }, y0 + 38.6, y0 + HT, { col, s0: 0.92 });                        // attique
+  box(bs, { cx, cz, ux: lx, uz: lz, hl: a, hw: E }, y0 + HA, y0 + 36.5, { col, s0: 0.9 });                         // au-dessus de la clef
+  // la voûte : tympans des deux faces et intrados, en huit claveaux (chaque face est doublée : elle se voit des deux côtés)
+  const N = 8, P = (s, e) => [cx + lx * s + dx * e, cz + lz * s + dz * e], deux = (p, q, r2, t, sh) => { bs.quad(p[0], p[2], p[1], q[0], q[2], q[1], r2[0], r2[2], r2[1], t[0], t[2], t[1], 0, 0, 1, 1, col, sh, sh); bs.quad(q[0], q[2], q[1], p[0], p[2], p[1], t[0], t[2], t[1], r2[0], r2[2], r2[1], 0, 0, 1, 1, col, sh, sh); };
+  for (let k = 0; k < N; k++) {
+    const t0 = (k / N) * Math.PI, t1 = ((k + 1) / N) * Math.PI, s0 = -a * Math.cos(t0), s1 = -a * Math.cos(t1), ya = y0 + HA - a + a * Math.sin(t0), yb = y0 + HA - a + a * Math.sin(t1);
+    for (const e of [-E, E]) { const p = P(s0, e), q = P(s1, e); deux([p[0], p[1], ya], [q[0], q[1], yb], [q[0], q[1], y0 + HA], [p[0], p[1], y0 + HA], 0.86); }
+    const p = P(s0, -E), q = P(s1, -E), p2 = P(s0, E), q2 = P(s1, E); deux([p[0], p[1], ya], [q[0], q[1], yb], [q2[0], q2[1], yb], [p2[0], p2[1], ya], 0.62);
+  }
+  app.monuments.Arc = { x: cx, z: cz, top: y0 + HT + 8 };
+}
+
+// Sacré-Cœur en 1889 : la crypte est achevée, les murs de la nef montent dans leurs échafaudages ; ni dôme ni campanile.
+function sacreCoeur(app, B) {
+  const V = app.v89, x = -504, z = -3712, y0 = app.terrain.height(x, z), bp = B.at('plain', x, z), bs = bp, col = PIERRE_BLANCHE;      // pierre de Château-Landon, très blanche
+  V.reserves.push({ ring: [[x - 40, z - 52], [x + 40, z - 52], [x + 40, z + 52], [x - 40, z + 52]], x0: x - 40, z0: z - 52, x1: x + 40, z1: z + 52 });
+  box(bs, { cx: x, cz: z, ux: 0, uz: 1, hl: 40, hw: 17 }, y0 - 4, y0 + 24, { col, s0: 0.8 });                      // nef et chœur
+  box(bs, { cx: x, cz: z - 4, ux: 1, uz: 0, hl: 29, hw: 12 }, y0 - 4, y0 + 22, { col, s0: 0.8 });                  // transept
+  cyl(bs, x, z - 40, 17, y0 - 4, y0 + 19, { col, seg: 16, s0: 0.8 });                                                // chevet
+  cyl(bs, x, z - 4, 11.5, y0 + 24, y0 + 31, { col, seg: 16, s0: 0.9 });                                              // amorce du tambour
+  // échafaudages : perches et moises de bois tout autour, une chèvre de levage au sommet
+  const R = [[x - 19, z - 42], [x + 19, z - 42], [x + 19, z + 42], [x - 19, z + 42]];
+  for (let k = 0; k < 4; k++) { const p = R[k], q = R[(k + 1) % 4], L = Math.hypot(q[0] - p[0], q[1] - p[1]), ux = (q[0] - p[0]) / L, uz = (q[1] - p[1]) / L, n = Math.round(L / 6.5);
+    for (let i = 0; i < n; i++) box(bp, { cx: p[0] + (ux * L * i) / n, cz: p[1] + (uz * L * i) / n, ux, uz, hl: 0.2, hw: 0.2 }, y0 - 3, y0 + 30, { col: BOIS, s0: 0.8 });
+    for (const y of [7, 14, 21, 28]) box(bp, { cx: (p[0] + q[0]) / 2, cz: (p[1] + q[1]) / 2, ux, uz, hl: L / 2, hw: 0.16 }, y0 + y, y0 + y + 0.4, { col: BOIS }); }
+  box(bp, { cx: x, cz: z - 4, ux: 1, uz: 0, hl: 0.3, hw: 0.3 }, y0 + 31, y0 + 44, { col: BOIS }); box(bp, { cx: x + 5, cz: z - 4, ux: 1, uz: 0, hl: 6, hw: 0.22 }, y0 + 43.4, y0 + 44, { col: BOIS });
+  app.foot.push({ ring: [[x - 19, z - 42], [x + 19, z - 42], [x + 19, z + 42], [x - 19, z + 42]], top: y0 + 31 });
+  app.monuments.SacreCoeur = { x, z, top: y0 + 52 };
+}
+
+export function batirMonuments(app, B) {
+  const V = app.v89, M = app.monuments, T = app.terrain, H = (x, z) => T.height(x, z);
+  // ---- dôme des Invalides : l'église carrée, deux étages de tambour, la coupole dorée (107 m). Son tambour est dans les données : il est remplacé.
+  { const x = -2736, z = -235, y0 = H(x, z), bs = B.at('stone', x, z);
+    reserver(V, x, z);
+    box(bs, { cx: x, cz: z, ux: 0.997, uz: 0.08, hl: 24, hw: 24 }, y0 - 1, y0 + 30, { col: PIERRE, s0: 0.84 });
+    cyl(bs, x, z, 15.5, y0 + 30, y0 + 46, { col: PIERRE, seg: 20, s0: 0.9 });
+    M.Invalides = { x, z, top: coupole(app, B, x, z, 13.4, 46, 59, 87, 99, 107, OR, { fleche: OR, lanterne: OR }) }; }
+  // ---- dôme du Panthéon (83 m), sur son tambour à colonnade, lui aussi dans les données
+  { const x = -309, z = 736, y0 = H(x, z); reserver(V, x, z);
+    cyl(B.at('stone', x, z), x, z, 18.5, y0 - 1, y0 + 44, { col: PIERRE, seg: 20, s0: 0.86 });
+    M.Pantheon = { x, z, top: coupole(app, B, x, z, 14.5, 44, 58, 75, 80, 83, PLOMB) }; }
+  // ---- Opéra : coupole de cuivre de la salle, cage de scène et son comble
+  M.Opera = { x: -1337, z: -2084, top: coupole(app, B, -1337, -2084, 19, 28, 38, 50, 53, 56, CUIVRE, { fleche: OR }) };
+  { const ax = [0.309, 0.951], c = [-1341 - ax[0] * 30, -2095 - ax[1] * 30], y0 = H(c[0], c[1]);
+    box(B.at('stone', c[0], c[1]), { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 17, hw: 29 }, y0 + 28, y0 + 49, { col: PIERRE, s0: 0.9 });
+    cone(B.at('plain', c[0], c[1]), c[0], c[1], 33, y0 + 49, y0 + 57, { col: CUIVRE, seg: 4, a0: Math.atan2(ax[1], ax[0]) + Math.PI / 4 }); }
+  // ---- Institut : la coupole, au milieu de la façade du quai
+  { const R = repere(-952, -459, [0.438, 0.899], [-0.44, -0.9]); if (R) { const p = R.P(16); M.Institut = { x: p[0], z: p[1], top: coupole(app, B, p[0], p[1], 9.5, 18, 32, 41, 44, 46, PLOMB, { fleche: OR }) }; } }
+  // ---- Saint-Augustin : le dôme (80 m) au-dessus du chœur
+  { const R = repere(-2274, -2561, [0.423, 0.906], [0.4, 0.9]); if (R) { const p = R.P(R.L * 0.74); M.Augustin = { x: p[0], z: p[1], top: coupole(app, B, p[0], p[1], 11, 30, 55, 72, 77, 80, ARDOISE, { fleche: OR }) }; } }
+  // ---- Notre-Dame : les deux tours de la façade (69 m), la flèche de Viollet-le-Duc à la croisée (96 m)
+  { const R = repere(-49, -16, [0.899, 0.438], [-1, -0.4]);
+    if (R) { let top = 0; for (const s of [-1, 1]) { const p = R.P(7.2, s * 15.6); top = tour(app, B, p[0], p[1], R.f[0], R.f[1], 6.8, 0, 69, { baies: 43 }); }
+      const k = R.P(R.L * 0.6), y0 = H(k[0], k[1]), f = R.P(7.2);
+      cyl(B.at('plain', k[0], k[1]), k[0], k[1], 2.6, y0 + 40, y0 + 52, { col: PLOMB, seg: 8, r1: 2 }); cone(B.at('plain', k[0], k[1]), k[0], k[1], 2.3, y0 + 52, y0 + 96, { col: PLOMB, seg: 8 });
+      M.NotreDame = { x: f[0], z: f[1], top }; app.landmarks.push({ nom: 'fleche', x: k[0], z: k[1], top: y0 + 96 }); } }
+  // ---- tours de façade : Saint-Sulpice (73 et 68 m), la Trinité (65 m), Saint-Vincent-de-Paul (54 m)
+  { const R = repere(-1123, 213, [0.9986, -0.052], [-1, 0]); if (R) { const a = R.P(8, -21), b = R.P(8, 21); tour(app, B, a[0], a[1], R.f[0], R.f[1], 6.6, 0, 68, { baies: 44 }); M.Sulpice = { x: b[0], z: b[1], top: tour(app, B, b[0], b[1], R.f[0], R.f[1], 6.6, 0, 73, { baies: 46 }) }; } }
+  { const R = repere(-1371, -2680, [0.276, 0.961], [0.3, 1]); if (R) { const p = R.P(6); M.Trinite = { x: p[0], z: p[1], top: tour(app, B, p[0], p[1], R.f[0], R.f[1], 5, 0, 52, { baies: 34, fleche: 65, toit: PLOMB }) }; } }
+  { const R = repere(118, -2870, [0.174, -0.985], [-0.17, 0.985]); if (R) for (const s of [-1, 1]) { const p = R.P(6, s * 12.8); tour(app, B, p[0], p[1], R.f[0], R.f[1], 4.6, 0, 54, { baies: 36 }); } }
+  // ---- colonnes et obélisque
+  M.Vendome = { x: -1512, z: -1596, top: colonne(app, B, -1512, -1596, 1.9, 44, BRONZE, BRONZE) };
+  M.Juillet = { x: 1355, z: -25, top: colonne(app, B, 1355, -25, 2, 50, BRONZE, OR) };
+  { const x = -2108, z = -1387, y0 = H(x, z), bp = B.at('plain', x, z); box(B.at('stone', x, z), { cx: x, cz: z, ux: 1, uz: 0, hl: 2.4, hw: 2.4 }, y0 - 0.5, y0 + 4.5, { col: PIERRE });
+    cyl(bp, x, z, 1.7, y0 + 4.5, y0 + 26, { col: GRANIT, seg: 4, r1: 1.05, s0: 0.9 }); cone(bp, x, z, 1.05, y0 + 26, y0 + 27.6, { col: OR, seg: 4 });
+    app.foot.push({ ring: [[x - 2.4, z - 2.4], [x + 2.4, z - 2.4], [x + 2.4, z + 2.4], [x - 2.4, z + 2.4]], top: y0 + 27.6 }); M.Obelisque = { x, z, top: y0 + 27.6 }; }
+  arc(app, B);
+  sacreCoeur(app, B);
+}
