@@ -3,7 +3,7 @@ import { initUI89 } from '../p1789/ui.js';
 import { bootEmbed, tell } from '../embed.js';
 import { MONDE_1889 } from './monde.js';
 import { CATS, makePlaces } from './places.js';
-import { CREDITS, COMPTE } from './data.js';
+import { CREDITS, COMPTE, FER } from './data.js';
 import { DATE, ETAPES, FIN } from './tour.js';
 
 bootEmbed('1889');                                   // s'annonce à la page d'accueil, si elle héberge cette maquette
@@ -18,6 +18,7 @@ const UI = {
     ['Îlots, rues et enceinte', `${CREDITS.ilots}. ${CREDITS.rues} : l’état est celui de 1900, onze ans après l’Exposition.`],
     ['Seine, canaux, jardins', `${CREDITS.eau}. ${CREDITS.parcs}.`],
     ['Relief', CREDITS.relief],
+    ['Voies ferrées', `${CREDITS.fer}. ${n(Math.round(FER.a))} km de voies d’aujourd’hui sont gardés, sur les emprises de 1889 ; ${n(Math.round(FER.r + FER.e))} km sont restitués ou évoqués, là où la ligne a disparu.`],
   ],
 };
 // Le curseur du chantier : la tour (et les palais) à la date choisie, du 1er janvier 1887 au 6 mai 1889.

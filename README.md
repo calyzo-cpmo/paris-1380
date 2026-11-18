@@ -15,8 +15,8 @@ arènes sur la colline de la rive gauche, l'île et ses deux ponts de bois, un f
 la restitution de Théodore Vacquer.
 
 Une quatrième page, **Paris 1889**, montre tout Paris dans l'enceinte de Thiers l'année de l'Exposition universelle :
-près de quatre-vingt mille bâtiments, et un curseur de date qui fait monter la tour Eiffel et les palais du
-Champ-de-Mars, de janvier 1887 au 6 mai 1889.
+près de quatre-vingt mille bâtiments, neuf gares et leurs voies ferrées, et un curseur de date qui fait monter la tour
+Eiffel et les palais du Champ-de-Mars, de janvier 1887 au 6 mai 1889.
 
 Une **page d'accueil** héberge les quatre maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
 « Lutèce », « 1380 », « 1789 » ou « 1889 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
@@ -185,8 +185,28 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   de la largeur de la voie. Trente-neuf mille arbres d'alignement bordent les boulevards, les avenues et les quais
   (voies de 24 m et plus : une évocation ; les places restent minérales). La Seine coule entre des murs de quai ; une
   trentaine de ponts, chacun bâti d'une rive à l'autre quel que soit le découpage de la base de 1900.
-- **Ce qui manque encore** : l'Hôtel-Dieu, les gares et les voies ferrées, les ports bas de la Seine, la banlieue ; les
-  autres édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
+- **Chemins de fer** : 580 km de voies, posées sur le sol avec leur ballast, leurs traverses et leurs rails. Aucune base
+  ne donne les voies de 1889 ; elles sont recomposées comme le bâti, et chaque voie garde la trace de ce qui la
+  justifie : **actuelle** (546 km : voies d'aujourd'hui, d'après l'APUR, posées sur une emprise du chemin de fer qui
+  existait en 1889 — faisceaux des six grandes gares, ligne de Sceaux, Petite Ceinture, embranchement du Champ-de-Mars ;
+  le métro, le tramway et les lignes ouvertes depuis sont écartés), **restituée** (5 km : ligne déposée, tracée dans
+  l'axe de l'emprise qui subsiste — Petite Ceinture, ligne d'Auteuil le long du boulevard Pereire), **évoquée** (31 km :
+  tracé le long des rues de 1900 que la ligne longeait — ligne d'Auteuil de la porte Maillot au viaduc du
+  Point-du-Jour, Petite Ceinture le long des rues Leibniz et Belliard, ligne de Vincennes sur le viaduc de l'avenue
+  Daumesnil puis vers Bel-Air, arrivée à l'ancienne gare Montparnasse, gare du Champ-de-Mars). Les viaducs portent leurs
+  voies en hauteur, sur des arches de convention ; le viaduc d'Auteuil franchit la Seine au-dessus de la route.
+- **Gares** : neuf gares bâties au bout de leurs voies — Saint-Lazare (rebâtie de 1885 à 1889, avec l'hôtel Terminus),
+  Nord, Est (la seule moitié ouest de la gare d'aujourd'hui), Lyon (l'embarcadère de 1855), Orléans, Montparnasse (la
+  gare de 1852, face à la rue de Rennes, voies à l'étage), la Bastille, Sceaux et la gare du Champ-de-Mars bâtie pour
+  l'Exposition. La portée et la longueur des grandes halles sont celles du temps ; façades, pavillons et hauteurs sont
+  une évocation.
+- **Ce qu'il faut savoir des chemins de fer** : les faisceaux d'aujourd'hui sont souvent plus larges que ceux de 1889,
+  dans Paris comme au-delà des fortifications ; les tranchées ne sont pas creusées (les voies y sont posées au niveau
+  du sol, et croisent les rues à niveau) ; les souterrains de Belleville, de Charonne et de Montsouris ne sont pas
+  tracés, ni le raccordement de Courcelles ; les stations de la Petite Ceinture et les gares de marchandises ne sont
+  pas modelées ; il n'y a pas de trains.
+- **Ce qui manque encore** : l'Hôtel-Dieu, les ports bas de la Seine, la banlieue ; les autres édifices publics sont
+  rendus par leur seul volume. La maquette vise l'ordinateur et la
   tablette ; sur téléphone, les toits sont simplifiés.
 
 ## Sources
@@ -261,10 +281,11 @@ tools/fetch_alpage.py        télécharge les vingt et une couches GeoPackage du
 tools/extract_epochs.py      GeoPackage → data/epoques.json (recalage sur la maquette, simplification, codage compact)
 tools/extract_1789.py        GeoPackage → data/paris1789.json (même recalage, relief en grille, repères projetés en Lambert-93)
 tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, géométries WKB)
-data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, disparu, évoqué), îlots et rues de 1900, eau, jardins, relief (ODbL 1.0)
+data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, disparu, évoqué), îlots et rues de 1900, eau, jardins, relief, voies ferrées (actuelles, restituées, évoquées) (ODbL 1.0)
 tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
 tools/extract_1889.py        recompose la ville de 1889 à partir de ces sources et de l'atlas de Vasserot
-tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, tour et chantier, curseur, repères, téléphone
+tools/fer_1889.py            voies ferrées de 1889 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
+tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, chemins de fer et gares, tour et chantier, curseur, repères, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
@@ -337,6 +358,8 @@ src/p1889/data.js            accès aux données de Paris 1889 ; repère de l'Ex
 src/p1889/sol.js             sol peint : banlieue, zone et talus de l'enceinte, îlots, jardins, canaux ; carte de distance de la voirie
 src/p1889/bati.js            bâtiments légers : un mur par côté, comble brisé ou toit à croupes
 src/p1889/ville.js           bâti de toute la ville, enceinte, murs de quai et ponts de la Seine, arbres, trame des passants
+src/p1889/fer.js             voies ferrées : rubans de ballast, de traverses et de rails, viaducs et ponts du chemin de fer, ballast peint au sol
+src/p1889/gares.js           les neuf gares de 1889 : halles vitrées, bâtiments des voyageurs, pavillons
 src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, étages, échafaudages, grues, date
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
 src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier, Halles, palais de l'Industrie

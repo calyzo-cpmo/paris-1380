@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { rues, ilots } from './data.js';
 import { trottoir } from './sol.js';
+import { ilotsFerres } from './fer.js';
 import { pointInPoly, polyArea } from '../geom.js';
 
 const PAS = 10, BORD = 1.3, RANG = 4.2, PORTEE = 46, TUILE = 1100;
@@ -28,9 +29,10 @@ export function planter(app) {
     return Math.max(0, (((d[q] * (1 - u) + d[q + 1] * u) * (1 - v) + (d[q + G.w] * (1 - u) + d[q + G.w + 1] * u) * v) / 255 - 0.5) * 2 * V.D); };
   // terre-pleins et promenades plantées, rangés par cases de 150 m ; les places et les abords des monuments restent nus
   const CASE = 150, cases = new Map(), monuments = Object.values(app.monuments).filter((m) => m && m.x != null);
-  for (const i of ilots()) { if (i.c !== 'p') continue; const r = i.rings[0]; let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of r) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); }
-    const o = { r, x0, z0, x1, z1, nu: /^Place\b/i.test(i.nom) || Math.abs(polyArea(r)) < 150 || monuments.some((m) => m.x >= x0 - 60 && m.x <= x1 + 60 && m.z >= z0 - 60 && m.z <= z1 + 60 && (pointInPoly(m.x, m.z, r) || r.some((p) => Math.hypot(p[0] - m.x, p[1] - m.z) < 60))) };      // le terre-plein d'une place est souvent en plusieurs morceaux autour du monument
-    for (let a = Math.floor(x0 / CASE); a <= Math.floor(x1 / CASE); a++) for (let b = Math.floor(z0 / CASE); b <= Math.floor(z1 / CASE); b++) { const k = a * 4096 + b; let l = cases.get(k); if (!l) cases.set(k, (l = [])); l.push(o); } }
+  const ferres = ilotsFerres();                                                                                                   // cours de gares, faisceaux : pas des terre-pleins
+  ilots().forEach((i, rang) => { if (i.c !== 'p') return; const r = i.rings[0]; let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of r) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); }
+    const o = { r, x0, z0, x1, z1, nu: ferres.has(rang) || /^Place\b/i.test(i.nom) || Math.abs(polyArea(r)) < 150 || monuments.some((m) => m.x >= x0 - 60 && m.x <= x1 + 60 && m.z >= z0 - 60 && m.z <= z1 + 60 && (pointInPoly(m.x, m.z, r) || r.some((p) => Math.hypot(p[0] - m.x, p[1] - m.z) < 60))) };      // le terre-plein d'une place est souvent en plusieurs morceaux autour du monument
+    for (let a = Math.floor(x0 / CASE); a <= Math.floor(x1 / CASE); a++) for (let b = Math.floor(z0 / CASE); b <= Math.floor(z1 / CASE); b++) { const k = a * 4096 + b; let l = cases.get(k); if (!l) cases.set(k, (l = [])); l.push(o); } });
   const terrePlein = (x, z) => { const l = cases.get(Math.floor(x / CASE) * 4096 + Math.floor(z / CASE)); if (l) for (const o of l) if (x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1 && pointInPoly(x, z, o.r)) return o; return null; };
   // places : les voies nommées « place », « parvis », « rond-point »… ne sont pas plantées, ni, à moins d'une
   // trentaine de mètres d'elles, les rues qui les traversent
@@ -41,7 +43,7 @@ export function planter(app) {
   let n = 0;
   const poser = (x, z, surTerrePlein) => {
     const k = cle(x, z); if (vus.has(k) || vus.has(k + 1) || vus.has(k - 1) || vus.has(k + 8192) || vus.has(k - 8192)) return;      // un boulevard à deux chaussées est décrit deux fois
-    if ((!surTerrePlein && sd(x, z) < 0.8) || T.wetAt(x, z) > 0.05 || app.footAt(x, z) || placeEn(x, z)) return;
+    if ((!surTerrePlein && sd(x, z) < 0.8) || T.wetAt(x, z) > 0.05 || app.footAt(x, z) || placeEn(x, z) || app.v89.fer.pres(x, z, 2.8)) return;      // ni dans l'eau, ni dans un mur, ni sur une place, ni sur une voie ferrée
     vus.add(k); const t = Math.floor(x / TUILE) * 64 + Math.floor(z / TUILE); let l = tuiles.get(t); if (!l) tuiles.set(t, (l = [])); l.push(x, T.height(x, z), z); n++;
   };
   for (const r of rues()) {

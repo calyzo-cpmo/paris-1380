@@ -1,5 +1,5 @@
 // Test fonctionnel de la page « Paris 1889 » (le test lit l'image : l'avertissement du pilote sur cette lecture est ignoré) : charge la page, vérifie la ville recomposée (bâti, Seine, ponts,
-// enceinte), la tour et son chantier (curseur de date, échafaudages, palais), les repères, la marche à pied, l'heure,
+// enceinte), les chemins de fer et les gares, la tour et son chantier (curseur de date, échafaudages, palais), les repères, la marche à pied, l'heure,
 // la frise, les sources, le téléphone et l'absence d'erreurs.
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -53,6 +53,25 @@ check('trottoirs : leur largeur suit celle de la voie (carte des demi-largeurs, 
 check('cadre : tout Paris dans l’enceinte de Thiers (plus de 12 km d’ouest en est)', v.cadre.x1 - v.cadre.x0 > 12000 && v.cadre.z1 - v.cadre.z0 > 9000, JSON.stringify(v.cadre));
 check('jardins et passants', v.arbres > 5000 && v.passants > 1000 && v.nav > 1e6, JSON.stringify([v.arbres, v.passants]));
 
+// ---------- chemins de fer et gares
+const fe = await page.evaluate(() => { const a = window.__app, V = a.v89, F = V.fer, T = a.terrain, M = a.monuments, E = F.echantillon, A = V.alignements;
+  const G = ['GareNord', 'GareEst', 'GareLazare', 'GareLyon', 'GareOrleans', 'GareMontparnasse', 'GareBastille', 'GareSceaux', 'GareChampDeMars'];
+  const plan = a.plan.wide.getContext('2d', { willReadFrequently: true }), R = a.plan.rectWide, px = (x, z) => [...plan.getImageData(Math.round(((x - R.x) / R.w) * a.plan.wide.width), Math.round(((z - R.z) / R.h) * a.plan.wide.height), 1, 1).data].slice(0, 3);
+  return { n: F.n, km: Math.round(F.km), tris: F.tris, viaduc: F.viaduc, surEau: F.surEau, noyes: F.noyes, statuts: F.statuts, e: E.length,
+    sousSol: E.filter((p) => p[1] < T.land(p[0], p[2]) + 0.2).length, daumesnil: E.filter((p) => p[3] > 6 && p[0] > 1500 && p[0] < 2600 && p[2] > 300).length, auteuil: E.filter((p) => p[3] > 6 && p[0] < -5800).length,
+    lignes: { ceinture: F.pres(-218, -4932, 25), auteuil: F.pres(-5648, -1348, 25), vincennes: F.pres(3050, 1254, 25), montparnasse: F.pres(-2085, 1196, 25), champDeMars: F.pres(-4418, -316, 25), sceaux: F.pres(-1064, 2722, 60), nord: F.pres(480, -3600, 60), lyon: F.pres(2200, 1350, 80) },
+    ecartees: { metro6: F.pres(-3905, 361, 40), metro2: F.pres(1437, -2963, 40), rouelle: F.pres(-5080, -93, 40), belleville: F.pres(2650, -2500, 60), invalides: F.pres(-2760, -1040, 60) },
+    gares: G.map((k) => (M[k] ? Math.round(M[k].top - T.height(M[k].x, M[k].z)) : -1)), murs: G.map((k) => !!(M[k] && a.footAt(M[k].x, M[k].z))), reels: G.filter((k) => M[k] && (a.footAt(M[k].x, M[k].z) || {}).reel).length,
+    quai: G.map((k) => (M[k] ? F.pres(M[k].butoirs[0] + M[k].axe[0] * 60, M[k].butoirs[1] + M[k].axe[1] * 60, 30) : false)),
+    arbres: A.tous().filter((p) => F.pres(p[0], p[1], 2.2)).length, viaducs: a.foot.filter((f) => f.fer).length, cour: px(430, -3150), meshes: a.batiMeshes.length }; });
+check('voies ferrées : près de six cents kilomètres de voies posées sur le sol, aucune sous terre ni sous l’eau', fe.n > 4000 && fe.km > 500 && fe.km < 650 && fe.tris < 260000 && fe.e > 500 && fe.sousSol === 0 && fe.noyes === 0, JSON.stringify([fe.n, fe.km, fe.tris, fe.sousSol, fe.noyes]));
+check('voies ferrées : chaque voie dit d’où vient son tracé — voies d’aujourd’hui, lignes restituées, lignes évoquées', fe.statuts.a > 400 && fe.statuts.r > 2 && fe.statuts.e > 20 && fe.statuts.e < 60, JSON.stringify(fe.statuts));
+check('lignes de 1889 : Petite Ceinture, ligne d’Auteuil, ligne de Vincennes, arrivée à l’ancienne gare Montparnasse, embranchement du Champ-de-Mars, ligne de Sceaux, grandes lignes', Object.values(fe.lignes).every(Boolean), JSON.stringify(fe.lignes));
+check('lignes écartées : ni le métro aérien, ni le pont Rouelle (1900), ni la ligne des Invalides ; rien dans le souterrain de Belleville', Object.values(fe.ecartees).every((v) => !v), JSON.stringify(fe.ecartees));
+check('viaducs : la ligne de Vincennes le long de l’avenue Daumesnil et le viaduc d’Auteuil portent leurs voies en hauteur, on ne les traverse pas à pied ; les voies franchissent la Seine', fe.viaduc > 6000 && fe.viaduc < 16000 && fe.daumesnil >= 3 && fe.auteuil >= 2 && fe.viaducs > 300 && fe.surEau > 150, JSON.stringify([fe.viaduc, fe.daumesnil, fe.auteuil, fe.viaducs, fe.surEau]));
+check('gares : neuf gares bâties au bout de leurs voies (Nord, Est, Saint-Lazare, Lyon, Orléans, Montparnasse, Bastille, Sceaux, Champ-de-Mars), à la place des volumes des données', fe.gares.every((h) => h > 14 && h < 60) && fe.murs.every(Boolean) && fe.quai.every(Boolean) && fe.reels === 0, JSON.stringify([fe.gares, fe.murs, fe.quai, fe.reels]));
+check('emprises du chemin de fer : la cour de la gare du Nord n’est plus une pelouse, aucun arbre d’alignement sur une voie', fe.cour[1] - fe.cour[0] < 6 && fe.arbres === 0, JSON.stringify([fe.cour, fe.arbres]));
+
 // ---------- la tour et son chantier
 const ch = await page.evaluate(([j1, j2, j3, fin]) => { const a = window.__app, V = a.v89, out = {}, etat = () => ({ h: +V.chantier.hauteur.toFixed(1), vus: V.mobiles.filter((m) => m.visible).length });
   out.n = V.mobiles.length; out.top = +(a.monuments.Tour.top - a.terrain.height(-4039.4, -604.3)).toFixed(1);
@@ -96,7 +115,7 @@ check('curseur : la lecture repart de 1887, avance, puis s’arrête à l’ouve
 
 // ---------- repères, fiche, sources
 const lx = await page.evaluate(() => { const a = window.__app, P = a.ui.places; return { n: P.length, noms: P.map((p) => p.name), cats: [...new Set(P.map((p) => p.cat))].length, hors: P.filter((p) => p.x < a.monde.cadre.x0 || p.x > a.monde.cadre.x1 || p.z < a.monde.cadre.z0 || p.z > a.monde.cadre.z1).length }; });
-check('repères : la tour, les palais de l’Exposition, le Trocadéro, l’enceinte et les monuments de la ville', lx.n >= 32 && lx.hors === 0 && lx.cats >= 4 && ['Tour de 300 mètres', 'Galerie des machines', 'Dôme central', 'Palais du Trocadéro', 'Pont d’Iéna', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur, en chantier', 'Colonne Vendôme', 'Halles centrales', 'Palais de l’Industrie'].every((n) => lx.noms.includes(n)), `${lx.n} lieux`);
+check('repères : la tour, les palais de l’Exposition, le Trocadéro, l’enceinte, les gares et les monuments de la ville', lx.n >= 42 && lx.hors === 0 && lx.cats >= 4 && ['Gare Saint-Lazare', 'Gare du Nord', 'Gare de l’Est', 'Gare de Lyon', 'Gare d’Orléans', 'Gare Montparnasse', 'Gare de la Bastille', 'Gare de Sceaux', 'Gare du Champ-de-Mars', 'Petite Ceinture', 'Viaduc d’Auteuil', 'Viaduc de la ligne de Vincennes', 'Tour de 300 mètres', 'Galerie des machines', 'Dôme central', 'Palais du Trocadéro', 'Pont d’Iéna', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur, en chantier', 'Colonne Vendôme', 'Halles centrales', 'Palais de l’Industrie'].every((n) => lx.noms.includes(n)), `${lx.n} lieux`);
 await page.click('#btn-places');
 await page.fill('#place-search', 'machines');
 const liste = await page.evaluate(() => [...document.querySelectorAll('#place-list button, #place-list li')].map((b) => b.textContent).filter((t) => /machines/i.test(t)).length);
@@ -107,7 +126,7 @@ check('fiche : la tour, ses dates et ses chiffres', fiche.vu && /Tour de 300 mè
 await page.evaluate(() => window.__app.ui.select(null));
 await page.click('#btn-sources');
 const src = await page.evaluate(() => { const d = document.getElementById('sources'); return { vu: !d.hidden, n: d.querySelectorAll('#sources-list li').length, t: d.textContent }; });
-check('sources : APUR, base « Paris 1900 », atlas de Vasserot, IGN ; ce qui est réel et ce qui est évoqué', src.vu && src.n === 5 && /Atelier parisien d’urbanisme/.test(src.t) && /Paris 1900/.test(src.t) && /Vasserot/.test(src.t) && /IGN/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t), `${src.n} sources`);
+check('sources : APUR, base « Paris 1900 », atlas de Vasserot, IGN, voies ferrées ; ce qui est réel et ce qui est évoqué', src.vu && src.n === 6 && /Voies ferrées/.test(src.t) && /Chemins de fer/.test(src.t) && /Gares :/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /Paris 1900/.test(src.t) && /Vasserot/.test(src.t) && /IGN/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t), `${src.n} sources`);
 await page.click('#sources [data-close="sources"]');
 
 // ---------- heure, marche, frise

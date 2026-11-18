@@ -15,6 +15,8 @@ trace de ce qui le justifie (champ `s`) :
                 garde de bâtiments anciens. Sans elles, les arrondissements extérieurs — peuplés autant qu'aujourd'hui
                 en 1889, mais presque entièrement rebâtis depuis — paraîtraient vides.
 Îlots et rues sont ceux de la base « Paris 1900 » (onze ans plus tard) ; son pourtour dessine l'enceinte de Thiers.
+Les voies ferrées sont recomposées de la même façon (tools/fer_1889.py) : voies d'aujourd'hui sur les emprises de
+1889, lignes déposées restituées dans l'axe de leur emprise ou évoquées le long des rues qu'elles longeaient.
 
 Sources (tools/fetch_1889.py les télécharge) : APUR, données ouvertes, ODbL 1.0 ; base « Paris 1900 — les îlots, les
 voies et les adresses », Projets Time Machine, ODbL 1.0, DOI 10.34847/nkl.cbf5ecd0 ; Atlas de Vasserot © ALPAGE, ODbL
@@ -25,6 +27,7 @@ import glob, json, math, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import extract_epochs as X
+import fer_1889 as FER
 
 SRC = os.path.join(HERE, '..', 'data', 'source', '1889')
 OUT = os.path.join(HERE, '..', 'data', 'paris1889.json')
@@ -217,6 +220,44 @@ def main():
     for rings in parcs + cim: gp.boite(boite(rings[0]), rings)
     def au_jardin(x, z): return any(dans_poly(rings, x, z) for rings in gp.en(x, z))
 
+    # ---------------------------------------------------------------- Seine, canaux, lacs
+    eau, types = [], ''
+    for f in json.load(open(os.path.join(SRC, 'plan_eau_000000.json')))['features']:
+        at = f['attributes']; t = at.get('c_type')
+        if at.get('b_souterrain') != 'N' or t not in (1, 2, 4, 5, 11): continue
+        for rings in polys_de(anneaux_esri(f.get('geometry')), 1.2, 4000.0 if t == 2 else 300.0, 300.0):
+            r = rings[0]; bb = boite(r)
+            if bb[2] < cadre[0] or bb[0] > cadre[2] or bb[3] < cadre[1] or bb[1] > cadre[3]: continue
+            eau.append(rings); types += 'S' if t == 1 else 'c' if t in (4, 5, 11) else 'l'
+    data['eau'] = {'q': 1, 'g': X.enc_polys(eau, 1), 'n': len(eau), 't': types, 'credit': 'Seine, canaux et lacs : APUR (tracé actuel, peu différent de celui de 1889)'}
+    print('eau :', len(eau), 'polygones', {k: types.count(k) for k in 'Scl'})
+
+    # ---------------------------------------------------------------- voies ferrées de 1889
+    gs = Grille(200)
+    for rings, t in zip(eau, types):
+        if t == 'S': gs.boite(boite(rings[0]), rings)
+    def sur_seine(x, z): return any(dans_poly(r, x, z) for r in gs.en(x, z))
+    voies = FER.extraire(SRC, T, X, cadre, equip, anneaux_esri, [{'rings': i['rings'], 'c': code(i)} for i in ilots], sur_seine)
+    kmf = {k: round(sum(FER.longueur(v['pts']) for v in voies if v['s'] == k) / 1000, 1) for k in 'are'}
+    data['fer'] = {'q': 2, 'g': X.enc_lines([v['pts'] for v in voies], 2), 'n': len(voies), 's': ''.join(v['s'] for v in voies),
+                   'h': {str(k): [round(h * 10) for h in v['h']] for k, v in enumerate(voies) if v['h']}, 'km': kmf,
+                   'credit': 'Voies ferrées : tracé actuel des voies (Atelier parisien d’urbanisme, données ouvertes) sur les emprises du chemin de fer de 1889 ; lignes déposées restituées d’après les emprises qui subsistent (APUR) et les îlots de la base « Paris 1900 »'}
+    data['meta']['fer'] = kmf
+    print('voies ferrées de 1889 :', len(voies), 'voies,', kmf, 'km ;', sum(len(v['pts']) for v in voies), 'points ;', len(data['fer']['g']) // 1024, 'Ko')
+    gt = Grille(40)                                                      # points des voies de 1889, tous les 5 m
+    for v in voies:
+        for q in FER.pas_a_pas(v['pts'], 5.0): gt.point(q[0], q[1], q)
+    def sur_voie(b, d=5.0):
+        """Une voie de 1889 traverse-t-elle l'emprise du bâtiment, ou la frôle-t-elle à moins de d mètres ?"""
+        bb = b['bb']; r = b['rings'][0]; vus = set()
+        for i in range(int((bb[0] - d) // 40), int((bb[2] + d) // 40) + 1):
+            for k in range(int((bb[1] - d) // 40), int((bb[3] + d) // 40) + 1):
+                for q in gt.c.get((i, k), ()):
+                    if q in vus or q[0] < bb[0] - d or q[0] > bb[2] + d or q[1] < bb[1] - d or q[1] > bb[3] + d: continue
+                    vus.add(q)
+                    if dans(r, q[0], q[1]) or any(FER.dseg(q[0], q[1], r[j], r[(j + 1) % len(r)]) < d for j in range(len(r))): return True
+        return False
+
     # ---------------------------------------------------------------- emprise de l'Exposition : le Champ-de-Mars de 1889
     # Il allait alors de l'avenue de La Bourdonnais à l'avenue de Suffren (ses bords n'ont été lotis qu'après 1900).
     # Repère de l'Exposition : origine au centre de la tour, u vers l'École militaire, v vers l'avenue de Suffren.
@@ -348,7 +389,8 @@ def main():
         for b in V:
             hs = [o['h'] for o in gc.autour(b['c'][0], b['c'][1], 100) if o['st'] == 'R' and o['h'] > 3 and math.hypot(o['c'][0] - b['c'][0], o['c'][1] - b['c'][1]) < 100]
             b['h'] = min(mediane(hs) or 13.0, 19.0) * (0.75 if b['aire'] < 60 else 1.0)
-    print('  disparus, d’après Vasserot :', len(V), 'sur', len(vieux) if os.path.exists(P1789) else 0, '; écartés des îlots refondus ou tenus par un édifice public :', refondus)
+    n0 = len(V); V = [b for b in V if not sur_voie(b)]                  # une maison de l'atlas n'était plus là où passe le chemin de fer
+    print('  disparus, d’après Vasserot :', len(V), 'sur', len(vieux) if os.path.exists(P1789) else 0, '; écartés des îlots refondus ou tenus par un édifice public :', refondus, '; écartés des voies ferrées :', n0 - len(V))
 
     # ---- bâtiments évoqués : hors de l'atlas, là où le bâtiment actuel est postérieur à 1889 dans un quartier déjà bâti
     gV = Grille(60)
@@ -362,7 +404,9 @@ def main():
         i = ilot_en(x, z)
         if not i or not i['bati'] or i['fortif']: continue
         E.append({**b, 'st': 'E', 'h': min(b['h'] if b['h'] > 3 else 12.0, (b.get('hv') or 15.0) + 1.5), 'toit': b.get('tv') or 4, 'sur': None})
-    print('  évoqués sur emprise actuelle :', len(E))
+    n0 = len(E); E = [b for b in E if not sur_voie(b)]
+    print('  évoqués sur emprise actuelle :', len(E), '; écartés des voies ferrées :', n0 - len(E))
+    print('  bâtiments réels ou probables que touche une voie de 1889 (halles des gares, bâtiments des voyageurs) :', sum(1 for b in B if b['st'] in 'RP' and sur_voie(b, 0.5)))
 
     # ---- maisons évoquées le long des rues de 1900, là où rien d'autre ne parle
     pose = [b for b in B if b['st'] in 'RP'] + V + E
@@ -380,6 +424,8 @@ def main():
                 for a, b in zip(pts, pts[1:]):
                     n = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 10))
                     for k in range(n + 1): gr.point(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, (a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n))
+    for v in voies:                                                      # et les voies de 1889 qui n'existent plus
+        for q in FER.pas_a_pas(v['pts'], 10.0): gr.point(q[0], q[1], q)
     def sur_rails(x, z): return any(math.hypot(q[0] - x, q[1] - z) < 15 for q in gr.autour(x, z, 15))
     def hasard(*v):
         h = 2166136261
@@ -443,19 +489,6 @@ def main():
     cpt = {k: sum(1 for b in tout if b['st'] == k) for k in 'RPVEG'}
     data['meta']['bati'] = cpt
     print('bâti de 1889 :', len(tout), cpt, ';', sum(len(r) for b in tout for r in b['rings']), 'sommets ;', len(data['bati']['g']) // 1024, 'Ko ; emprise', round(sum(b['aire'] for b in tout) / 1e4), 'ha')
-
-    # ---------------------------------------------------------------- eau, jardins, cimetières, lieux
-    eau, types = [], ''
-    for f in json.load(open(os.path.join(SRC, 'plan_eau_000000.json')))['features']:
-        at = f['attributes']; t = at.get('c_type')
-        if at.get('b_souterrain') != 'N' or t not in (1, 2, 4, 5, 11): continue
-        for rings in polys_de(anneaux_esri(f.get('geometry')), 1.2, 4000.0 if t == 2 else 300.0, 300.0):
-            r = rings[0]; bb = boite(r)
-            if bb[2] < cadre[0] or bb[0] > cadre[2] or bb[3] < cadre[1] or bb[1] > cadre[3]: continue
-            eau.append(rings); types += 'S' if t == 1 else 'c' if t in (4, 5, 11) else 'l'
-    data['eau'] = {'q': 1, 'g': X.enc_polys(eau, 1), 'n': len(eau), 't': types, 'credit': 'Seine, canaux et lacs : APUR (tracé actuel, peu différent de celui de 1889)'}
-    print('eau :', len(eau), 'polygones', {k: types.count(k) for k in 'Scl'})
-
 
     # ---------------------------------------------------------------- relief : RGE ALTI, ramené à la grille de la maquette
     rp = os.path.join(SRC, 'relief_ign.json')
