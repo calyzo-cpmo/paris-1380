@@ -113,6 +113,43 @@ export class Terrain89 {
     }
   }
 
+  // Ports bas : bandes de terre ferme abaissées au niveau `niveau` (m au-dessus de l'eau) entre le bord de l'eau et un
+  // mur de quai en retrait. bandes : [{ P, Q, mP, mQ, w0, w1, fin0, fin1 }] — le bord de l'eau de P à Q, les normales
+  // vers la terre en P et en Q, la largeur du port en P et en Q, les bouts où il s'arrête. Le maillage du sol est abaissé
+  // jusqu'à `marge` mètres au-delà du mur (la pente qui remonte au quai haut reste derrière lui, sous le dallage) ; le sol
+  // où l'on marche et où l'on bâtit ne l'est que devant le mur. Chaque case du masque retient la bande qui la couvre.
+  abaisser(bandes, niveau, marge = 2.5) {
+    const { W, H } = this, c = this.cadre, idx = new Int32Array(W * H), score = new Float32Array(W * H), M = marge + 2.9;
+    const quad = (b, eau, terre, bout) => { const ux = b.Q[0] - b.P[0], uz = b.Q[1] - b.P[1], L = Math.hypot(ux, uz) || 1, ex = (ux / L) * bout, ez = (uz / L) * bout;
+      return [[b.P[0] - b.mP[0] * eau - ex, b.P[1] - b.mP[1] * eau - ez], [b.Q[0] - b.mQ[0] * eau + ex, b.Q[1] - b.mQ[1] * eau + ez], [b.Q[0] + b.mQ[0] * (b.w1 + terre) + ex, b.Q[1] + b.mQ[1] * (b.w1 + terre) + ez], [b.P[0] + b.mP[0] * (b.w0 + terre) - ex, b.P[1] + b.mP[1] * (b.w0 + terre) - ez]]; };
+    bandes.forEach((b, j) => {
+      b.quad = quad(b, 7, 0, 0); b.j = j;
+      const r = quad(b, 7, M, 3), cx = (b.P[0] + b.Q[0]) / 2 + ((b.mP[0] + b.mQ[0]) * (b.w0 + b.w1)) / 8, cz = (b.P[1] + b.Q[1]) / 2 + ((b.mP[1] + b.mQ[1]) * (b.w0 + b.w1)) / 8;
+      const i0 = clamp(Math.floor((Math.min(...r.map((p) => p[0])) - c.x0) / CELL), 0, W - 1), i1 = clamp(Math.floor((Math.max(...r.map((p) => p[0])) - c.x0) / CELL), 0, W - 1);
+      const k0 = clamp(Math.floor((Math.min(...r.map((p) => p[1])) - c.z0) / CELL), 0, H - 1), k1 = clamp(Math.floor((Math.max(...r.map((p) => p[1])) - c.z0) / CELL), 0, H - 1);
+      for (let k = k0; k <= k1; k++) for (let i = i0; i <= i1; i++) {
+        const x = c.x0 + (i + 0.5) * CELL, z = c.z0 + (k + 0.5) * CELL; if (!pointInPoly(x, z, r)) continue;
+        const q = k * W + i, sc = Math.hypot(x - cx, z - cz); if (!idx[q] || sc < score[q]) { idx[q] = j + 1; score[q] = sc; }
+      }
+    });
+    this.bas = idx; this.bandes = bandes; this.niveauBas = niveau;
+  }
+  // Le point est-il sur un port bas, devant le mur du quai haut ? (la bande de la case, ou l'une de ses voisines)
+  estBas(x, z) {
+    if (!this.bas || !this.inside(x, z)) return false;
+    const j = this.bas[this.cell(x, z)]; if (!j) return false;
+    const B = this.bandes, b = B[j - 1];
+    if (pointInPoly(x, z, b.quad)) return true;
+    for (let k = 1; k <= 3; k++) { const p = B[j - 1 - k], n = B[j - 1 + k]; if (!b.fin0 && p && pointInPoly(x, z, p.quad)) return true; if (!b.fin1 && n && pointInPoly(x, z, n.quad)) return true; }
+    return false;
+  }
+  // Une case du maillage (25 m) touche-t-elle un port bas ? Elle est alors affinée comme les rives.
+  affine(cx, cz) {
+    if (!this.bas) return false;
+    for (const [a, b] of [[0, 0], [12, 0], [-12, 0], [0, 12], [0, -12], [12, 12], [-12, -12], [12, -12], [-12, 12]]) if (this.inside(cx + a, cz + b) && this.bas[this.cell(cx + a, cz + b)]) return true;
+    return false;
+  }
+
   // Part des quais maçonnés en x (0 : berge en pente ; 1 : quai), nulle si la ville n'a pas de quais.
   qk(x) { const q = this.quais; return q ? smoothstep(q.x0 - 60, q.x0 + 60, x) * (1 - smoothstep(q.x1 - 60, q.x1 + 60, x)) : 0; }
 
@@ -173,14 +210,15 @@ export class Terrain89 {
   // plus bas, pour disparaître derrière le mur ; le maillage (5 m) ne peut pas tracer l'arête : un dallage la recouvre.
   raw(x, z) {
     if (this.sunk && this.inside(x, z) && this.sunk[this.cell(x, z)]) return FOND - 3.3;
-    const l = this.land(x, z), w = this.wetAt(x, z);
+    let l = this.land(x, z); const w = this.wetAt(x, z);
+    if (this.bas && this.inside(x, z) && this.bas[this.cell(x, z)]) l = Math.min(l, this.niveauBas);
     if (w <= 0.3) return l;
     const k = this.qk(x);
     return l + (FOND - 3.3 * k - l) * smoothstep(0.3 + 0.04 * k, 0.74 - 0.22 * k, w);
   }
 
   // Sol où l'on marche et où l'on bâtit : sur les quais et les ponts de la ville, le niveau du nivellement jusqu'au mur.
-  height(x, z) { return this.qk(x) > 0.5 && this.dry(x, z) ? this.land(x, z) : this.raw(x, z); }
+  height(x, z) { return this.qk(x) > 0.5 && this.dry(x, z) ? (this.bas && this.estBas(x, z) ? Math.min(this.land(x, z), this.niveauBas) : this.land(x, z)) : this.raw(x, z); }
 
   // Sur la terre ferme des quais, la pente est celle du nivellement : le maillage, qui plonge sous le dallage, reçoit
   // ainsi le même éclairage que lui et ne s'en distingue pas là où les deux surfaces se confondent.

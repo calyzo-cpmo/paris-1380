@@ -10,7 +10,7 @@ import { bati, ilots } from './data.js';
 const PIERRE = rgb(226, 214, 190), PIERRE_BLANCHE = rgb(238, 232, 220), PLOMB = rgb(128, 136, 142), OR = rgb(226, 188, 96), CUIVRE = rgb(118, 152, 134), BRONZE = rgb(74, 84, 72), BOIS = rgb(190, 156, 110), GRANIT = rgb(196, 150, 132), ARDOISE = rgb(84, 92, 106);
 
 // Coupole : tambour de pierre, calotte en six assises, lanternon et flèche. Cotes en mètres au-dessus du sol.
-function coupole(app, B, x, z, r, yTambour0, yTambour1, yDome, yLanterne, yFleche, col, o = {}) {
+export function coupole(app, B, x, z, r, yTambour0, yTambour1, yDome, yLanterne, yFleche, col, o = {}) {
   const y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), bp = B.at('plain', x, z), N = 6, seg = o.seg || 20, rd = r * (o.debord || 1.02);
   cyl(bs, x, z, r, y0 + yTambour0, y0 + yTambour1, { col: o.pierre || PIERRE, seg, s0: 0.82 });
   for (let k = 0; k < N; k++) {
@@ -22,11 +22,12 @@ function coupole(app, B, x, z, r, yTambour0, yTambour1, yDome, yLanterne, yFlech
   app.landmarks.push({ x, z, top: y0 + yFleche });
   return y0 + yFleche;
 }
-// Emprise du bâtiment qui couvre le point (la plus vaste) et repère le long de son axe, façade du côté `vers` :
-// P(recul, travers) rend le point situé à `recul` mètres en arrière de la façade et à `travers` mètres de l'axe.
-function repere(x, z, ax, vers) {
+// Emprise du bâtiment qui couvre le point (la plus vaste, parmi celles que retient `filtre`) et repère le long de son
+// axe, façade du côté `vers` : P(recul, travers) rend le point situé à `recul` mètres en arrière de la façade et à
+// `travers` mètres de l'axe.
+export function repere(x, z, ax, vers, filtre) {
   let ring = null, A = 0;
-  for (const e of bati()) { const r = e.rings[0]; if (pointInPoly(x, z, r)) { const a = Math.abs(polyArea(r)); if (a > A) { A = a; ring = r; } } }
+  for (const e of bati()) { const r = e.rings[0]; if ((!filtre || filtre(e)) && pointInPoly(x, z, r)) { const a = Math.abs(polyArea(r)); if (a > A) { A = a; ring = r; } } }
   if (!ring) return null;
   const s = ax[0] * vers[0] + ax[1] * vers[1] < 0 ? -1 : 1, fx = ax[0] * s, fz = ax[1] * s, nx = -fz, nz = fx;
   let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
@@ -36,7 +37,7 @@ function repere(x, z, ax, vers) {
 }
 // Tour carrée de demi-côté h, de la cote ya à yb ; o.baies : cote où commence l'étage du beffroi, à hautes baies ;
 // o.fleche : cote du sommet d'une flèche.
-function tour(app, B, x, z, ux, uz, h, ya, yb, o = {}) {
+export function tour(app, B, x, z, ux, uz, h, ya, yb, o = {}) {
   const y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), col = o.col || PIERRE;
   if (o.baies) {
     box(bs, { cx: x, cz: z, ux, uz, hl: h, hw: h }, y0 + ya, y0 + o.baies, { col, s0: 0.84 });
@@ -65,7 +66,7 @@ function ancre(V, x, z, rayon = 30) {
   for (const e of bati()) { const r = e.rings[0]; if (e.h < 25 || Math.abs(polyArea(r)) > 320) continue; let cx = 0, cz = 0; for (const p of r) { cx += p[0]; cz += p[1]; } cx /= r.length; cz /= r.length; const d = Math.hypot(cx - x, cz - z); if (d < rayon && (!best || d < best.d)) best = { d, x: cx, z: cz }; }
   const c = best ? [best.x, best.z] : [x, z]; reserver(V, c[0], c[1], 6); return c;
 }
-const reserver = (V, x, z, d = 5) => V.reserves.push({ ring: [[x - d, z - d], [x + d, z - d], [x + d, z + d], [x - d, z + d]], x0: x - d, z0: z - d, x1: x + d, z1: z + d });
+export const reserver = (V, x, z, d = 5) => V.reserves.push({ ring: [[x - d, z - d], [x + d, z - d], [x + d, z + d], [x - d, z + d]], x0: x - d, z0: z - d, x1: x + d, z1: z + d });
 
 // Arc de triomphe de l'Étoile : 45 m de large, 22 m d'épaisseur, 50 m de haut ; la grande arche a 29 m sous clef.
 function arc(app, B) {

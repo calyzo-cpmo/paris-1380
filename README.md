@@ -178,6 +178,13 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   Saint-Vincent-de-Paul, colonnes Vendôme et de Juillet, obélisque), l'Arc de triomphe est bâti entier, le Sacré-Cœur
   est montré en chantier. Les passants sont en costumes de 1889 : blouse bleue, redingote et haut-de-forme, canotier,
   robe à tournure, fantassin en pantalon garance.
+- **Édifices publics** : l'Hôtel-Dieu, rebâti de 1866 à 1877 au nord du parvis, occupe tout son îlot de 1900 — corps
+  sur le parvis et sur le quai, pavillons de malades de part et d'autre d'une cour-jardin à galeries, chapelle au fond ;
+  les maisons que l'atlas de Vasserot dessinait là sont écartées. Les autres édifices gardent le volume des données, et
+  reçoivent leur silhouette : campanile et combles d'angle de l'Hôtel de Ville, tour de l'Horloge et tours rondes de la
+  Conciergerie (aux places de la maquette de 1380), flèche de la Sainte-Chapelle (75 m), tour Saint-Jacques (52 m),
+  dômes du Val-de-Grâce, de la Sorbonne et de Saint-Paul (aux cotes de la page de 1789), flèches de Sainte-Clotilde
+  (69 m), portes Saint-Denis et Saint-Martin, que les données donnent comme des bâtiments à leur place exacte.
 - **Disparus depuis** : les dix pavillons des Halles de Baltard, chacun sur son îlot de 1900, et le palais de
   l'Industrie le long des Champs-Élysées (le Grand et le Petit Palais, de 1900, sont écartés).
 - **Rues et quais** : la rue est l'espace laissé libre par les îlots de 1900 ; le sol y dessine trottoirs, bordures et
@@ -185,6 +192,12 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   de la largeur de la voie. Trente-neuf mille arbres d'alignement bordent les boulevards, les avenues et les quais
   (voies de 24 m et plus : une évocation ; les places restent minérales). La Seine coule entre des murs de quai ; une
   trentaine de ponts, chacun bâti d'une rive à l'autre quel que soit le découpage de la base de 1900.
+- **Ports bas** : une quinzaine de kilomètres de ports, deux mètres au-dessus de l'eau, au pied du mur du quai haut.
+  Ils sont tirés de la base de 1900, qui nomme leurs voies (« Port Saint-Nicolas », « Port de la Tournelle »…) : là où
+  une telle voie longe la rive, le port va du bord de l'eau à deux fois la distance de la voie, sans entamer la rue du
+  quai haut ; il est écarté le long des voies ferrées et sur l'Exposition. Le terrain y est abaissé, un mur à parapet
+  le sépare du quai haut, un mur en travers le ferme à chaque bout ; les ponts vont d'un quai haut à l'autre, par-dessus.
+  Largeur et niveau sont des conventions ; les rampes ne sont pas figurées (on descend sur un port par un double-clic).
 - **Chemins de fer** : 580 km de voies, posées sur le sol avec leur ballast, leurs traverses et leurs rails. Aucune base
   ne donne les voies de 1889 ; elles sont recomposées comme le bâti, et chaque voie garde la trace de ce qui la
   justifie : **actuelle** (546 km : voies d'aujourd'hui, d'après l'APUR, posées sur une emprise du chemin de fer qui
@@ -205,8 +218,8 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   du sol, et croisent les rues à niveau) ; les souterrains de Belleville, de Charonne et de Montsouris ne sont pas
   tracés, ni le raccordement de Courcelles ; les stations de la Petite Ceinture et les gares de marchandises ne sont
   pas modelées ; il n'y a pas de trains.
-- **Ce qui manque encore** : l'Hôtel-Dieu, les ports bas de la Seine, la banlieue ; les autres édifices publics sont
-  rendus par leur seul volume. La maquette vise l'ordinateur et la
+- **Ce qui manque encore** : les rampes et la vie des ports, les pavillons de l'esplanade des Invalides, la banlieue ;
+  les autres églises et édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
   tablette ; sur téléphone, les toits sont simplifiés.
 
 ## Sources
@@ -285,7 +298,7 @@ data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, dis
 tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
 tools/extract_1889.py        recompose la ville de 1889 à partir de ces sources et de l'atlas de Vasserot
 tools/fer_1889.py            voies ferrées de 1889 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
-tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, chemins de fer et gares, tour et chantier, curseur, repères, téléphone
+tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, tour et chantier, curseur, repères, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
@@ -330,7 +343,7 @@ src/layout.js                mise en page commune (hauteur réelle de la barre d
 src/ui.js, controls.js       interface et caméra
 src/body1789.html            page Paris 1789 (mêmes styles que la première)
 src/p1789/data.js            accès aux données de 1789
-src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan, sol des quais
+src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan, sol des quais, ports bas abaissés (1889)
 src/p1789/textures.js        façades de la fin du XVIIIe siècle, brisis à lucarnes, nefs classiques, flancs de pont à arches
 src/p1789/blocks.js          teintes, façades à travées, corps de bâtiment, combles (brisés, en bâtière, à croupes), souches
 src/p1789/eglises.js         Notre-Dame, églises gothiques et clochers, bâtis avec src/cathedral.js et src/stonework.js
@@ -360,6 +373,9 @@ src/p1889/bati.js            bâtiments légers : un mur par côté, comble bris
 src/p1889/ville.js           bâti de toute la ville, enceinte, murs de quai et ponts de la Seine, arbres, trame des passants
 src/p1889/fer.js             voies ferrées : rubans de ballast, de traverses et de rails, viaducs et ponts du chemin de fer, ballast peint au sol
 src/p1889/gares.js           les neuf gares de 1889 : halles vitrées, bâtiments des voyageurs, pavillons
+src/p1889/corps.js           corps de bâtiment communs aux gares et aux édifices : repère local, murs, combles, pavillons, frontons
+src/p1889/edifices.js        Hôtel-Dieu ; silhouettes de l'Hôtel de Ville, du Palais, de la Sainte-Chapelle, de la tour Saint-Jacques, des dômes, de Sainte-Clotilde, des portes Saint-Denis et Saint-Martin
+src/p1889/ports.js           rives de la Seine chaînées, ports bas tirés des voies « Port … » de la base de 1900
 src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, étages, échafaudages, grues, date
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
 src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier, Halles, palais de l'Industrie
