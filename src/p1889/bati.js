@@ -75,6 +75,12 @@ export function maison(app, B, e, id, pres) {
     top = eave + BRISIS_H;
     versants(B.at('comble', c[0], c[1]), outer, q, eave, top, 0, 1, tint(0xffffff, 0.86 + hash(id, 23) * 0.22), 1, 1);
     dalle(B.at('plain', c[0], c[1]), q, holes, top, ZINCS[Math.floor(hash(id, 31) * ZINCS.length)]);
+    // souches : une ou deux, aux angles du terrasson, le long de ses côtés (src/p1889/souches.js)
+    if (app.souches && q.length >= 4) for (let s = 0, n = P > 44 ? 2 : 1; s < n; s++) {
+      const i = Math.floor(hash(id, 51 + s) * q.length), a = q[i], b = q[(i + 1) % q.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 2.5) continue;
+      const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, hl = Math.min(L * 0.3, 0.45 + hash(id, 53 + s) * 0.4), x = a[0] + ux * (hl + 0.3) - uz * 0.5, z = a[1] + uz * (hl + 0.3) + ux * 0.5;
+      app.souches.ajouter(x, z, top - 0.3, top + 1 + hash(id, 55 + s) * 0.8, ux, uz, hl, Math.floor(hash(id, 57 + s) * 5));
+    }
   } else if (q) {
     const d = Math.max(0.7, Math.min(4.2, (0.82 * A) / P)), rise = d * (0.62 + hash(id, 24) * 0.2), tuile = e.h < 11 && hash(id, 26) < 0.55, rc = tuile ? TUILES_[Math.floor(hash(id, 22) * TUILES_.length)] : ARDOISES[Math.floor(hash(id, 21) * ARDOISES.length)];
     top = eave + rise;

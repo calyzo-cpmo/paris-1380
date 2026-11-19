@@ -8,7 +8,7 @@ attesté, restitué ou conjectural, et frise des époques qui superpose à la ma
 
 Une seconde page, **Paris 1789**, montre la ville à la veille de la Révolution, dans le mur des Fermiers généraux :
 plus de vingt mille bâtiments dressés d'après leur emprise réelle, la Seine, le relief, une cinquantaine de repères,
-le survol et la promenade à pied.
+le survol, une visite guidée et la promenade à pied.
 
 Une troisième page, **Lutèce**, montre la ville gallo-romaine vers 250 : le forum, les deux thermes, le théâtre et les
 arènes sur la colline de la rive gauche, l'île et ses deux ponts de bois, un fleuve plus large qu'aujourd'hui, d'après
@@ -16,7 +16,9 @@ la restitution de Théodore Vacquer.
 
 Une quatrième page, **Paris 1889**, montre tout Paris dans l'enceinte de Thiers l'année de l'Exposition universelle :
 près de quatre-vingt mille bâtiments, neuf gares et leurs voies ferrées, et un curseur de date qui fait monter la tour
-Eiffel et les palais du Champ-de-Mars, de janvier 1887 au 6 mai 1889.
+Eiffel et les palais du Champ-de-Mars, de janvier 1887 au 6 mai 1889 ; un calque dit d'où vient chaque maison.
+
+Les trois dernières ont chacune leur visite guidée (quinze étapes en 1789, douze pour Lutèce, quatorze en 1889).
 
 Une **page d'accueil** héberge les quatre maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
 « Lutèce », « 1380 », « 1789 » ou « 1889 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
@@ -25,6 +27,7 @@ et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent 
 **Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889. Les quatre adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html` et `dist/1889.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` (les cinq fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
+**Projet de jeu :** le cadrage d'un « mode classe » (séance animée par un enseignant, sans compte) est dans [`CADRAGE-JEU.md`](CADRAGE-JEU.md) ; rien n'en est encore construit.
 
 ## Ce que montre la maquette
 
@@ -100,8 +103,10 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   gilet, habit et tricorne, tablier d'artisan, gardes-françaises, abbés, robes à l'anglaise, fichus et bonnets),
   cavaliers et charrettes dans les rues de la ville dense ; 53 repères avec une courte notice ; le nom de la rue où l'on se trouve, tiré du plan de
   Verniquet (1 194 noms, dans leur graphie d'époque).
-- **Ce qu'on y fait** : survoler, descendre à pied par un double-clic ou depuis une fiche, régler l'heure (les
-  fenêtres s'éclairent la nuit), se repérer au mini-plan et à la boussole, partager une vue par son adresse.
+- **Ce qu'on y fait** : survoler, suivre la visite guidée — « Paris en 1789 », de la Cité à la Bastille, en quinze
+  étapes —, descendre à pied par un double-clic ou depuis une fiche, régler l'heure (les fenêtres s'éclairent la nuit),
+  se repérer au mini-plan et à la boussole, partager une vue par son adresse. Les étiquettes ne se chevauchent pas :
+  quand deux noms se gêneraient, le moins important se réduit à sa pastille.
 - **D'où viennent les données** (toutes du SIG ALPAGE, licence ODbL 1.0) :
 
 | Élément | Couche et crédit | Date du relevé |
@@ -128,10 +133,13 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
     maisons le long des rues ;
   - les monuments sont placés et orientés d'après les données (emprise donnée par l'atlas, enclos qu'il nomme,
     coordonnées géographiques) et dimensionnés d'après ce que l'on sait de chaque édifice ; leur détail est une
-    évocation, et la hauteur des clochers est conventionnelle. Trois édifices hors de l'atlas ne sont pas encore
-    modelés (Salpêtrière, Gobelins, Saint-Lazare) et leur fiche le dit ;
+    évocation, et la hauteur des clochers est conventionnelle. Trois établissements des faubourgs que l'atlas ne couvre
+    pas — la Salpêtrière et sa chapelle à dôme, les Gobelins, la maison Saint-Lazare — sont évoqués, placés par leurs
+    coordonnées et orientés sur la rue la plus proche, et leur fiche le dit ;
+  - hors du mur, une douzaine de moulins à vent couronnent la butte Montmartre ; le nivellement de Girard ne couvrant
+    pas la butte, ils sont posés à plat autour de son sommet, en nombre et à des places de convention ;
   - les habitants sont une évocation ; ils ne circulent que dans la ville dense (5 × 4,2 km autour du centre) ;
-  - il n'y a pas encore de parcours commentés ni d'intérieurs ;
+  - il n'y a pas encore d'intérieurs ;
   - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
 
 ## Lutèce — la troisième maquette
@@ -154,6 +162,8 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
     cultures ; le pilier des Nautes et les tombeaux de la route du sud sont placés par convention ;
   - décalage de date : le relief est moderne. Près des rives et dans les îles, le sol a été rabattu pour retrouver
     des berges basses ; les grands édifices sont posés sur des terrasses de niveau.
+- **Visite guidée** : « Lutèce vers 250 », douze étapes, de l'île et du pont de bois au forum, aux thermes, au théâtre et
+  aux arènes, du matin au soir.
 - **Technique** : la page réutilise l'application de Paris 1789, à laquelle la ville est fournie comme un « monde »
   (cadre, terrain, sol peint, construction, habitants). Elle ne transporte que ses propres données : 810 Ko, une ville
   bâtie en quelques secondes, cinquante mille triangles.
@@ -164,6 +174,9 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   79 000 bâtiments, la Seine et une quarantaine de ponts, les canaux, les jardins, les bastions de l'enceinte, le
   relief des collines. Sur le Champ-de-Mars, la tour de 300 mètres, la Galerie des machines, le Dôme central, les
   palais des Beaux-Arts et des Arts libéraux ; en face, le palais du Trocadéro de 1878.
+- **Visite guidée et origine du bâti** : « Paris en 1889 », quatorze étapes de l'Exposition au cœur de la ville. Le
+  bouton « Origine du bâti » teinte chaque maison selon ce qui la justifie — réelle, probable, disparue, évoquée (voir
+  ci-dessous) — ; les monuments, les gares, les édifices et l'Exposition, modelés à part, gardent leur couleur.
 - **La tour se monte** : un curseur de date va du 1er janvier 1887 au 6 mai 1889. Fondations, piles inclinées sur leurs
   échafaudages de bois, jonction du premier étage (7 décembre 1887), deuxième étage (14 août 1888), sommet
   (31 mars 1889) ; les palais s'élèvent en même temps. Un bouton fait défiler tout le chantier en 45 secondes.
@@ -178,6 +191,13 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   Saint-Vincent-de-Paul, colonnes Vendôme et de Juillet, obélisque), l'Arc de triomphe est bâti entier, le Sacré-Cœur
   est montré en chantier. Les passants sont en costumes de 1889 : blouse bleue, redingote et haut-de-forme, canotier,
   robe à tournure, fantassin en pantalon garance.
+- **Édifices publics** : l'Hôtel-Dieu, rebâti de 1866 à 1877 au nord du parvis, occupe tout son îlot de 1900 — corps
+  sur le parvis et sur le quai, pavillons de malades de part et d'autre d'une cour-jardin à galeries, chapelle au fond ;
+  les maisons que l'atlas de Vasserot dessinait là sont écartées. Les autres édifices gardent le volume des données, et
+  reçoivent leur silhouette : campanile et combles d'angle de l'Hôtel de Ville, tour de l'Horloge et tours rondes de la
+  Conciergerie (aux places de la maquette de 1380), flèche de la Sainte-Chapelle (75 m), tour Saint-Jacques (52 m),
+  dômes du Val-de-Grâce, de la Sorbonne et de Saint-Paul (aux cotes de la page de 1789), flèches de Sainte-Clotilde
+  (69 m), portes Saint-Denis et Saint-Martin, que les données donnent comme des bâtiments à leur place exacte.
 - **Disparus depuis** : les dix pavillons des Halles de Baltard, chacun sur son îlot de 1900, et le palais de
   l'Industrie le long des Champs-Élysées (le Grand et le Petit Palais, de 1900, sont écartés).
 - **Rues et quais** : la rue est l'espace laissé libre par les îlots de 1900 ; le sol y dessine trottoirs, bordures et
@@ -185,6 +205,18 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   de la largeur de la voie. Trente-neuf mille arbres d'alignement bordent les boulevards, les avenues et les quais
   (voies de 24 m et plus : une évocation ; les places restent minérales). La Seine coule entre des murs de quai ; une
   trentaine de ponts, chacun bâti d'une rive à l'autre quel que soit le découpage de la base de 1900.
+- **La vie** : dix-huit trains — locomotive, tender, voitures — vont et viennent sur les plus longs parcours que forment
+  les voies raccordées bout à bout (de un à deux kilomètres et demi : les faisceaux et les aiguillages les arrêtent) ;
+  près de deux cents péniches sont amarrées le long des ports bas, huit vapeurs remontent et descendent la Seine. Sur
+  ordinateur, les combles brisés portent leurs souches de cheminée à mitres de terre cuite (plus de quatre-vingt mille),
+  montrées près de la caméra seulement. Les passants ne circulent qu'autour de l'Exposition. Trains et bateaux sont une
+  évocation : ni horaires ni lignes de navigation ne sont figurés.
+- **Ports bas** : une quinzaine de kilomètres de ports, deux mètres au-dessus de l'eau, au pied du mur du quai haut.
+  Ils sont tirés de la base de 1900, qui nomme leurs voies (« Port Saint-Nicolas », « Port de la Tournelle »…) : là où
+  une telle voie longe la rive, le port va du bord de l'eau à deux fois la distance de la voie, sans entamer la rue du
+  quai haut ; il est écarté le long des voies ferrées et sur l'Exposition. Le terrain y est abaissé, un mur à parapet
+  le sépare du quai haut, un mur en travers le ferme à chaque bout ; les ponts vont d'un quai haut à l'autre, par-dessus.
+  Largeur et niveau sont des conventions ; les rampes ne sont pas figurées (on descend sur un port par un double-clic).
 - **Chemins de fer** : 580 km de voies, posées sur le sol avec leur ballast, leurs traverses et leurs rails. Aucune base
   ne donne les voies de 1889 ; elles sont recomposées comme le bâti, et chaque voie garde la trace de ce qui la
   justifie : **actuelle** (546 km : voies d'aujourd'hui, d'après l'APUR, posées sur une emprise du chemin de fer qui
@@ -205,8 +237,8 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   du sol, et croisent les rues à niveau) ; les souterrains de Belleville, de Charonne et de Montsouris ne sont pas
   tracés, ni le raccordement de Courcelles ; les stations de la Petite Ceinture et les gares de marchandises ne sont
   pas modelées ; il n'y a pas de trains.
-- **Ce qui manque encore** : l'Hôtel-Dieu, les ports bas de la Seine, la banlieue ; les autres édifices publics sont
-  rendus par leur seul volume. La maquette vise l'ordinateur et la
+- **Ce qui manque encore** : les rampes et la vie des ports, les pavillons de l'esplanade des Invalides, la banlieue ;
+  les autres églises et édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
   tablette ; sur téléphone, les toits sont simplifiés.
 
 ## Sources
@@ -285,15 +317,17 @@ data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, dis
 tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
 tools/extract_1889.py        recompose la ville de 1889 à partir de ces sources et de l'atlas de Vasserot
 tools/fer_1889.py            voies ferrées de 1889 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
-tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, chemins de fer et gares, tour et chantier, curseur, repères, téléphone
+tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
-tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, marche à pied, heure, mini-plan, lien, sources, téléphone
-tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, marche à pied, heure, frise, sources, téléphone
+tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, établissements évoqués et moulins, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
+tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, visite guidée, marche à pied, heure, frise, sources, téléphone
 tools/test_accueil.mjs       test de la page d'accueil : hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
 tools/test_toits.mjs         contrôle géométrique des toits de 1789, sans navigateur : l'aire de chaque toit égale celle de son emprise, cours déduites
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
+tools/og.mjs                 images de partage (og:image) de chaque maquette, 1200 × 630, dans dist/og/
+.github/workflows/tests.yml  intégration continue : construction, pages de dist/ à jour, tests des cinq maquettes en parallèle
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/inshot.mjs, uishot.mjs captures des intérieurs et de l'interface
 tools/make_thumbs.py         vignettes des sources (réduction locale des images du domaine public)
@@ -330,7 +364,7 @@ src/layout.js                mise en page commune (hauteur réelle de la barre d
 src/ui.js, controls.js       interface et caméra
 src/body1789.html            page Paris 1789 (mêmes styles que la première)
 src/p1789/data.js            accès aux données de 1789
-src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan, sol des quais
+src/p1789/terrain.js         relief de Girard, Seine creusée d'après Verniquet et prolongée au-delà du plan, sol des quais, ports bas abaissés (1889)
 src/p1789/textures.js        façades de la fin du XVIIIe siècle, brisis à lucarnes, nefs classiques, flancs de pont à arches
 src/p1789/blocks.js          teintes, façades à travées, corps de bâtiment, combles (brisés, en bâtière, à croupes), souches
 src/p1789/eglises.js         Notre-Dame, églises gothiques et clochers, bâtis avec src/cathedral.js et src/stonework.js
@@ -339,7 +373,7 @@ src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots év
 src/p1789/monuments.js       tours, dômes, clochers et grands ensembles posés sur les emprises et les enclos de l'atlas
 src/p1789/figures.js         visages et costumes de 1789, choix du costume de chaque passant
 src/p1789/places.js          repères de 1789 et leurs notices
-src/p1789/app.js, ui.js      application et interface des pages Paris 1789 et Lutèce : la ville leur est fournie comme un « monde »
+src/p1789/app.js, ui.js      application et interface des pages Paris 1789, Lutèce et Paris 1889 : la ville leur est fournie comme un « monde » ; étiquettes sans chevauchement, mini-plan, visite guidée, calque facultatif
 src/p1789/monde.js           le monde de Paris 1789 : cadre, terrain et quais, sol peint, construction, habitants
 src/p1789/outils.js          outils communs aux deux villes : tracé sur le plan du sol, emprises infranchissables, arbres
 src/relief.js                décodage de la grille de relief
@@ -360,6 +394,16 @@ src/p1889/bati.js            bâtiments légers : un mur par côté, comble bris
 src/p1889/ville.js           bâti de toute la ville, enceinte, murs de quai et ponts de la Seine, arbres, trame des passants
 src/p1889/fer.js             voies ferrées : rubans de ballast, de traverses et de rails, viaducs et ponts du chemin de fer, ballast peint au sol
 src/p1889/gares.js           les neuf gares de 1889 : halles vitrées, bâtiments des voyageurs, pavillons
+src/p1889/corps.js           corps de bâtiment communs aux gares et aux édifices : repère local, murs, combles, pavillons, frontons
+src/p1889/edifices.js        Hôtel-Dieu ; silhouettes de l'Hôtel de Ville, du Palais, de la Sainte-Chapelle, de la tour Saint-Jacques, des dômes, de Sainte-Clotilde, des portes Saint-Denis et Saint-Martin
+src/p1889/ports.js           rives de la Seine chaînées, ports bas tirés des voies « Port … » de la base de 1900
+src/p1889/trains.js          trains : voies raccordées en parcours, locomotives, tenders et voitures qui vont et viennent
+src/p1889/bateaux.js         péniches amarrées aux ports bas, vapeurs sur la Seine
+src/p1889/souches.js         souches de cheminée des combles brisés, par carreaux de 500 m montrés près de la caméra
+src/p1889/statuts.js         calque « origine du bâti » : trame des emprises par statut, greffée sur les matières des maisons
+src/p1889/parcours.js        visite guidée de Paris 1889
+src/p1789/parcours.js        visite guidée de Paris 1789
+src/lutece/parcours.js       visite guidée de Lutèce
 src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, étages, échafaudages, grues, date
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
 src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier, Halles, palais de l'Industrie
@@ -379,7 +423,12 @@ npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
 npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html et dist/1889.html
 npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
+node tools/og.mjs # facultatif : refait les images de partage de dist/og/ (SITE_URL=… npm run build pour un autre domaine)
 ```
+
+À chaque envoi sur `main` et à chaque demande de fusion, GitHub Actions refait la construction, vérifie que les pages
+versionnées dans `dist/` sont bien celles que donnent les sources, puis lance les tests des cinq maquettes en parallèle
+(`.github/workflows/tests.yml`).
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),
 esbuild (outil de build). Toute la géométrie et toutes les textures sont générées par le code au chargement de la page.

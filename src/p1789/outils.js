@@ -6,8 +6,15 @@ import { mulberry32, pointInPoly } from '../geom.js';
 
 // T : { s (pixels par mètre), x(xMonde), y(zMonde) }.
 export const ring = (x, T, r) => { x.moveTo(T.x(r[0][0]), T.y(r[0][1])); for (let i = 1; i < r.length; i++) x.lineTo(T.x(r[i][0]), T.y(r[i][1])); x.closePath(); };
-export const fill = (x, T, polys, style) => { x.fillStyle = style; x.beginPath(); for (const rings of polys) for (const r of rings) ring(x, T, r); x.fill('evenodd'); };
-export const stroke = (x, T, polys, style, w) => { x.strokeStyle = style; x.lineWidth = w; x.lineJoin = 'round'; x.beginPath(); for (const rings of polys) for (const r of rings) ring(x, T, r); x.stroke(); };
+// Les polygones sont tracés par paquets de PAQUET : un seul tracé de plusieurs dizaines de milliers de contours coûte
+// des secondes au moteur de dessin, des paquets quelques dizaines de millisecondes. Un polygone et ses trous restent dans
+// le même paquet (règle pair-impair) ; deux polygones qui se recouvrent sont réunis plutôt qu'évidés.
+const PAQUET = 256;
+const parPaquets = (x, T, polys, faire) => { let n = 0; x.beginPath(); for (const rings of polys) { for (const r of rings) ring(x, T, r); if (++n === PAQUET) { faire(); x.beginPath(); n = 0; } } if (n) faire(); };
+export const fill = (x, T, polys, style) => { x.fillStyle = style; parPaquets(x, T, polys, () => x.fill('evenodd')); };
+export const stroke = (x, T, polys, style, w) => { x.strokeStyle = style; x.lineWidth = w; x.lineJoin = 'round'; parPaquets(x, T, polys, () => x.stroke()); };
+// Emprises pleines et cernées (trames d'obstacles) : f.ring pour chaque élément.
+export const pleins = (x, T, foot) => parPaquets(x, T, foot.map((f) => [f.ring]), () => { x.fill(); x.stroke(); });
 
 // Lignes ouvertes (rues, ruisseaux).
 export const lines = (x, T, ls, style, w) => { x.strokeStyle = style; x.lineWidth = w; x.lineJoin = 'round'; x.lineCap = 'round'; x.beginPath(); for (const l of ls) { x.moveTo(T.x(l[0][0]), T.y(l[0][1])); for (let i = 1; i < l.length; i++) x.lineTo(T.x(l[i][0]), T.y(l[i][1])); } x.stroke(); };

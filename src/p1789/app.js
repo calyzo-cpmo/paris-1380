@@ -86,7 +86,7 @@ export class App89 {
 
     await step(monde.etapes[1], 0.1);
     const fw = CADRE.x1 - CADRE.x0, fh = CADRE.z1 - CADRE.z0, bank = (cx, cz, d) => { let lo = 1, hi = 0; for (const [a, b] of [[0, 0], [d, 0], [-d, 0], [0, d], [0, -d]]) { const w = terrain.wetAt(cx + a, cz + b); if (w < lo) lo = w; if (w > hi) hi = w; } return hi > 0.03 && lo < 0.97; };
-    const core = buildGrid({ x0: CADRE.x0, z0: CADRE.z0, x1: CADRE.x1, z1: CADRE.z1, cell: 25, sub: 5, terrain: terrain.mesh, skirt: 14, fine: (cx, cz) => bank(cx, cz, 16), uv: (x, z) => [(x - CADRE.x0) / fw, 1 - (z - CADRE.z0) / fh] });
+    const core = buildGrid({ x0: CADRE.x0, z0: CADRE.z0, x1: CADRE.x1, z1: CADRE.z1, cell: 25, sub: 5, terrain: terrain.mesh, skirt: 14, fine: (cx, cz) => bank(cx, cz, 16) || terrain.affine(cx, cz), uv: (x, z) => [(x - CADRE.x0) / fw, 1 - (z - CADRE.z0) / fh] });
     const inside = (x, z) => Math.min(x - CADRE.x0, CADRE.x1 - x, z - CADRE.z0, CADRE.z1 - z);
     const outer = buildGrid({ x0: -LOIN, z0: -LOIN, x1: LOIN, z1: LOIN, cell: 320, sub: 8, terrain: terrain.mesh, fine: (cx, cz) => inside(cx, cz) < 0 && bank(cx, cz, 200), skip: (cx, cz) => inside(cx, cz) > 420, lower: (x, z) => 9 * smoothstep(0, 120, inside(x, z)), uv: (x, z) => [x / TUILE, -z / TUILE], skirt: 90 });
 
@@ -106,6 +106,7 @@ export class App89 {
     this.pave = { value: blank };
     let voirie = null;
     if (monde.voirie) { const v = monde.voirie(this, Math.min(gl, mobile ? 2048 : 4096)), t = new THREE.DataTexture(v.data, v.w, v.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; const l = new THREE.DataTexture(v.large.data, v.large.w, v.large.h, THREE.RedFormat); l.minFilter = l.magFilter = THREE.LinearFilter; l.unpackAlignment = 1; l.needsUpdate = true; voirie = { tex: t, large: l, cadre: CADRE, D: v.D }; this.voirie = v; }
+    this.log('sol peint (plan d’ensemble et toile fine), voirie');
     this.groundMat = makeGround89(wideTex, centreTex, detail, makeCobbleTexture(), this.pave, CENTRE_RECT, voirie);
     const coreMesh = new THREE.Mesh(core, this.groundMat), outerMesh = new THREE.Mesh(outer, makeGroundMaterial(fields, detail));
     coreMesh.receiveShadow = true; outerMesh.receiveShadow = true; coreMesh.matrixAutoUpdate = false; outerMesh.matrixAutoUpdate = false;
@@ -116,9 +117,12 @@ export class App89 {
     this.rig.goal = { ...monde.vue }; this.rig.cur = { ...this.rig.goal };
     this.navRect = CENTRE_RECT;
     await monde.construire(this, step);
+    this.log('ville construite');
     { const n = this.nav, src = this.pavage || n.data, px = new Uint8Array(n.w * n.h); for (let i = 0; i < px.length; i++) px[i] = src[i] ? 255 : 0;      // masque des pavés : la trame des voies, ou celle que la ville désigne (this.pavage)
       const t = new THREE.DataTexture(px, n.w, n.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; this.pave.value = t; }
+    this.log('trame des passants');
     this.people = new People(this, { nav: this.nav, ...monde.figures(mobile), noBeasts: true, groundCell: 3 });
+    this.log('passants');
     this.on('frame', (dt) => this.people.update(dt));
     // maisons, monuments, arbres et habitants vont dans un groupe que le passage d'une époque à l'autre enfonce dans
     // le sol ou dresse (setCityScale) ; le sol, le fleuve et ses quais restent en place

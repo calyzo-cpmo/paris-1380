@@ -29,7 +29,7 @@ const NOTES = {
   'Porte Saint-Denis': ['barriere', 'Arc de triomphe de 1672, sur les boulevards qui ont remplacé l’enceinte.'],
   'Porte Saint-Martin': ['barriere', 'Arc de triomphe de 1674.'],
   'Hôpital Saint-Louis': ['savoir', 'Fondé en 1607 pour isoler les malades de la peste.'],
-  'Saint-Lazare': ['eglise', 'Maison des Lazaristes, pillée le 13 juillet 1789.'],
+  'Saint-Lazare': ['eglise', 'Maison des Lazaristes, pillée le 13 juillet 1789. L’atlas ne couvre pas cet îlot : le cloître et l’église sont une évocation, placée par les coordonnées du lieu.'],
   'Invalides': ['pouvoir', 'Hôtel royal bâti de 1671 à 1676, et son dôme. Le matin du 14 juillet 1789, la foule y prend des fusils.', null, 1],
   'École militaire': ['savoir', 'Bâtie par Gabriel à partir de 1751.', null, 1],
   'Champ-de-Mars': ['place', 'Terrain de manœuvres de l’École militaire. La fête de la Fédération s’y tient le 14 juillet 1790.'],
@@ -43,8 +43,8 @@ const NOTES = {
   'Val-de-Grâce': ['eglise', 'Abbaye fondée par Anne d’Autriche ; l’église est achevée en 1667.'],
   'Observatoire': ['savoir', 'Observatoire royal, bâti par Claude Perrault à partir de 1667.'],
   'Jardin du Roi': ['jardin', 'Jardin royal des plantes. Buffon l’a dirigé jusqu’à sa mort, en 1788.'],
-  'Salpêtrière': ['savoir', 'Hôpital général pour les femmes.'],
-  'Gobelins': ['savoir', 'Manufacture royale de tapisseries, au bord de la Bièvre.'],
+  'Salpêtrière': ['savoir', 'Hôpital général pour les femmes, et sa chapelle Saint-Louis à dôme, par Libéral Bruant. L’atlas ne couvre pas cet îlot : la chapelle et les corps de l’hôpital sont une évocation, placée par les coordonnées du lieu.'],
+  'Gobelins': ['savoir', 'Manufacture royale de tapisseries, au bord de la Bièvre. L’atlas ne couvre pas cet îlot : les ateliers sont une évocation, placée par les coordonnées du lieu.'],
   'Arsenal': ['pouvoir', 'Magasins et résidence du grand maître de l’artillerie.'],
   'Hôtel des Monnaies': ['pouvoir', 'Achevé en 1775 sur le quai de Conti.', 'Hôtel des Monnaies'],
   'Collège des Quatre-Nations': ['savoir', 'Fondé par Mazarin ; futur Institut.', 'Palais de l\'Institut'],
@@ -64,8 +64,11 @@ const NOTES = {
 const slug = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // landmarks : édifices nommés par l'atlas, tels que posés par la construction ({ nom, x, z, top, area }).
+// lieux que la construction pose elle-même, hors des repères des données
+const EXTRAS = { 'Moulins de Montmartre': ['jardin', 'Une trentaine de moulins à vent couronnent la butte au XVIIIe siècle ; ils moulent le grain et pressent la vendange des vignes de la butte. Leur nombre et leur place sont ici de convention : ils sont posés sur les points les plus hauts.'] };
 export function makePlaces(app) {
-  return RAW.reperes.filter((r) => NOTES[r[2]]).map(([x, z, nom]) => {
+  const extras = Object.entries(EXTRAS).filter(([nom]) => app.monuments && app.monuments[nom]).map(([nom, [cat, note]]) => { const m = app.monuments[nom]; return { id: slug(nom), name: nom, cat, catName: CATS[cat][0], color: CATS[cat][1], note, absent: false, x: m.x, z: m.z, y: m.top, rang: 2 }; });
+  return extras.concat(RAW.reperes.filter((r) => NOTES[r[2]]).map(([x, z, nom]) => {
     const [cat, note, vass, rang] = NOTES[nom];
     let px = x, pz = z, top = null;
     const mo = app.monuments && app.monuments[nom]; if (mo) { px = mo.x; pz = mo.z; top = mo.top; }
@@ -74,5 +77,5 @@ export function makePlaces(app) {
     let reel = 0; for (let a = 0; a < 12 && !reel; a++) for (const d of [0, 25, 55, 90]) { const f = app.footAt(px + Math.cos(a * 0.5236) * d, pz + Math.sin(a * 0.5236) * d); if (f && f.reel) { reel = 1; break; } }
     const absent = !reel && ['pouvoir', 'eglise', 'savoir', 'marche'].includes(cat);
     return { id: slug(nom), name: nom, cat, catName: CATS[cat][0], color: CATS[cat][1], note, absent, x: px, z: pz, y: top != null ? top : app.terrain.land(px, pz) + 22, rang: rang || 2 };
-  });
+  }));
 }

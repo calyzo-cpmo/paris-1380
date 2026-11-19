@@ -10,8 +10,13 @@ import { bati, rues, ilots, parcs, dansExpo, FER } from './data.js';
 import { maison } from './bati.js';
 import { planter } from './arbres.js';
 import { materiauVoie, poserVoies, ilotsFerres } from './fer.js';
+import { NIVEAU_PORT } from './ports.js';
+import { Statuts } from './statuts.js';
+import { Souches } from './souches.js';
+import { trains } from './trains.js';
+import { bateaux } from './bateaux.js';
 
-const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
+const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), DALLE_PORT = hex(0xb8b1a1), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
 // Ponts de la Seine : tablier en léger dos d'âne, arches surbaissées sur des piles, parapets.
 function ponts(app, B) {
@@ -31,7 +36,9 @@ function ponts(app, B) {
     if (!mouille(m.x - dz * 24, m.z + dx * 24) || !mouille(m.x + dz * 24, m.z - dx * 24)) continue;      // une rue de quai qui mord sur l'eau n'est pas un pont
     const rive = (sg) => { for (let d = 0; d <= 420; d += 2) if (!mouille(m.x + dx * sg * d, m.z + dz * sg * d)) return d; return -1; };
     const ra = rive(-1), rb = rive(1); if (ra < 0 || rb < 0 || ra + rb < 16) continue;                    // une voie qui longe le fleuve (île aux Cygnes) n'atteint aucune rive
-    cand.push({ nom: r.nom, a: [m.x - dx * (ra + 14), m.z - dz * (ra + 14)], b: [m.x + dx * (rb + 14), m.z + dz * (rb + 14)], w: Math.min(30, Math.max(11, r.l || 16)) / 2 });
+    // au-dessus d'un port bas, le pont va jusqu'au quai haut : la culée sort du port
+    const sortir = (sg, d) => { let k = 0; while (k < 24 && T.estBas(m.x + dx * sg * d, m.z + dz * sg * d)) { d += 2; k++; } return k ? d + 4 : d; };
+    cand.push({ nom: r.nom, a: [m.x - dx * sortir(-1, ra + 14), m.z - dz * sortir(-1, ra + 14)], b: [m.x + dx * sortir(1, rb + 14), m.z + dz * sortir(1, rb + 14)], w: Math.min(30, Math.max(11, r.l || 16)) / 2 });
   }
   // 2. Les tronçons d'un même pont sont réunis : même axe, milieux à moins de 34 m (les ponts de Paris sont bien plus
   //    espacés). Le pont réuni prend l'axe moyen ; deux chaussées jumelles l'élargissent.
@@ -75,42 +82,61 @@ function ponts(app, B) {
 }
 
 // Quais de la Seine dans Paris : un mur de pierre le long de l'eau, son parapet, et une bande dallée qui recouvre le
-// bord du terrain. Le tracé suit le contour du masque d'eau du terrain (courbe de niveau « moitié eau »).
+// bord du terrain. Le tracé suit les rives chaînées par src/p1889/ports.js (courbe « moitié eau » du masque du terrain).
+// Le long d'un port bas, le mur du bord de l'eau ne dépasse le port que d'une margelle ; le mur du quai haut, avec son
+// parapet, est en retrait de la largeur du port, et un mur en travers ferme le port à chaque bout.
 function quais(app, B) {
-  const T = app.terrain, C = app.monde.cadre, W = T.W, H = T.H, s = T.soft, cell = (C.x1 - C.x0) / W, env = app.v89.enveloppe.ring; let n = 0;
-  const X = (i) => C.x0 + (i + 0.5) * cell, Z = (k) => C.z0 + (k + 0.5) * cell, t = (u, v) => (127.5 - u) / (v - u), AV = 3, AR = 7.5, EP = 0.55, PAR = 0.95;
+  const T = app.terrain, R = app.v89.rives, env = app.v89.enveloppe.ring, yp = NIVEAU_PORT, AV = 3, AR = 7.5, HAUT = 12, EP = 0.55, PAR = 0.95;
   // face verticale de P à Q, tournée vers (nx, nz)
   const face = (b, P, Q, y0, y1, nx, nz, col, s0, s1) => { let a = P, c = Q; if (-(c[1] - a[1]) * nx + (c[0] - a[0]) * nz < 0) { a = Q; c = P; } b.quad(a[0], y0, a[1], c[0], y0, c[1], c[0], y1, c[1], a[0], y1, a[1], (a[0] + a[1]) * 0.2, y0 * 0.2, (c[0] + c[1]) * 0.2, y1 * 0.2, col, s0, s1); };
   // dalle a-b-c-d, tournée vers le ciel
   const dalle = (b, a, c, d, e, col) => { if ((c[0] - a[0]) * (e[2] - a[2]) - (c[2] - a[2]) * (e[0] - a[0]) > 0) b.quad(a[0], a[1], a[2], e[0], e[1], e[2], d[0], d[1], d[2], c[0], c[1], c[2], 0, 0, 1, 1, col, 1, 1); else b.quad(a[0], a[1], a[2], c[0], c[1], c[2], d[0], d[1], d[2], e[0], e[1], e[2], 0, 0, 1, 1, col, 1, 1); };
-  const mur = (p, q) => {
+  // décalages le long des normales lissées des sommets (src/p1889/ports.js) : d'un segment à l'autre, les murs se raccordent
+  const off = (p, n, d) => [p[0] + n[0] * d, p[1] + n[1] * d], sol = (p, y) => [p[0], Math.max(y, T.land(p[0], p[1])) + 0.05, p[1]], neg = (n) => [-n[0], -n[1]];
+  // mur à parapet de A à B, tourné vers nF ; nA, nB : normales en A et B (même sens), le long desquelles se prennent
+  // l'épaisseur du parapet et la largeur `ar` du dallage, au niveau yq, derrière lui
+  const parapet = (bs, bp, A, Bq, nA, nB, nF, y0, yq, ar) => {
+    const yt = yq + PAR, Ai = off(A, nA, -EP), Bi = off(Bq, nB, -EP), Aa = off(A, nA, -ar), Ba = off(Bq, nB, -ar);
+    face(bs, A, Bq, y0, yt, nF[0], nF[1], PIERRE_QUAI, 0.7, 1);                                          // le mur, vu de l'eau ou du port
+    dalle(bs, [A[0], yt, A[1]], [Bq[0], yt, Bq[1]], [Bi[0], yt, Bi[1]], [Ai[0], yt, Ai[1]], PIERRE_QUAI);   // dessus du parapet
+    face(bs, Ai, Bi, yq, yt, -nF[0], -nF[1], PIERRE_QUAI, 0.85, 0.95);                                    // le parapet, vu du quai
+    dalle(bp, [Ai[0], yq + 0.05, Ai[1]], [Bi[0], yq + 0.05, Bi[1]], sol(Ba, yq), sol(Aa, yq), DALLE_QUAI);  // trottoir du quai
+  };
+  let n = 0, np = 0, lp = 0;
+  const mur = (p, q, mp, mq, bande) => {
     const L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 0.25) return;
     const mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2; if (!pointInPoly(mx, mz, env)) return;          // hors de Paris, les berges restent naturelles
     let nx = -(q[1] - p[1]) / L, nz = (q[0] - p[0]) / L; if (T.wetAt(mx + nx * 3, mz + nz * 3) < T.wetAt(mx - nx * 3, mz - nz * 3)) { nx = -nx; nz = -nz; }      // vers l'eau
-    const yq = Math.max(4.2, T.land(mx - nx * 9, mz - nz * 9)), yt = yq + PAR, bs = B.at('stone', mx, mz), bp = B.at('plain', mx, mz);
-    const P = [p[0] + nx * AV, p[1] + nz * AV], Q = [q[0] + nx * AV, q[1] + nz * AV], Pi = [P[0] - nx * EP, P[1] - nz * EP], Qi = [Q[0] - nx * EP, Q[1] - nz * EP], Pa = [p[0] - nx * AR, p[1] - nz * AR], Qa = [q[0] - nx * AR, q[1] - nz * AR];
-    face(bs, P, Q, -2.5, yt, nx, nz, PIERRE_QUAI, 0.7, 1);                                                  // le mur, vu du fleuve
-    dalle(bs, [P[0], yt, P[1]], [Q[0], yt, Q[1]], [Qi[0], yt, Qi[1]], [Pi[0], yt, Pi[1]], PIERRE_QUAI);     // dessus du parapet
-    face(bs, Pi, Qi, yq, yt, -nx, -nz, PIERRE_QUAI, 0.85, 0.95);                                            // le parapet, vu du quai
-    dalle(bp, [Pi[0], yq + 0.05, Pi[1]], [Qi[0], yq + 0.05, Qi[1]], [Qa[0], Math.max(yq, T.land(Qa[0], Qa[1])) + 0.05, Qa[1]], [Pa[0], Math.max(yq, T.land(Pa[0], Pa[1])) + 0.05, Pa[1]], DALLE_QUAI);      // trottoir du quai
+    const nF = [nx, nz], np_ = neg(mp), nq = neg(mq), bs = B.at('stone', mx, mz), bp = B.at('plain', mx, mz), P = off(p, np_, AV), Q = off(q, nq, AV);
     n++;
+    if (!bande) { parapet(bs, bp, P, Q, np_, nq, nF, -2.5, Math.max(4.2, T.land(mx - nx * 9, mz - nz * 9)), AV + AR); return; }
+    // port bas : margelle au bord de l'eau, dallage du port, mur du quai haut en retrait
+    const ym = yp + 0.3, Pi = off(P, np_, -EP), Qi = off(Q, nq, -EP);
+    face(bs, P, Q, -2.5, ym, nx, nz, PIERRE_QUAI, 0.7, 1);
+    dalle(bs, [P[0], ym, P[1]], [Q[0], ym, Q[1]], [Qi[0], ym, Qi[1]], [Pi[0], ym, Pi[1]], PIERRE_QUAI);
+    face(bs, Pi, Qi, yp, ym, -nx, -nz, PIERRE_QUAI, 0.85, 0.95);
+    { const Pa = off(p, np_, -AR), Qa = off(q, nq, -AR); dalle(bp, [Pi[0], yp + 0.05, Pi[1]], [Qi[0], yp + 0.05, Qi[1]], [Qa[0], yp + 0.05, Qa[1]], [Pa[0], yp + 0.05, Pa[1]], DALLE_PORT); }
+    const w = (bande.w0 + bande.w1) / 2, R0 = off(p, mp, bande.w0), R1 = off(q, mq, bande.w1), yq = Math.max(4.2, T.land(mx - nx * (w + 9), mz - nz * (w + 9)));
+    parapet(bs, bp, R0, R1, np_, nq, nF, yp - 0.5, yq, HAUT);
+    app.foot.push({ ring: [off(R0, np_, 0.4), off(R1, nq, 0.4), off(R1, nq, -EP - 0.4), off(R0, np_, -EP - 0.4)], top: yq + PAR, quai: true });
+    // aux bouts, un mur en travers du port, et le dallage du quai haut au-delà (le terrain y remonte du port)
+    for (const [fin, A, Ar, sg] of [[bande.fin0, P, R0, -1], [bande.fin1, Q, R1, 1]]) {
+      if (!fin) continue;
+      const e = [((q[0] - p[0]) / L) * sg, ((q[1] - p[1]) / L) * sg], ie = neg(e);
+      parapet(bs, bp, A, Ar, ie, ie, ie, yp - 0.5, yq, 10);
+      app.foot.push({ ring: [off(A, e, -0.4), off(Ar, e, -0.4), off(Ar, e, EP + 0.4), off(A, e, EP + 0.4)], top: yq + PAR, quai: true });
+    }
+    np++; lp += L;
   };
-  for (let k = 0; k < H - 1; k++) for (let i = 0; i < W - 1; i++) {
-    const q = k * W + i, a = s[q], b = s[q + 1], c = s[q + W + 1], d = s[q + W], m = (a > 127 ? 1 : 0) | (b > 127 ? 2 : 0) | (c > 127 ? 4 : 0) | (d > 127 ? 8 : 0);
-    if (m === 0 || m === 15) continue;
-    const pts = [];
-    if ((m & 1) !== ((m >> 1) & 1)) pts.push([X(i) + t(a, b) * cell, Z(k)]);
-    if (((m >> 1) & 1) !== ((m >> 2) & 1)) pts.push([X(i + 1), Z(k) + t(b, c) * cell]);
-    if (((m >> 2) & 1) !== ((m >> 3) & 1)) pts.push([X(i) + t(d, c) * cell, Z(k + 1)]);
-    if (((m >> 3) & 1) !== (m & 1)) pts.push([X(i), Z(k) + t(a, d) * cell]);
-    for (let j = 0; j + 1 < pts.length; j += 2) mur(pts[j], pts[j + 1]);
-  }
-  return n;
+  for (const c of R.chaines) for (let k = 0; k + 1 < c.pts.length; k++) mur(c.pts[k], c.pts[k + 1], c.m[k], c.m[k + 1], c.bande[k] >= 0 ? R.bandes[c.bande[k]] : null);
+  return { n, ports: np, km: lp / 1000 };
 }
 
 export async function construire(app, step) {
   const V = app.v89, B = new Builder(1100), mats = (app.materials = makeMaterials89(app.mobile ? 0.5 : 1));
   mats.voie = materiauVoie();
+  // calque « d'où vient ce bâtiment » : greffé sur les matières des maisons, tracé à mesure qu'elles sont bâties
+  const ST = (app.statuts = new Statuts(app)); for (const k of ['facade', 'rdc', 'comble', 'roof', 'ardoise', 'plain', 'nef']) if (mats[k]) ST.greffer(mats[k]);
   app.foot = []; app.landmarks = []; app.gardens = []; app.monuments = {}; app.stats = {};
   const pause = () => new Promise((r) => setTimeout(r, 0)), R = app.navRect;
   const pres = (x, z) => x > R.x && x < R.x + R.w && z > R.z && z < R.z + R.h;
@@ -120,13 +146,14 @@ export async function construire(app, step) {
   if (V.monuments) { await step('La tour de trois cents mètres et les palais de l’Exposition…', 0.24); await V.monuments(app, B); }
   const reserve = (x, z) => { for (const r of V.reserves) if (x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1 && pointInPoly(x, z, r.ring)) return true; return false; };
 
+  app.souches = app.mobile ? null : new Souches(app);          // pas de souches sur téléphone : les toits y sont plats
   const L = bati(); let n = 0, faits = 0;
   for (const e of L) {
     const r = e.rings[0]; let cx = 0, cz = 0; for (const p of r) { cx += p[0]; cz += p[1]; } cx /= r.length; cz /= r.length;
-    if (!reserve(cx, cz)) { maison(app, B, e, n, pres(cx, cz)); faits++; }
+    if (!reserve(cx, cz)) { maison(app, B, e, n, pres(cx, cz)); ST.poser(e); faits++; }
     if (++n % 4000 === 0) { await step('Les maisons de Paris, quartier par quartier…', 0.26 + (0.42 * n) / L.length); await pause(); }
   }
-  app.stats.bati = faits;
+  app.stats.bati = faits; ST.finir();
 
   // enceinte de Thiers : rempart de terre revêtu de pierre, bastion après bastion
   await step('L’enceinte de Thiers et ses bastions…', 0.69);
@@ -140,7 +167,7 @@ export async function construire(app, step) {
     } }
 
   await step('Les quais et les ponts de la Seine…', 0.7);
-  app.stats.quais = quais(app, B);
+  { const Q = quais(app, B); app.stats.quais = Q.n; app.stats.ports = { segments: Q.ports, km: +Q.km.toFixed(2), bandes: app.v89.rives.bandes.length }; }
   V.ponts = ponts(app, B);
 
   // les voies passent sur les ponts qui viennent d'être bâtis ; leurs viaducs s'ajoutent aux emprises infranchissables
@@ -152,6 +179,11 @@ export async function construire(app, step) {
   app.batiMeshes = B.finish(app.scene, mats); app.quaiMeshes = []; app.cityMeshes = app.batiMeshes;
   { const rubans = BR.finish(app.scene, mats); for (const m of rubans) m.castShadow = false; app.batiMeshes.push(...rubans); B.tris += BR.tris; }      // un ruban posé au sol ne porte pas d'ombre
   if (V.mobiles) app.batiMeshes.push(...V.mobiles);              // échafaudages, grues, palais en chantier : ils suivent la date
+  // la vie : trains sur les grandes lignes, péniches aux ports, vapeurs sur la Seine, souches de cheminée près de la caméra
+  { const TR = (V.trains = trains(app, V.fer.lignes)), BA = (V.bateaux = bateaux(app, V.rives, V.enveloppe.ring)); app.batiMeshes.push(...TR.meshes, ...BA.meshes);
+    app.stats.trains = TR.n; app.stats.peniches = BA.peniches; app.stats.vapeurs = BA.vapeurs;
+    app.on('frame', (dt) => { TR.update(dt); BA.update(dt); if (app.souches) app.stats.souchesVues = app.souches.montrer(app.camera.position); });
+    if (app.souches) { app.batiMeshes.push(...app.souches.finir()); app.stats.souches = app.souches.n; app.souches.montrer(app.camera.position); } }
   app.stats.tris = Math.round(B.tris);
   indexFoot(app);
 

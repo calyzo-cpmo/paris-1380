@@ -121,5 +121,5 @@ export function poserVoies(app, B, BR = B) {
       if (!p.eau && !q.eau && T.wetAt(mx, mz) < 0.5) { const a = G(p, 1, DEMI), b = G(p, -1, DEMI), c = G(q, -1, DEMI), d = G(q, 1, DEMI); app.foot.push({ ring: [a, b, c, d], top: Math.max(yp, yq) + 1, fer: true }); }
     }
   });
-  return { n: R.length, km: km / 1000, tris: quads * 2, viaduc: Math.round(viaduc), surEau: Math.round(surEau), noyes, echantillon, pres };
+  return { n: R.length, km: km / 1000, tris: quads * 2, viaduc: Math.round(viaduc), surEau: Math.round(surEau), noyes, echantillon, pres, lignes: R };
 }

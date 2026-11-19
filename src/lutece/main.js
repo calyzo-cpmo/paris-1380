@@ -4,11 +4,13 @@ import { bootEmbed, tell } from '../embed.js';
 import { MONDE_LUTECE } from './monde.js';
 import { CATS, makePlaces } from './places.js';
 import { CREDIT, CREDIT_RELIEF } from './data.js';
+import { PARCOURS } from './parcours.js';
 
 bootEmbed('lutece');                                 // s'annonce à la page d'accueil, si elle héberge cette maquette
 
 // Ce que l'interface doit savoir de cette ville : catégories et lieux, sources.
 const UI = {
+  parcours: PARCOURS,
   cats: CATS, places: makePlaces, absent: '',
   sources: [
     ['Rues, rivages et monuments', CREDIT],

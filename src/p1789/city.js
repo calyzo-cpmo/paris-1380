@@ -9,7 +9,7 @@ import { makeMaterials89 } from './textures.js';
 import { hash, hex, ENDUITS, ARDOISE, PIERRE, ardoise, tuile, building } from './blocks.js';
 import { Builder, ccw } from '../builder.js';
 import { polyArea, centroid, mulberry32, offsetEx, difference, pointInPoly, clamp } from '../geom.js';
-import { ring, fill, stroke, indexFoot, buildTrees } from './outils.js';
+import { ring, fill, stroke, pleins, indexFoot, buildTrees } from './outils.js';
 
 export const CENTRE = { x: -250, z: -500 };              // cœur dense de la ville (entre les Halles et le Châtelet)
 export const TUILE = 1600;                               // côté du motif de campagne (m)
@@ -228,7 +228,7 @@ export async function buildCity89(app, step) {
     fill(x, TT, enclos().filter((e) => ENC_SABLE.test(e.nom) || /^(Jardin des Tuileries|Les Champs Elys|Esplanade)/.test(e.nom)).map((e) => e.rings), '#fff');
     fill(x, TT, eau(), '#000');
     fill(x, TT, app.quaiPans.map((q) => [q.outer.map((p) => p.a), ...q.holes.map((h) => h.map((p) => p.a))]), '#000');      // becs de pile, devant les murs
-    x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; x.beginPath(); for (const f of app.foot) ring(x, TT, f.ring); x.fill(); x.stroke();
+    x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; pleins(x, TT, app.foot);
     const im = x.getImageData(0, 0, w, h).data, data = new Uint8Array(w * h); for (let i = 0; i < data.length; i++) data[i] = im[i * 4] > 200 ? 1 : 0;
     app.nav = { data, w, h, x0: R.x, z0: R.z, cell }; }
 }

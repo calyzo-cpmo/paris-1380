@@ -4,11 +4,13 @@ import { initUI89 } from './ui.js';
 import { RAW } from './data.js';
 import { CATS, makePlaces } from './places.js';
 import { bootEmbed, tell } from '../embed.js';
+import { PARCOURS } from './parcours.js';
 
 bootEmbed('1789');                                   // s'annonce à la page d'accueil, si elle héberge cette maquette
 
 // Ce que l'interface doit savoir de cette ville : catégories et lieux, sources, mention des édifices non modelés.
 const UI = {
+  parcours: PARCOURS,
   cats: CATS, places: makePlaces, absent: 'L’atlas de Vasserot ne couvre pas cet îlot : l’édifice n’est pas encore modelé.',
   sources: [
     ['Îlots, rues nommées et Seine', 'plan de Verniquet, levé de 1782 à 1790 — © ALPAGE : P. Rouet ; rues © ALPAGE : L. Hermenault'],

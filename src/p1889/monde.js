@@ -7,6 +7,7 @@ import { makeFigureAtlas1889, outfit1889 } from './figures.js';
 import { Terrain89 } from '../p1789/terrain.js';
 import { pointInPoly } from '../geom.js';
 import { batirExpo, peindreExpo, ESPLANADES, jardinsExpo } from './expo.js';
+import { portsBas, NIVEAU_PORT } from './ports.js';
 
 // La Seine sort du cadre en plusieurs endroits (amont, aval, boucle de Boulogne) : on la prolonge tout droit à chacun.
 function prolongements(S) {
@@ -36,7 +37,10 @@ export const MONDE_1889 = {
     const eauEn = (x, z) => B.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && pointInPoly(x, z, b.r)), m = 46, k = 0.7 * m;
     for (let j = 0; j < R.nz; j++) for (let i = 0; i < R.nx; i++) { const x = R.x0 + i * R.pas, z = R.z0 + j * R.pas;
       if (eauEn(x, z) || eauEn(x + m, z) || eauEn(x - m, z) || eauEn(x, z + m) || eauEn(x, z - m) || eauEn(x + k, z + k) || eauEn(x - k, z + k) || eauEn(x + k, z - k) || eauEn(x - k, z - k)) R.ok[j * R.nx + i] = 0; }
-    return new Terrain89({ cadre: CADRE, relief: R, eau: S, ext: prolongements(S), union: true, quais: { x0: CADRE.x0 - 400, x1: CADRE.x1 + 400 } });
+    const T = new Terrain89({ cadre: CADRE, relief: R, eau: S, ext: prolongements(S), union: true, quais: { x0: CADRE.x0 - 400, x1: CADRE.x1 + 400 } });
+    // rives et ports bas : le terrain est abaissé sur les ports avant que le maillage du sol soit construit
+    const P = portsBas(T, CADRE, app.v89.enveloppe.ring); T.abaisser(P.bandes, NIVEAU_PORT); app.v89.rives = P;
+    return T;
   },
   motif: () => motifBanlieue(),
   peindre,

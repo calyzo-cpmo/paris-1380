@@ -9,6 +9,11 @@
 <meta property="og:description" content="Maquette 3D interactive de Paris vers 1380 : survol, parcours commentés, promenade dans les rues peuplées, histoire de chaque monument et visite de leurs intérieurs, d’après le plan restitué ALPAGE-CNRS.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
+<meta property="og:image" content="https://calyzo-cpmo.github.io/paris-1380/dist/og/1380.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La maquette 3D de Paris vers 1380">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0b1230">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Grenze+Gotisch:wght@500;700&display=swap">
 <style>/* Mise en page : scène 3D plein cadre ; titre et menus en haut, modes et heure en bas, fiche à gauche, liste et repères à droite,
@@ -210,6 +215,7 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #ch-reperes span:nth-child(2) { position: relative; left: -6.5%; }
 #ch-reperes span:nth-child(3) { visibility: hidden; }
 body.morph #chantier { visibility: hidden; }
+@media (max-width: 900px) { body.touring #chantier { display: none; } }      /* sur petit écran, la visite guidée prend la place du curseur du chantier */
 #frise { display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 10px; }
 #frise-play { flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 50%; }
 #frise-play .ico-pause, #frise-play[aria-pressed="true"] .ico-play { display: none; }

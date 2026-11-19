@@ -113,9 +113,11 @@ check('habitants : la foule se retire quand on prend de la hauteur', await page.
 // ---------- repères : recalage, fiches, édifices pas encore modelés
 const rp = await page.evaluate(() => { const a = window.__app, P = (id) => a.ui.byId.get(id), nd = P('notre-dame'), f = a.footAt(nd.x, nd.z); return { nd: [Math.round(nd.x), Math.round(nd.z)], surEmprise: !!(f && f.reel), haut: f ? Math.round(f.top) : 0, absents: a.places.filter((p) => p.absent).map((p) => p.id), hv: !!P('hotel-de-ville') && !P('hotel-de-ville').absent, louvre: !P('louvre').absent, cats: [...new Set(a.places.map((p) => p.cat))].length }; });
 check('recalage : Notre-Dame, placée par ses coordonnées géographiques, tombe sur son emprise', Math.hypot(rp.nd[0] + 36, rp.nd[1] + 12) < 25 && rp.surEmprise && rp.haut > 25, JSON.stringify(rp));
-check('repères : 53 lieux, huit catégories ; les rares édifices pas encore modelés sont signalés', st.lieux === 53 && rp.cats === 8 && rp.hv && rp.louvre && !rp.absents.includes('invalides') && !rp.absents.includes('luxembourg') && rp.absents.includes('salpetriere') && rp.absents.length <= 5, JSON.stringify(rp.absents));
+check('repères : 54 lieux, huit catégories ; la Salpêtrière, les Gobelins et Saint-Lazare sont évoqués, plus aucun édifice n’est signalé absent ; les moulins de Montmartre', st.lieux === 54 && rp.cats === 8 && rp.hv && rp.louvre && rp.absents.length === 0 && st.moulins === 12, JSON.stringify([st.lieux, rp.absents, st.moulins]));
 const lab = await page.evaluate(() => { const l = [...document.querySelectorAll('.label')].filter((e) => e.style.display !== 'none'); return { noms: l.filter((e) => !e.classList.contains('dot')).map((e) => e.children[1].textContent), pastilles: l.filter((e) => e.classList.contains('dot')).length }; });
 check('étiquettes : grands lieux nommés, les autres en pastilles', lab.noms.includes('Notre-Dame') && lab.noms.includes('Bastille') && lab.noms.length >= 8 && lab.noms.length <= 16 && lab.pastilles >= 20, JSON.stringify(lab));
+const ov = await page.evaluate(() => { const L = [...document.querySelectorAll('.label')].filter((e) => e.style.display !== 'none' && !e.classList.contains('dot')).map((e) => e.getBoundingClientRect()); let n = 0; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a.left < b.right - 3 && b.left < a.right - 3 && a.top < b.bottom - 3 && b.top < a.bottom - 3) n++; } return { noms: L.length, chevauchements: n }; });
+check('étiquettes : aucun nom n’en chevauche un autre (les moins importants se réduisent à leur pastille)', ov.chevauchements === 0 && ov.noms >= 6, JSON.stringify(ov));
 
 // ---------- liste, recherche, fiche
 await page.click('#btn-places');
@@ -126,7 +128,7 @@ await page.click('#place-list button'); await frames(50);
 const card = await page.evaluate(() => { const a = window.__app; return { nom: document.getElementById('card-name').textContent, cat: document.getElementById('card-cat').textContent, texte: document.getElementById('card-text').textContent, liste: document.getElementById('places').hidden, x: Math.round(a.rig.cur.x), z: Math.round(a.rig.cur.z), dist: Math.round(a.rig.cur.dist), lien: a.ui.link() }; });
 check('fiche : notice, vue recadrée sur le lieu, lieu dans le lien', (await visible('#card')) && card.nom === 'Bastille' && /Palais et pouvoir/.test(card.cat) && /14 juillet 1789/.test(card.texte) && card.liste && Math.hypot(card.x - 1287, card.z + 29) < 60 && card.dist <= 600 && /&p=bastille$/.test(card.lien), JSON.stringify(card));
 await page.evaluate(() => window.__app.ui.select(window.__app.ui.byId.get('salpetriere'), false));
-check('fiche d’un édifice pas encore modelé : la notice le dit', /pas encore modelé/.test(await page.evaluate(() => document.getElementById('card-text').textContent)));
+{ const t = await page.evaluate(() => document.getElementById('card-text').textContent); check('fiche de la Salpêtrière : l’édifice, hors de l’atlas, est une évocation placée par ses coordonnées', /évocation/.test(t) && /Libéral Bruant/.test(t) && !/pas encore modelé/.test(t), t.slice(0, 120)); }
 
 // ---------- à pied
 await page.evaluate(() => window.__app.ui.startWalk(window.__app.ui.byId.get('hotel-de-ville'))); await frames(20);
@@ -165,12 +167,24 @@ const jour = await page.evaluate(() => ({ h: window.__app.sky.hour, joue: docume
 check('journée en accéléré', jour.h > 13 && jour.joue === 'true', JSON.stringify(jour));
 await page.click('#hour-play'); await page.click('#hour-presets [data-hour="12"]'); await frames(2);
 
+// ---------- parcours commenté : étapes, vol vers chaque lieu, lecture automatique, retour au survol
+const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.visite, $ = (id) => document.getElementById(id), tic = (n) => { for (let i = 0; i < n; i++) { a.rig.update(0.05); a.emit('frame', 0.05); } };
+  $('mode-tour').click(); const t0 = { panneau: !$('tour').hidden, titre: $('tour-title').textContent, compte: $('tour-count').textContent, texte: $('tour-text').textContent.length, mode: $('mode-tour').getAttribute('aria-pressed'), points: document.querySelectorAll('#tour-dots button').length };
+  $('tour-next').click(); tic(80); const e1 = V.etat(), p = a.ui.places.find((q) => q.name === e1.lieu), pres = p ? Math.round(Math.hypot(a.rig.cur.x - p.x, a.rig.cur.z - p.z)) : -1, fiche = !$('tour-card').hidden;
+  for (let i = 0; i < 1500 && V.etat().k === e1.k; i++) tic(1); const e2 = V.etat();
+  $('tour-stop').click(); const fin = { actif: V.etat().actif, panneau: !$('tour').hidden, survol: $('mode-fly').getAttribute('aria-pressed') };
+  return { t0, e1, pres, fiche, e2, fin, manquants: V.manquants }; });
+check('parcours commenté « Paris en 1789 » : 15 étapes, la vue se rend à chaque lieu, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1789' && vi.t0.compte === '1 / 15' && vi.t0.points === 15 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
+
 // ---------- mini-plan, boussole, vue d'ensemble
 await page.click('#btn-home'); await frames(70);
 const home = await page.evaluate(() => ({ x: Math.round(window.__app.rig.cur.x), z: Math.round(window.__app.rig.cur.z), dist: Math.round(window.__app.rig.cur.dist) }));
 check('vue d’ensemble', home.x === -350 && home.z === -420 && home.dist === 3600, JSON.stringify(home));
 const mm = await page.evaluate(() => { const c = document.getElementById('minimap'), t = performance.now(); window.__app.ui.mini.sig = ''; window.__app.ui.drawMini(); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, ms = Math.round(performance.now() - t), seen = new Set(); for (let i = 0; i < d.length; i += 4 * 53) seen.add((d[i] >> 4) + ',' + (d[i + 1] >> 4) + ',' + (d[i + 2] >> 4)); const r = c.getBoundingClientRect(); return { teintes: seen.size, ms, x: r.left + r.width * 0.5, y: r.top + r.height * 0.5, w: Math.round(r.width) }; });
 check('mini-plan dessiné, redessin immédiat', mm.teintes > 12 && mm.w > 100 && mm.ms < 400, JSON.stringify(mm));
+const mb = await page.evaluate(() => { const c = document.getElementById('minimap'), w = document.getElementById('map-wrap').getBoundingClientRect(), R = window.__app.plan.rectWide, x = c.getContext('2d'); window.__app.ui.mini.sig = ''; window.__app.ui.drawMini(); const fond = (px, py) => { const d = x.getImageData(px, py, 1, 1).data; return d[0] === 24 && d[1] === 36 && d[2] === 76; };
+  return { rapport: +(w.width / w.height).toFixed(2), plan: +(R.w / R.h).toFixed(2), bandes: [[2, 2], [c.width - 3, 2], [2, c.height - 3], [c.width - 3, c.height - 3], [c.width >> 1, 2], [c.width >> 1, c.height - 3]].filter(([a, b]) => fond(a, b)).length }; });
+check('mini-plan : aux proportions du plan de la ville, qui le remplit sans bandes vides', Math.abs(mb.rapport - mb.plan) < 0.08 && mb.bandes === 0, JSON.stringify(mb));
 await page.mouse.click(mm.x + 12, mm.y - 6); await frames(60);
 const mm2 = await page.evaluate(() => ({ x: Math.round(window.__app.rig.cur.x), z: Math.round(window.__app.rig.cur.z), dist: Math.round(window.__app.rig.cur.dist) }));
 check('cliquer le mini-plan : la vue s’y rend', Math.hypot(mm2.x + 350, mm2.z + 420) > 150 && mm2.dist <= 900, JSON.stringify(mm2));

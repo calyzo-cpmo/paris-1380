@@ -29,6 +29,8 @@ const J = (a, m, j) => Math.round((Date.UTC(a, m - 1, j) - Date.UTC(1887, 0, 1))
 
 check('la page démarre', await page.evaluate(() => window.__ready === true && !window.__failed), String(await page.evaluate(() => window.__failed || '')));
 await frames(3);
+const ov = await page.evaluate(() => { const L = [...document.querySelectorAll('.label')].filter((e) => e.style.display !== 'none' && !e.classList.contains('dot')).map((e) => e.getBoundingClientRect()); let n = 0; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a.left < b.right - 3 && b.left < a.right - 3 && a.top < b.bottom - 3 && b.top < a.bottom - 3) n++; } return { noms: L.length, chevauchements: n }; });
+check('étiquettes, à l’ouverture : aucun nom n’en chevauche un autre (les moins importants se réduisent à leur pastille)', ov.chevauchements === 0 && ov.noms >= 6, JSON.stringify(ov));
 
 // ---------- la ville recomposée
 const v = await page.evaluate(() => { const a = window.__app, T = a.terrain, V = a.v89; return {
@@ -96,11 +98,51 @@ check('monuments : dôme des Invalides (107 m), Panthéon (83 m), tours (69 m) e
 check('monuments : Saint-Sulpice, la Trinité, l’Opéra, l’Institut, Saint-Augustin, les colonnes et l’obélisque', mo.sulpice === 73 && mo.trinite === 65 && mo.opera === 56 && mo.institut === 46 && mo.augustin === 80 && mo.vendome === 44 && mo.juillet === 50 && Math.abs(mo.obelisque - 27.6) < 0.2, JSON.stringify(mo));
 check('Arc de triomphe : 50 m, on passe sous l’arche mais pas à travers les piles ; Sacré-Cœur en chantier, sans dôme', mo.arc > 55 && mo.arc < 60 && mo.sousArc && mo.dansPile && mo.sc > 40 && mo.sc < 60, JSON.stringify([mo.arc, mo.sousArc, mo.dansPile, mo.sc]));
 check('Halles : dix pavillons sur leurs îlots de 1900 ; palais de l’Industrie le long des Champs-Élysées, le Petit Palais (1900) écarté', mo.halles === 10 && mo.dansPavillon && mo.industrie > 40 && mo.industrie < 50 && mo.dansPalais && !mo.petitPalais, JSON.stringify([mo.halles, mo.dansPavillon, mo.industrie, mo.dansPalais, mo.petitPalais]));
+// ---------- édifices publics complétés
+const ed = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1);
+  const F = (u, v) => [-115 + 0.398 * u + 0.917 * v, -186 - 0.917 * u + 0.398 * v], pav = F(-42, 40), cour = F(-20, 0), courL = F(-24, 40);      // repère de l'Hôtel-Dieu : u vers le quai, v vers la rue d'Arcole
+  return { hd: h(M.HotelDieu), pav: !!a.footAt(pav[0], pav[1]), cour: a.walkable(cour[0], cour[1]), courL: a.walkable(courL[0], courL[1]),
+    hdv: h(M.HotelDeVille), sj: h(M.TourSaintJacques), sjPied: !!a.footAt(-106, -556), sc: h(M.SainteChapelle), horloge: h(M.Horloge), clotilde: h(M.Clotilde), vdg: h(M.ValDeGrace), sorb: h(M.Sorbonne), paul: h(M.SaintPaul),
+    psd: h(M.PorteSaintDenis), psm: h(M.PorteSaintMartin), sousPorte: a.walkable(M.PorteSaintDenis.x, M.PorteSaintDenis.z) && a.walkable(M.PorteSaintMartin.x, M.PorteSaintMartin.z) }; });
+check('Hôtel-Dieu : pavillons de malades autour d’une cour-jardin, sur son îlot de 1900 ; les maisons de l’atlas de Vasserot en sont écartées (cours libres)', ed.hd > 25 && ed.pav && ed.cour && ed.courL, JSON.stringify(ed));
+check('silhouettes : Hôtel de Ville, tour Saint-Jacques (52 m), flèche de la Sainte-Chapelle, tour de l’Horloge, flèches de Sainte-Clotilde (69 m), dômes du Val-de-Grâce, de la Sorbonne et de Saint-Paul', ed.hdv > 45 && ed.sj === 52 && ed.sjPied && ed.sc === 75 && ed.horloge === 52 && ed.clotilde === 69 && ed.vdg === 41.5 && ed.sorb === 42 && ed.paul === 58.5, JSON.stringify(ed));
+check('portes Saint-Denis et Saint-Martin : au milieu des boulevards, on passe sous l’arche', ed.psd === 24.6 && ed.psm === 18 && ed.sousPorte, JSON.stringify([ed.psd, ed.psm, ed.sousPorte]));
+
+// ---------- ports bas
+const po = await page.evaluate(() => { const a = window.__app, T = a.terrain, R = a.v89.rives, S = a.stats.ports, N = T.niveauBas;
+  let n = 0, bas = 0, haut = 0, sec = 0, mur = 0;
+  for (let i = 0; i < R.bandes.length; i += 23) { const b = R.bandes[i], P = (k) => [(b.P[0] + b.Q[0]) / 2 + ((b.mP[0] + b.mQ[0]) / 2) * k, (b.P[1] + b.Q[1]) / 2 + ((b.mP[1] + b.mQ[1]) / 2) * k], w = (b.w0 + b.w1) / 2, m = P(w / 2), d = P(w + 5), r = P(w + 0.3);
+    n++; if (Math.abs(T.height(m[0], m[1]) - N) < 0.01 && a.walkable(m[0], m[1])) bas++; if (T.height(d[0], d[1]) > N + 1.5) haut++; if (T.wetAt(m[0], m[1]) < 0.5) sec++; if (a.footAt(r[0], r[1])) mur++; }
+  const nommes = [[-1219, -753], [212, 228], [123, -259], [473, 360], [-2440, -1125], [-1150, -588], [777, 292], [2513, 2431]].filter((p) => T.estBas(p[0], p[1])).length;
+  return { S, n, bas, haut, sec, mur, nommes, ponts: a.v89.ponts.filter((p) => T.estBas(p.a[0], p.a[1]) || T.estBas(p.b[0], p.b[1])).length, niveau: N }; });
+check('ports bas : une quinzaine de kilomètres le long de la Seine, deux mètres au-dessus de l’eau, au pied du mur du quai haut (on n’y passe pas à travers le mur)', po.S.km > 10 && po.S.km < 25 && po.n > 100 && po.bas === po.n && po.sec === po.n && po.haut > 0.9 * po.n && po.mur > 0.9 * po.n, JSON.stringify(po));
+check('ports bas : ceux que nomme la base de 1900 (Saint-Nicolas, la Tournelle, l’Hôtel de Ville, Saint-Bernard, les Invalides, Malaquais, les Célestins, Bercy) ; les ponts vont d’un quai haut à l’autre', po.nommes >= 7 && po.ponts === 0, JSON.stringify([po.nommes, po.ponts]));
 const co = await page.evaluate(() => { const a = window.__app, P = a.people, cv = P.atlas.canvas, k = cv.width / 2048, x = cv.getContext('2d', { willReadFrequently: true }), px = (col, row, dy) => [...x.getImageData(Math.round((col * 256 + 60) * k), Math.round((512 + row * 640 + dy) * k), 1, 1).data].slice(0, 3);
   let i = 0; const r = () => ((i += 0.37) % 1), F = a.monde.figures(true);
   return { kepi: px(7, 0, 20), haut: px(1, 0, 20), canotier: px(5, 0, 20), garance: px(7, 0, 600), bonnet: px(1, 1, 20), soldat: F.outfit(r, 'man', 'guard'), soeur: F.outfit(r, 'robe', 'monk'), meme: P.outfit === a.monde.figures(true).outfit || typeof P.outfit === 'function' }; });
 check('costumes de 1889 : képi et pantalon garance du fantassin, haut-de-forme noir, canotier de paille, bonnet blanc', co.kepi[0] > 140 && co.kepi[1] < 80 && co.garance[0] > 140 && co.garance[1] < 80 && co.haut[0] < 70 && co.haut[2] < 70 && co.canotier[0] > 180 && co.canotier[2] < 180 && co.bonnet[0] > 200 && co.bonnet[2] > 190, JSON.stringify(co));
 check('costumes : le fantassin en capote, la sœur de charité en cornette', co.soldat.v[0] === 7 && co.soldat.col[2] > co.soldat.col[0] && co.soeur.v[0] === 5 && co.soeur.v[1] === 1 && co.soeur.v[2] === 7, JSON.stringify([co.soldat, co.soeur]));
+
+// ---------- calque « origine du bâti »
+const ca = await page.evaluate(() => { const a = window.__app, b = document.getElementById('btn-calque'), S = a.statuts, $ = (id) => document.getElementById(id);
+  const lire = [S.lire(-15, -1), S.lire(145, -381), S.lire(-113, -204)];
+  a.setView([-420, 700, 900], [-80, 20, -80]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0);
+  const px = () => { a.renderNow(); const gl = a.renderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, d = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, d); let vert = 0, rose = 0; for (let i = 0; i < d.length; i += 4) { const r = d[i], g = d[i + 1], bl = d[i + 2]; if (g > r + 25 && g > bl + 12) vert++; if (r > g + 45 && bl > g + 8) rose++; } return [vert, rose]; };
+  const avant = px(); b.click(); const on = S.uniforms.uStatut.value, leg = !$('legend').hidden, items = document.querySelectorAll('#legend-list li').length, apres = px();
+  document.querySelector('#legend [data-close="legend"]').click();
+  return { lire, compte: S.compte, avant, apres, on, leg, items, off: S.uniforms.uStatut.value, presse: b.getAttribute('aria-pressed'), cache: $('legend').hidden }; });
+check('calque « origine du bâti » : chaque maison teintée selon ce qui la justifie (réelle, probable, disparue, évoquée), légende à quatre entrées ; l’Hôtel-Dieu, modelé à part, ne l’est pas', ca.on === 1 && ca.leg && ca.items === 4 && ca.off === 0 && ca.presse === 'false' && ca.cache && ca.lire[0] === 1 && ca.lire[1] === 2 && ca.lire[2] === 0 && ca.compte[1] > 35000 && ca.compte[2] > 5000 && ca.compte[3] > 3000 && ca.compte[4] > 20000 && ca.apres[0] > ca.avant[0] + 2000 && ca.apres[1] > ca.avant[1] + 500, JSON.stringify(ca));
+
+// ---------- la vie : trains, bateaux, souches de cheminée
+const vie = await page.evaluate(() => { const a = window.__app, V = a.v89, T = a.terrain, F = V.fer;
+  const t0 = V.trains.etat(), b0 = V.bateaux.etat(), ecart = t0.map(() => 0); for (let i = 0; i < 40; i++) { a.emit('frame', 0.25); V.trains.etat().forEach((p, k) => { ecart[k] = Math.max(ecart[k], Math.hypot(p[0] - t0[k][0], p[2] - t0[k][2])); }); } const t1 = V.trains.etat(), b1 = V.bateaux.etat();      // un train qui touche le bout de sa ligne repart en arrière : on mesure son plus grand écart
+  const bouge = ecart.filter((d) => d > 20).length, surVoie = t1.filter((p) => F.pres(p[0], p[2], 6)).length, sousSol = t1.filter((p) => p[1] < T.land(p[0], p[2]) - 0.2).length;
+  const vapeursBougent = b1.filter((p, i) => Math.hypot(p[0] - b0[i][0], p[1] - b0[i][1]) > 10).length, dansLeau = b1.filter((p) => T.wetAt(p[0], p[1]) > 0.9).length;
+  a.setView([-200, 120, 300], [-60, 20, -60]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0); const pres = a.souches.montrer(a.camera.position);
+  a.setView([0, 4000, 4000], [0, 0, 0]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0); const loin = a.souches.montrer(a.camera.position);
+  return { trains: V.trains.n, parcours: V.trains.parcours.slice(0, 4), bouge, surVoie, sousSol, peniches: V.bateaux.peniches, vapeurs: V.bateaux.vapeurs, vapeursBougent, dansLeau, souches: a.stats.souches, pres, loin }; });
+check('la vie : dix-huit trains roulent sur les voies, des péniches sont amarrées aux ports bas, des vapeurs remontent et descendent la Seine', vie.trains >= 12 && vie.bouge === vie.trains && vie.surVoie === vie.trains && vie.sousSol === 0 && vie.peniches > 60 && vie.vapeurs >= 6 && vie.vapeursBougent === vie.vapeurs && vie.dansLeau === vie.vapeurs, JSON.stringify(vie));
+check('souches de cheminée : sur les combles brisés, montrées près de la caméra seulement', vie.souches > 40000 && vie.pres > 0 && vie.loin === 0, JSON.stringify([vie.souches, vie.pres, vie.loin]));
 
 // ---------- le curseur
 const cu = await page.evaluate(async ([j1, fin]) => { const a = window.__app, sl = document.getElementById('ch-date'), jour = document.getElementById('ch-jour'), note = document.getElementById('ch-note'), play = document.getElementById('ch-play'), out = { max: +sl.max, depart: +sl.value, texte0: jour.textContent + ' | ' + note.textContent };
@@ -115,7 +157,7 @@ check('curseur : la lecture repart de 1887, avance, puis s’arrête à l’ouve
 
 // ---------- repères, fiche, sources
 const lx = await page.evaluate(() => { const a = window.__app, P = a.ui.places; return { n: P.length, noms: P.map((p) => p.name), cats: [...new Set(P.map((p) => p.cat))].length, hors: P.filter((p) => p.x < a.monde.cadre.x0 || p.x > a.monde.cadre.x1 || p.z < a.monde.cadre.z0 || p.z > a.monde.cadre.z1).length }; });
-check('repères : la tour, les palais de l’Exposition, le Trocadéro, l’enceinte, les gares et les monuments de la ville', lx.n >= 42 && lx.hors === 0 && lx.cats >= 4 && ['Gare Saint-Lazare', 'Gare du Nord', 'Gare de l’Est', 'Gare de Lyon', 'Gare d’Orléans', 'Gare Montparnasse', 'Gare de la Bastille', 'Gare de Sceaux', 'Gare du Champ-de-Mars', 'Petite Ceinture', 'Viaduc d’Auteuil', 'Viaduc de la ligne de Vincennes', 'Tour de 300 mètres', 'Galerie des machines', 'Dôme central', 'Palais du Trocadéro', 'Pont d’Iéna', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur, en chantier', 'Colonne Vendôme', 'Halles centrales', 'Palais de l’Industrie'].every((n) => lx.noms.includes(n)), `${lx.n} lieux`);
+check('repères : la tour, les palais de l’Exposition, le Trocadéro, l’enceinte, les gares et les monuments de la ville', lx.n >= 53 && lx.hors === 0 && lx.cats >= 4 && ['Gare Saint-Lazare', 'Gare du Nord', 'Gare de l’Est', 'Gare de Lyon', 'Gare d’Orléans', 'Gare Montparnasse', 'Gare de la Bastille', 'Gare de Sceaux', 'Gare du Champ-de-Mars', 'Petite Ceinture', 'Viaduc d’Auteuil', 'Viaduc de la ligne de Vincennes', 'Tour de 300 mètres', 'Galerie des machines', 'Dôme central', 'Palais du Trocadéro', 'Pont d’Iéna', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur, en chantier', 'Colonne Vendôme', 'Halles centrales', 'Palais de l’Industrie', 'Hôtel-Dieu', 'Hôtel de Ville', 'Tour Saint-Jacques', 'Sainte-Clotilde', 'Porte Saint-Denis'].every((n) => lx.noms.includes(n)), `${lx.n} lieux`);
 await page.click('#btn-places');
 await page.fill('#place-search', 'machines');
 const liste = await page.evaluate(() => [...document.querySelectorAll('#place-list button, #place-list li')].map((b) => b.textContent).filter((t) => /machines/i.test(t)).length);
@@ -128,6 +170,17 @@ await page.click('#btn-sources');
 const src = await page.evaluate(() => { const d = document.getElementById('sources'); return { vu: !d.hidden, n: d.querySelectorAll('#sources-list li').length, t: d.textContent }; });
 check('sources : APUR, base « Paris 1900 », atlas de Vasserot, IGN, voies ferrées ; ce qui est réel et ce qui est évoqué', src.vu && src.n === 6 && /Voies ferrées/.test(src.t) && /Chemins de fer/.test(src.t) && /Gares :/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /Paris 1900/.test(src.t) && /Vasserot/.test(src.t) && /IGN/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t), `${src.n} sources`);
 await page.click('#sources [data-close="sources"]');
+{ const og = await page.evaluate(() => (document.querySelector('meta[property="og:image"]') || {}).content || ''), { existsSync } = await import('node:fs');
+  check('partage : l’image de la maquette (og:image, adresse absolue) est dans dist/og/', /^https:\/\/.+\/dist\/og\/1889\.jpg$/.test(og) && existsSync(join(root, 'dist/og/1889.jpg')), og); }
+
+// ---------- parcours commenté : étapes, vol vers chaque lieu, lecture automatique, retour au survol
+const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.visite, $ = (id) => document.getElementById(id), tic = (n) => { for (let i = 0; i < n; i++) { a.rig.update(0.05); a.emit('frame', 0.05); } };
+  $('mode-tour').click(); const t0 = { panneau: !$('tour').hidden, titre: $('tour-title').textContent, compte: $('tour-count').textContent, texte: $('tour-text').textContent.length, mode: $('mode-tour').getAttribute('aria-pressed'), points: document.querySelectorAll('#tour-dots button').length };
+  $('tour-next').click(); tic(80); const e1 = V.etat(), p = a.ui.places.find((q) => q.name === e1.lieu), pres = p ? Math.round(Math.hypot(a.rig.cur.x - p.x, a.rig.cur.z - p.z)) : -1, fiche = !$('tour-card').hidden;
+  for (let i = 0; i < 1500 && V.etat().k === e1.k; i++) tic(1); const e2 = V.etat();
+  $('tour-stop').click(); const fin = { actif: V.etat().actif, panneau: !$('tour').hidden, survol: $('mode-fly').getAttribute('aria-pressed') };
+  return { t0, e1, pres, fiche, e2, fin, manquants: V.manquants }; });
+check('parcours commenté « Paris en 1889 » : 14 étapes, la vue se rend à chaque lieu, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1889' && vi.t0.compte === '1 / 14' && vi.t0.points === 14 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
 
 // ---------- heure, marche, frise
 const nuit = await page.evaluate(() => { const a = window.__app; a.setHour(22); const n = a.materials.facade.emissiveIntensity; a.setHour(10.5); return [n, a.materials.facade.emissiveIntensity]; });

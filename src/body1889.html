@@ -15,6 +15,7 @@
       <button type="button" id="btn-lutece" data-m="lutece" title="Ouvrir la maquette de Lutèce, vers 250">Lutèce</button>
       <button type="button" id="btn-1380" data-m="1380" title="Ouvrir la maquette de Paris vers 1380">Paris 1380</button>
       <button type="button" id="btn-1789" data-m="1789" title="Ouvrir la maquette de Paris en 1789">Paris 1789</button>
+      <button type="button" id="btn-calque" aria-pressed="false" aria-controls="legend" title="Teinter chaque maison selon ce qui la justifie : réelle, probable, disparue, évoquée">Origine du bâti</button>
       <button type="button" id="btn-sources">Sources</button>
       <button type="button" id="btn-share">Partager</button>
       <button type="button" id="btn-help">Aide</button>
@@ -60,6 +61,25 @@
 <div id="toast" hidden role="status"></div>
 
 <div id="stack">
+<div id="tour" hidden>
+  <div id="tour-head"><span id="tour-title"></span><span id="tour-count"></span></div>
+  <div id="tour-dots" role="group" aria-label="Étapes du parcours"></div>
+  <h3 id="tour-place"></h3>
+  <p id="tour-text"></p>
+  <div class="row">
+    <button type="button" id="tour-prev" class="ghost">Précédent</button>
+    <button type="button" id="tour-play" class="ghost" aria-pressed="true">Pause</button>
+    <button type="button" id="tour-next" class="primary">Suivant</button>
+    <span class="spacer"></span>
+    <button type="button" id="tour-card" class="ghost" hidden>Fiche</button>
+    <button type="button" id="tour-stop" class="ghost">Terminer</button>
+  </div>
+</div>
+<aside id="legend" hidden aria-label="Légende : d’où vient chaque maison">
+  <div class="panel-head"><h2>D’où vient chaque maison</h2><button type="button" class="x" data-close="legend" aria-label="Masquer le calque">×</button></div>
+  <ul id="legend-list"></ul>
+  <p class="legend-note">Aucune base ne décrit le bâti de 1889 maison par maison : chacune garde la trace de ce qui la justifie. Les monuments, les gares, les édifices et l’Exposition, modelés à part, gardent leur couleur.</p>
+</aside>
 <div id="chantier" role="group" aria-label="Chantier de la tour et de l’Exposition">
   <button type="button" id="ch-play" aria-pressed="false" aria-label="Voir la tour se monter" title="Voir la tour se monter, de 1887 à 1889"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M3 1.5v9l7.5-4.5z" fill="currentColor"/><path class="ico-pause" d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg></button>
   <div id="ch-corps">
@@ -79,6 +99,7 @@
 <footer id="dock">
   <div class="seg" role="group" aria-label="Mode">
     <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
+    <button type="button" id="mode-tour" aria-pressed="false"><span class="long">Visite guidée</span><span class="short">Visite</span></button>
     <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
   </div>
   <div id="hour-wrap">
@@ -107,14 +128,15 @@
       <li><b>Réel :</b> l’emprise et la hauteur des bâtiments encore debout, le tracé de la Seine et des canaux, le relief, l’emplacement de la tour et le contour du Champ-de-Mars de 1889.</li>
       <li><b>Probable :</b> les bâtiments de la période 1851-1914 dont l’année n’est pas connue, quand leur voisinage est antérieur à 1890.</li>
       <li><b>Décalage de date :</b> îlots, rues et enceinte sont ceux de 1900 ; le relief, la Seine et les jardins sont ceux d’aujourd’hui ; les bâtiments disparus du centre sont ceux de 1810-1836.</li>
-      <li><b>Évoqué :</b> les maisons des faubourgs, presque toutes rebâties depuis ; la forme des toits, les façades, les couleurs ; l’élévation de la tour, des palais de l’Exposition et du Trocadéro, d’après leurs cotes ; les échafaudages et les grues du chantier ; les passants, en costumes de 1889.</li>
-      <li><b>Monuments :</b> le corps de chaque édifice vient des données (emprise et hauteur réelles) ; dômes, tours, flèches et colonnes y sont ajoutés à leur hauteur connue — Invalides, Panthéon, Notre-Dame, Saint-Sulpice, Opéra, Institut, Saint-Augustin, la Trinité, Saint-Vincent-de-Paul, colonnes Vendôme et de Juillet, obélisque —, l’Arc de triomphe est bâti entier. Leur détail est une évocation ; le Sacré-Cœur est montré en chantier, sans dôme.</li>
+      <li><b>Évoqué :</b> les maisons des faubourgs, presque toutes rebâties depuis ; la forme des toits, les façades, les couleurs ; l’élévation de la tour, des palais de l’Exposition et du Trocadéro, d’après leurs cotes ; les échafaudages et les grues du chantier ; les passants, en costumes de 1889 ; les trains, les péniches et les vapeurs, sans horaires ni lignes figurés ; les souches de cheminée.</li>
+      <li><b>Monuments :</b> le corps de chaque édifice vient des données (emprise et hauteur réelles) ; dômes, tours, flèches et colonnes y sont ajoutés à leur hauteur connue — Invalides, Panthéon, Notre-Dame, Saint-Sulpice, Opéra, Institut, Saint-Augustin, la Trinité, Saint-Vincent-de-Paul, colonnes Vendôme et de Juillet, obélisque —, l’Arc de triomphe est bâti entier. S’y ajoutent le campanile et les combles d’angle de l’Hôtel de Ville, la tour de l’Horloge et les tours rondes de la Conciergerie (placées comme dans la maquette de 1380), la flèche de la Sainte-Chapelle, la tour Saint-Jacques, les dômes du Val-de-Grâce, de la Sorbonne et de Saint-Paul, les flèches de Sainte-Clotilde, les portes Saint-Denis et Saint-Martin, que les données donnent comme des bâtiments à leur place exacte. Leur détail est une évocation ; le Sacré-Cœur est montré en chantier, sans dôme.</li>
+      <li><b>Hôtel-Dieu :</b> rebâti de 1866 à 1877 au nord du parvis, il occupe tout son îlot de 1900 ; les maisons que l’atlas de Vasserot dessinait là, sur les rues disparues du vieux quartier, sont écartées. Pavillons de malades, cour-jardin à galeries et chapelle sont une évocation d’après le parti du plan.</li>
       <li><b>Chantier :</b> les dates sont celles du montage de la tour (28 janvier 1887, 1<sup>er</sup> juillet et 7 décembre 1887, 1<sup>er</sup> avril et 14 août 1888, 31 mars 1889) ; entre deux dates, la hauteur est interpolée. Les palais s’élèvent à vitesse régulière entre le début et la fin de leurs travaux.</li>
       <li><b>Disparus depuis :</b> les dix pavillons des Halles de Baltard, chacun sur son îlot de 1900, et le palais de l’Industrie, placé d’après les axes des Champs-Élysées et des Invalides — le Grand et le Petit Palais, qui le remplaceront en 1900, sont écartés. Leur élévation est une évocation.</li>
-      <li><b>Rues et quais :</b> la rue est l’espace laissé libre par les îlots de 1900 ; trottoirs, bordures et chaussée pavée y sont dessinés ; le trottoir prend, par convention, un cinquième environ de la largeur de la voie. Les boulevards, les avenues et les quais de 24 m et plus sont plantés d’alignements d’arbres, deux rangs sur les plus larges ; les places restent minérales. Quelle voie était réellement plantée en 1889 n’est pas connu rue par rue. La Seine coule partout entre des murs de quai : les ports bas et leurs rampes ne sont pas figurés. Une trentaine de ponts : ceux de 1900, sans ceux bâtis après 1889 ; chacun va d’une rive à l’autre, sa forme — arches, piles, parapets — est de convention.</li>
+      <li><b>Rues et quais :</b> la rue est l’espace laissé libre par les îlots de 1900 ; trottoirs, bordures et chaussée pavée y sont dessinés ; le trottoir prend, par convention, un cinquième environ de la largeur de la voie. Les boulevards, les avenues et les quais de 24 m et plus sont plantés d’alignements d’arbres, deux rangs sur les plus larges ; les places restent minérales. Quelle voie était réellement plantée en 1889 n’est pas connu rue par rue. La Seine coule entre des murs de quai. Les ports bas sont tirés de la base de 1900, qui nomme leurs voies (« Port Saint-Nicolas », « Port de la Tournelle »…) : une quinzaine de kilomètres de ports, deux mètres au-dessus de l’eau, du bord du fleuve au mur du quai haut ; leur largeur — deux fois la distance de la voie au bord de l’eau — et leur niveau sont des conventions, et leurs rampes ne sont pas figurées (on y descend par un double-clic). Une trentaine de ponts : ceux de 1900, sans ceux bâtis après 1889 ; chacun va d’une rive à l’autre, sa forme — arches, piles, parapets — est de convention.</li>
       <li><b>Chemins de fer :</b> aucune base ne donne les voies de 1889. Sont gardées les voies d’aujourd’hui posées sur une emprise du chemin de fer qui existait alors — faisceaux des grandes gares, ligne de Sceaux, Petite Ceinture, embranchement du Champ-de-Mars — ; le métro, le tramway et les lignes ouvertes depuis sont écartés. Les faisceaux d’aujourd’hui sont souvent plus larges que ceux de 1889. Les lignes déposées sont restituées dans l’axe de l’emprise qui subsiste, ou évoquées le long des rues de 1900 qu’elles longeaient : ligne d’Auteuil et son viaduc, ligne de Vincennes sur le viaduc de l’avenue Daumesnil, arrivée à l’ancienne gare Montparnasse. Les tranchées ne sont pas creusées ni les souterrains figurés ; les arches des viaducs sont de convention.</li>
       <li><b>Gares :</b> neuf gares sont bâties au bout de leurs voies — Saint-Lazare, Nord, Est, Lyon, Orléans, Montparnasse, la Bastille, Sceaux et celle du Champ-de-Mars. La portée et la longueur des grandes halles sont celles du temps ; façades, pavillons et hauteurs sont une évocation. Les gares de Lyon, Montparnasse, de la Bastille et du Champ-de-Mars de 1889 ont disparu : leur emplacement est déduit des voies et des rues. Les stations de la Petite Ceinture et les gares de marchandises ne sont pas modelées.</li>
-      <li><b>Pas encore modelé :</b> l’Hôtel-Dieu, les pavillons de l’esplanade des Invalides, la banlieue ; les autres églises et édifices publics sont rendus par leur seul volume.</li>
+      <li><b>Pas encore modelé :</b> les pavillons de l’esplanade des Invalides, la banlieue, les rampes et la vie des ports ; les autres églises et édifices publics sont rendus par leur seul volume.</li>
     </ul>
     <p class="group-note">Les couches ont été recalées sur le même repère que les maquettes de 1380 et de 1789 : on passe de l’une à l’autre au même endroit.</p>
   </div>
@@ -128,6 +150,8 @@
       <dt>Clic droit ou Maj + glisser</dt><dd>pivoter et incliner</dd>
       <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
       <dt>Double-clic</dt><dd>descendre à pied à cet endroit</dd>
+      <dt>Visite guidée</dt><dd>un parcours commenté, d’étape en étape ; la lecture avance seule, toucher la maquette la met en pause</dd>
+      <dt>Origine du bâti</dt><dd>teinte chaque maison selon ce qui la justifie : réelle, probable, disparue, évoquée</dd>
       <dt>À pied</dt><dd>glisser pour regarder, cliquer le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir</dd>
       <dt>Échap</dt><dd>reprendre de la hauteur, fermer un panneau</dd>
       <dt>/</dt><dd>chercher un lieu</dd>
