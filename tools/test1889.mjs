@@ -133,6 +133,17 @@ const ca = await page.evaluate(() => { const a = window.__app, b = document.getE
   return { lire, compte: S.compte, avant, apres, on, leg, items, off: S.uniforms.uStatut.value, presse: b.getAttribute('aria-pressed'), cache: $('legend').hidden }; });
 check('calque « origine du bâti » : chaque maison teintée selon ce qui la justifie (réelle, probable, disparue, évoquée), légende à quatre entrées ; l’Hôtel-Dieu, modelé à part, ne l’est pas', ca.on === 1 && ca.leg && ca.items === 4 && ca.off === 0 && ca.presse === 'false' && ca.cache && ca.lire[0] === 1 && ca.lire[1] === 2 && ca.lire[2] === 0 && ca.compte[1] > 35000 && ca.compte[2] > 5000 && ca.compte[3] > 3000 && ca.compte[4] > 20000 && ca.apres[0] > ca.avant[0] + 2000 && ca.apres[1] > ca.avant[1] + 500, JSON.stringify(ca));
 
+// ---------- la vie : trains, bateaux, souches de cheminée
+const vie = await page.evaluate(() => { const a = window.__app, V = a.v89, T = a.terrain, F = V.fer;
+  const t0 = V.trains.etat(), b0 = V.bateaux.etat(), ecart = t0.map(() => 0); for (let i = 0; i < 40; i++) { a.emit('frame', 0.25); V.trains.etat().forEach((p, k) => { ecart[k] = Math.max(ecart[k], Math.hypot(p[0] - t0[k][0], p[2] - t0[k][2])); }); } const t1 = V.trains.etat(), b1 = V.bateaux.etat();      // un train qui touche le bout de sa ligne repart en arrière : on mesure son plus grand écart
+  const bouge = ecart.filter((d) => d > 20).length, surVoie = t1.filter((p) => F.pres(p[0], p[2], 6)).length, sousSol = t1.filter((p) => p[1] < T.land(p[0], p[2]) - 0.2).length;
+  const vapeursBougent = b1.filter((p, i) => Math.hypot(p[0] - b0[i][0], p[1] - b0[i][1]) > 10).length, dansLeau = b1.filter((p) => T.wetAt(p[0], p[1]) > 0.9).length;
+  a.setView([-200, 120, 300], [-60, 20, -60]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0); const pres = a.souches.montrer(a.camera.position);
+  a.setView([0, 4000, 4000], [0, 0, 0]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0); const loin = a.souches.montrer(a.camera.position);
+  return { trains: V.trains.n, parcours: V.trains.parcours.slice(0, 4), bouge, surVoie, sousSol, peniches: V.bateaux.peniches, vapeurs: V.bateaux.vapeurs, vapeursBougent, dansLeau, souches: a.stats.souches, pres, loin }; });
+check('la vie : dix-huit trains roulent sur les voies, des péniches sont amarrées aux ports bas, des vapeurs remontent et descendent la Seine', vie.trains >= 12 && vie.bouge === vie.trains && vie.surVoie === vie.trains && vie.sousSol === 0 && vie.peniches > 60 && vie.vapeurs >= 6 && vie.vapeursBougent === vie.vapeurs && vie.dansLeau === vie.vapeurs, JSON.stringify(vie));
+check('souches de cheminée : sur les combles brisés, montrées près de la caméra seulement', vie.souches > 40000 && vie.pres > 0 && vie.loin === 0, JSON.stringify([vie.souches, vie.pres, vie.loin]));
+
 // ---------- le curseur
 const cu = await page.evaluate(async ([j1, fin]) => { const a = window.__app, sl = document.getElementById('ch-date'), jour = document.getElementById('ch-jour'), note = document.getElementById('ch-note'), play = document.getElementById('ch-play'), out = { max: +sl.max, depart: +sl.value, texte0: jour.textContent + ' | ' + note.textContent };
   sl.value = String(j1); sl.dispatchEvent(new Event('input', { bubbles: true })); out.texte1 = jour.textContent + ' | ' + note.textContent; out.h1 = a.v89.chantier.hauteur;

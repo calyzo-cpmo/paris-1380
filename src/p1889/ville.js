@@ -12,6 +12,9 @@ import { planter } from './arbres.js';
 import { materiauVoie, poserVoies, ilotsFerres } from './fer.js';
 import { NIVEAU_PORT } from './ports.js';
 import { Statuts } from './statuts.js';
+import { Souches } from './souches.js';
+import { trains } from './trains.js';
+import { bateaux } from './bateaux.js';
 
 const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), DALLE_PORT = hex(0xb8b1a1), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
@@ -143,6 +146,7 @@ export async function construire(app, step) {
   if (V.monuments) { await step('La tour de trois cents mètres et les palais de l’Exposition…', 0.24); await V.monuments(app, B); }
   const reserve = (x, z) => { for (const r of V.reserves) if (x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1 && pointInPoly(x, z, r.ring)) return true; return false; };
 
+  app.souches = app.mobile ? null : new Souches(app);          // pas de souches sur téléphone : les toits y sont plats
   const L = bati(); let n = 0, faits = 0;
   for (const e of L) {
     const r = e.rings[0]; let cx = 0, cz = 0; for (const p of r) { cx += p[0]; cz += p[1]; } cx /= r.length; cz /= r.length;
@@ -175,6 +179,11 @@ export async function construire(app, step) {
   app.batiMeshes = B.finish(app.scene, mats); app.quaiMeshes = []; app.cityMeshes = app.batiMeshes;
   { const rubans = BR.finish(app.scene, mats); for (const m of rubans) m.castShadow = false; app.batiMeshes.push(...rubans); B.tris += BR.tris; }      // un ruban posé au sol ne porte pas d'ombre
   if (V.mobiles) app.batiMeshes.push(...V.mobiles);              // échafaudages, grues, palais en chantier : ils suivent la date
+  // la vie : trains sur les grandes lignes, péniches aux ports, vapeurs sur la Seine, souches de cheminée près de la caméra
+  { const TR = (V.trains = trains(app, V.fer.lignes)), BA = (V.bateaux = bateaux(app, V.rives, V.enveloppe.ring)); app.batiMeshes.push(...TR.meshes, ...BA.meshes);
+    app.stats.trains = TR.n; app.stats.peniches = BA.peniches; app.stats.vapeurs = BA.vapeurs;
+    app.on('frame', (dt) => { TR.update(dt); BA.update(dt); if (app.souches) app.stats.souchesVues = app.souches.montrer(app.camera.position); });
+    if (app.souches) { app.batiMeshes.push(...app.souches.finir()); app.stats.souches = app.souches.n; app.souches.montrer(app.camera.position); } }
   app.stats.tris = Math.round(B.tris);
   indexFoot(app);
 

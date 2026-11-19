@@ -201,6 +201,12 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   de la largeur de la voie. Trente-neuf mille arbres d'alignement bordent les boulevards, les avenues et les quais
   (voies de 24 m et plus : une évocation ; les places restent minérales). La Seine coule entre des murs de quai ; une
   trentaine de ponts, chacun bâti d'une rive à l'autre quel que soit le découpage de la base de 1900.
+- **La vie** : dix-huit trains — locomotive, tender, voitures — vont et viennent sur les plus longs parcours que forment
+  les voies raccordées bout à bout (de un à deux kilomètres et demi : les faisceaux et les aiguillages les arrêtent) ;
+  près de deux cents péniches sont amarrées le long des ports bas, huit vapeurs remontent et descendent la Seine. Sur
+  ordinateur, les combles brisés portent leurs souches de cheminée à mitres de terre cuite (plus de quatre-vingt mille),
+  montrées près de la caméra seulement. Les passants ne circulent qu'autour de l'Exposition. Trains et bateaux sont une
+  évocation : ni horaires ni lignes de navigation ne sont figurés.
 - **Ports bas** : une quinzaine de kilomètres de ports, deux mètres au-dessus de l'eau, au pied du mur du quai haut.
   Ils sont tirés de la base de 1900, qui nomme leurs voies (« Port Saint-Nicolas », « Port de la Tournelle »…) : là où
   une telle voie longe la rive, le port va du bord de l'eau à deux fois la distance de la voie, sans entamer la rue du
@@ -307,7 +313,7 @@ data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, dis
 tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
 tools/extract_1889.py        recompose la ville de 1889 à partir de ces sources et de l'atlas de Vasserot
 tools/fer_1889.py            voies ferrées de 1889 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
-tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, tour et chantier, curseur, repères, étiquettes, téléphone
+tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
@@ -385,6 +391,9 @@ src/p1889/gares.js           les neuf gares de 1889 : halles vitrées, bâtiment
 src/p1889/corps.js           corps de bâtiment communs aux gares et aux édifices : repère local, murs, combles, pavillons, frontons
 src/p1889/edifices.js        Hôtel-Dieu ; silhouettes de l'Hôtel de Ville, du Palais, de la Sainte-Chapelle, de la tour Saint-Jacques, des dômes, de Sainte-Clotilde, des portes Saint-Denis et Saint-Martin
 src/p1889/ports.js           rives de la Seine chaînées, ports bas tirés des voies « Port … » de la base de 1900
+src/p1889/trains.js          trains : voies raccordées en parcours, locomotives, tenders et voitures qui vont et viennent
+src/p1889/bateaux.js         péniches amarrées aux ports bas, vapeurs sur la Seine
+src/p1889/souches.js         souches de cheminée des combles brisés, par carreaux de 500 m montrés près de la caméra
 src/p1889/statuts.js         calque « origine du bâti » : trame des emprises par statut, greffée sur les matières des maisons
 src/p1889/parcours.js        visite guidée de Paris 1889
 src/p1789/parcours.js        visite guidée de Paris 1789
