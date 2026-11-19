@@ -43,15 +43,28 @@ export function initUI89(app, cfg) {
     const d = el('button', 'label' + (p.rang === 1 ? ' p1' : '')); d.type = 'button'; d.style.setProperty('--c', p.color);
     d.append(el('i'), el('span', null, p.name), el('small')); d.addEventListener('click', () => select(p, true)); layer.appendChild(d); p.el = d;
   }
+  // Les étiquettes se posent par ordre d'importance — la fiche ouverte, les grands lieux, puis les plus proches — ; un
+  // nom qui en chevaucherait un autre déjà posé se réduit à sa pastille, une pastille cachée sous un nom est omise
+  // (même règle que sur la page de 1380). bw : largeur estimée de l'étiquette, en pixels.
+  for (const p of places) p.bw = p.name.length * (p.rang === 1 ? 8.2 : 7) + 34;
   function updateLabels() {
-    const w = window.innerWidth, h = window.innerHeight, walking = rig.mode === 'walk', cam = app.camera.position;
+    const w = window.innerWidth, h = window.innerHeight, walking = rig.mode === 'walk', cam = app.camera.position, cand = [], boxes = [];
     for (const p of places) {
       v.set(p.x, p.y + 6, p.z); const dist = v.distanceTo(cam); v.project(app.camera);
       const sx = (v.x * 0.5 + 0.5) * w, sy = (-v.y * 0.5 + 0.5) * h;
       const vis = v.z < 1 && sx > -40 && sx < w + 40 && sy > 40 && sy < h - 30 && (walking ? dist < 900 : true);
-      if (!vis) { p.el.style.display = 'none'; continue; }
-      const named = p === selected || (walking ? dist < 500 || p.rang === 1 : p.rang === 1 ? dist < 9000 : dist < 1500);
-      p.el.style.display = ''; p.el.classList.toggle('dot', !named); p.el.classList.toggle('sel', p === selected);
+      if (vis) cand.push({ p, dist, sx, sy }); else if (p.shown !== 0) { p.el.style.display = 'none'; p.shown = 0; }
+    }
+    const rang = (c) => (c.p === selected ? 0 : c.p.rang === 1 ? 1 : 2);
+    cand.sort((a, b) => rang(a) - rang(b) || a.dist - b.dist);
+    for (const { p, dist, sx, sy } of cand) {
+      const sel = p === selected, bw = p.bw + (walking ? 44 : 0);
+      let named = sel || (walking ? dist < 500 || p.rang === 1 : p.rang === 1 ? dist < 9000 : dist < 1500);
+      if (named && !sel && boxes.some((q) => Math.abs(q[0] - sx) < (q[2] + bw) / 2 && Math.abs(q[1] - sy) < 24)) named = false;
+      if (!named && boxes.some((q) => Math.abs(q[0] - sx) < q[2] / 2 + 6 && Math.abs(q[1] - sy) < 20)) { if (p.shown !== 0) { p.el.style.display = 'none'; p.shown = 0; } continue; }
+      if (named) boxes.push([sx, sy, bw]);
+      if (p.shown !== 1) { p.el.style.display = ''; p.shown = 1; }
+      p.el.classList.toggle('dot', !named); p.el.classList.toggle('sel', sel);
       p.el.lastChild.textContent = walking && named ? Math.round(dist / 10) * 10 + ' m' : '';
       p.el.style.transform = `translate(${Math.round(sx)}px, ${Math.round(sy)}px) translate(-50%, ${named ? '-100%' : '-50%'})`;
     }
@@ -131,7 +144,7 @@ export function initUI89(app, cfg) {
   // ---------- marche à pied
   function walkUI(on) {
     body.classList.toggle('walking', on); $('walkhud').hidden = !on;
-    $('mode-walk').setAttribute('aria-pressed', String(on)); $('mode-fly').setAttribute('aria-pressed', String(!on));
+    if (on) arreterVisite(); modes(on ? 'walk' : 'fly');
     if (on) hint(matchMedia('(pointer: coarse)').matches ? 'Pouce gauche pour marcher · pouce droit pour regarder · toucher le sol pour avancer' : 'Glisser pour regarder · cliquer sur le sol pour avancer · flèches ou Z Q S D pour marcher, Maj pour courir · Échap pour remonter', 11);
     else $('hint').hidden = true;
   }
@@ -154,7 +167,7 @@ export function initUI89(app, cfg) {
     goWalk(best[0], best[1], Math.atan2(best[0] - p.x, best[1] - p.z));
   }
   $('walk-exit').addEventListener('click', stopWalk);
-  $('mode-fly').addEventListener('click', stopWalk);
+  $('mode-fly').addEventListener('click', () => { stopWalk(); arreterVisite(); });
   $('mode-walk').addEventListener('click', () => { if (rig.mode === 'walk') return; const q = nearestClear(rig.cur.x, rig.cur.z, 300); if (q) goWalk(q[0], q[1], rig.cur.az); else toast('Choisissez d’abord un endroit dégagé : une rue, une place, un quai.'); });
   let down = null;
   canvas.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY, performance.now()]; });
@@ -184,6 +197,8 @@ export function initUI89(app, cfg) {
 
   // ---------- mini-plan
   const mini = { cv: $('minimap'), ctx: $('minimap').getContext('2d', { willReadFrequently: true }), zoom: 'city', sig: '' };
+  // le cadre du mini-plan prend les proportions du plan de la ville : la ville entière le remplit, sans bandes vides
+  { const R = app.plan.rectWide; $('map-wrap').style.aspectRatio = `${Math.round(R.w)} / ${Math.round(R.h)}`; }
   function drawMini() {
     const cv = mini.cv, ctx = mini.ctx, cw = cv.clientWidth, ch = cv.clientHeight; if (!cw || !ch) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(cw * dpr), H = Math.round(ch * dpr), walking = rig.mode === 'walk';
@@ -275,10 +290,59 @@ export function initUI89(app, cfg) {
   fillList('');
   setHour(10.5, true);
   calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // ---------- parcours commentés (cfg.parcours) : chaque étape est [nom du lieu ou null, x, z, distance, azimut,
+  // élévation, heure, texte], comme sur la page de 1380. La caméra s'y rend, l'heure change, le texte s'affiche ; en
+  // lecture, l'étape suivante vient quand le visiteur a eu le temps de lire. Toucher la maquette met la lecture en pause.
+  function modes(m) { for (const k of ['fly', 'walk', 'tour']) { const b = $('mode-' + k); if (b) b.setAttribute('aria-pressed', String(k === m)); } }
+  const PARCOURS = cfg.parcours || [], visite = { p: null, k: 0, t: 0, joue: false, lieu: null }, parNom = new Map(places.map((p) => [p.name, p]));
+  const lecture = (e) => 5 + e[7].length * 0.055;                         // secondes à l'étape, vol compris
+  function jouer(on) { visite.joue = on; $('tour-play').setAttribute('aria-pressed', String(on)); $('tour-play').textContent = on ? 'Pause' : 'Lecture'; }
+  function etape(k) {
+    const P = visite.p; if (!P) return; k = clamp(k, 0, P.etapes.length - 1); visite.k = k; visite.t = 0;
+    const [nom, x, z, dist, az, elv, heure, texte] = P.etapes[k], p = nom ? parNom.get(nom) : null;
+    rig.flyTo({ x: p ? p.x : x, z: p ? p.z : z, dist, az, el: elv }, 2.6); setHour(heure);
+    $('tour-count').textContent = `${k + 1} / ${P.etapes.length}`; $('tour-place').textContent = p ? p.name : P.titre; $('tour-text').textContent = texte;
+    [...$('tour-dots').children].forEach((d, i) => { d.classList.toggle('done', i < k); if (i === k) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current'); });
+    $('tour-prev').disabled = k === 0; $('tour-next').textContent = k === P.etapes.length - 1 ? 'Terminer' : 'Suivant';
+    visite.lieu = p; $('tour-card').hidden = !p; $('card').hidden = true; selected = p; queueHash();
+  }
+  function demarrerVisite(P = PARCOURS[0]) {
+    if (!P) return; if (rig.mode === 'walk') stopWalk(); togglePlaces(false); closeMore(); stopHourPlay();
+    visite.p = P; $('tour-title').textContent = P.titre;
+    const d = $('tour-dots'); d.textContent = '';
+    P.etapes.forEach((e, i) => { const b = el('button'); b.type = 'button'; b.title = `${i + 1}. ${e[0] || 'Vue d’ensemble'}`; b.setAttribute('aria-label', b.title); b.addEventListener('click', () => etape(i)); d.appendChild(b); });
+    $('tour').hidden = false; body.classList.add('touring'); modes('tour'); jouer(true); etape(0);
+  }
+  function arreterVisite() { if (!visite.p) return; visite.p = null; visite.lieu = null; jouer(false); $('tour').hidden = true; body.classList.remove('touring'); if (rig.mode !== 'walk') modes('fly'); selected = null; queueHash(); }
+  if (PARCOURS.length && $('mode-tour')) {
+    $('mode-tour').addEventListener('click', () => (visite.p ? null : demarrerVisite()));
+    $('tour-prev').addEventListener('click', () => { jouer(false); etape(visite.k - 1); });
+    $('tour-next').addEventListener('click', () => { if (visite.k >= visite.p.etapes.length - 1) arreterVisite(); else etape(visite.k + 1); });
+    $('tour-play').addEventListener('click', () => { jouer(!visite.joue); if (visite.joue && visite.k >= visite.p.etapes.length - 1) etape(0); });
+    $('tour-stop').addEventListener('click', arreterVisite);
+    $('tour-card').addEventListener('click', () => { if (visite.lieu) { jouer(false); openCard(visite.lieu); } });
+    app.renderer.domElement.addEventListener('pointerdown', () => { if (visite.p && visite.joue) jouer(false); });
+    app.on('frame', (dt) => {
+      if (!visite.p || !visite.joue || rig.fly) return;
+      visite.t += dt; const P = visite.p;
+      if (visite.t > lecture(P.etapes[visite.k])) { if (visite.k < P.etapes.length - 1) etape(visite.k + 1); else jouer(false); }
+    });
+  } else if ($('mode-tour')) $('mode-tour').hidden = true;
+
   const fromLink = !app.shot && location.hash.length > 1 ? openLink(location.hash) : false;
   body.classList.add('ready');
   if (!fromLink && !app.shot) hint('Glisser pour se déplacer, molette pour s’approcher · double-clic pour descendre à pied', 10);
-  app.ui = { select, openCard, closeCard, setHour, startWalk, goWalk, stopWalk, goHome, link, openLink, currentState, applyState, places, byId, groundPoint, nearestClear, mini, drawMini, updateLabels, togglePlaces, calm };
+  // ---------- calque facultatif (page Paris 1889 : d'où vient chaque bâtiment) : un bouton, une légende
+  const calque = cfg.calque, bCalque = $('btn-calque');
+  let poserCalque = () => {};
+  if (calque && bCalque) {
+    const list = $('legend-list'); list.textContent = '';
+    for (const l of calque.legende) { const li = el('li'), i = el('i'); i.style.setProperty('--c', l.css); li.title = l.note; li.append(i, l.nom); list.appendChild(li); }
+    poserCalque = (on) => { calque.set(on); bCalque.setAttribute('aria-pressed', String(on)); $('legend').hidden = !on; closeMore(); if (app.paused || app.shot) app.renderNow(); };
+    bCalque.addEventListener('click', () => poserCalque(bCalque.getAttribute('aria-pressed') !== 'true'));
+    $('legend').querySelector('[data-close="legend"]').addEventListener('click', () => poserCalque(false));
+  }
+  app.ui = { calque: poserCalque, visite: { demarrer: demarrerVisite, arreter: arreterVisite, etape, jouer, etat: () => ({ actif: !!visite.p, k: visite.k, n: visite.p ? visite.p.etapes.length : 0, joue: visite.joue, lieu: visite.lieu && visite.lieu.name, t: visite.t }), manquants: PARCOURS.flatMap((P) => P.etapes.filter((e) => e[0] && !parNom.has(e[0])).map((e) => e[0])) }, select, openCard, closeCard, setHour, startWalk, goWalk, stopWalk, goHome, link, openLink, currentState, applyState, places, byId, groundPoint, nearestClear, mini, drawMini, updateLabels, togglePlaces, calm };
   suivreBarre($('dock'));
   // page d'accueil « Paris à travers le temps » : elle demande la vue, prépare l'arrivée, enfonce ou dresse la ville
   const quitter = () => { stopWalk(); stopHourPlay(); closeMore(); togglePlaces(false); toggleFrise(false); for (const m of document.querySelectorAll('.modal')) m.hidden = true; };

@@ -15,6 +15,7 @@
       <button type="button" id="btn-lutece" data-m="lutece" title="Ouvrir la maquette de Lutèce, vers 250">Lutèce</button>
       <button type="button" id="btn-1380" data-m="1380" title="Ouvrir la maquette de Paris vers 1380">Paris 1380</button>
       <button type="button" id="btn-1789" data-m="1789" title="Ouvrir la maquette de Paris en 1789">Paris 1789</button>
+      <button type="button" id="btn-calque" aria-pressed="false" aria-controls="legend" title="Teinter chaque maison selon ce qui la justifie : réelle, probable, disparue, évoquée">Origine du bâti</button>
       <button type="button" id="btn-sources">Sources</button>
       <button type="button" id="btn-share">Partager</button>
       <button type="button" id="btn-help">Aide</button>
@@ -60,6 +61,25 @@
 <div id="toast" hidden role="status"></div>
 
 <div id="stack">
+<div id="tour" hidden>
+  <div id="tour-head"><span id="tour-title"></span><span id="tour-count"></span></div>
+  <div id="tour-dots" role="group" aria-label="Étapes du parcours"></div>
+  <h3 id="tour-place"></h3>
+  <p id="tour-text"></p>
+  <div class="row">
+    <button type="button" id="tour-prev" class="ghost">Précédent</button>
+    <button type="button" id="tour-play" class="ghost" aria-pressed="true">Pause</button>
+    <button type="button" id="tour-next" class="primary">Suivant</button>
+    <span class="spacer"></span>
+    <button type="button" id="tour-card" class="ghost" hidden>Fiche</button>
+    <button type="button" id="tour-stop" class="ghost">Terminer</button>
+  </div>
+</div>
+<aside id="legend" hidden aria-label="Légende : d’où vient chaque maison">
+  <div class="panel-head"><h2>D’où vient chaque maison</h2><button type="button" class="x" data-close="legend" aria-label="Masquer le calque">×</button></div>
+  <ul id="legend-list"></ul>
+  <p class="legend-note">Aucune base ne décrit le bâti de 1889 maison par maison : chacune garde la trace de ce qui la justifie. Les monuments, les gares, les édifices et l’Exposition, modelés à part, gardent leur couleur.</p>
+</aside>
 <div id="chantier" role="group" aria-label="Chantier de la tour et de l’Exposition">
   <button type="button" id="ch-play" aria-pressed="false" aria-label="Voir la tour se monter" title="Voir la tour se monter, de 1887 à 1889"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M3 1.5v9l7.5-4.5z" fill="currentColor"/><path class="ico-pause" d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg></button>
   <div id="ch-corps">
@@ -79,6 +99,7 @@
 <footer id="dock">
   <div class="seg" role="group" aria-label="Mode">
     <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
+    <button type="button" id="mode-tour" aria-pressed="false"><span class="long">Visite guidée</span><span class="short">Visite</span></button>
     <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
   </div>
   <div id="hour-wrap">
@@ -129,6 +150,8 @@
       <dt>Clic droit ou Maj + glisser</dt><dd>pivoter et incliner</dd>
       <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
       <dt>Double-clic</dt><dd>descendre à pied à cet endroit</dd>
+      <dt>Visite guidée</dt><dd>un parcours commenté, d’étape en étape ; la lecture avance seule, toucher la maquette la met en pause</dd>
+      <dt>Origine du bâti</dt><dd>teinte chaque maison selon ce qui la justifie : réelle, probable, disparue, évoquée</dd>
       <dt>À pied</dt><dd>glisser pour regarder, cliquer le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir</dd>
       <dt>Échap</dt><dd>reprendre de la hauteur, fermer un panneau</dd>
       <dt>/</dt><dd>chercher un lieu</dd>

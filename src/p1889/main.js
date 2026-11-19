@@ -5,13 +5,17 @@ import { MONDE_1889 } from './monde.js';
 import { CATS, makePlaces } from './places.js';
 import { CREDITS, COMPTE, FER } from './data.js';
 import { DATE, ETAPES, FIN } from './tour.js';
+import { STATUTS } from './statuts.js';
+import { PARCOURS } from './parcours.js';
 
 bootEmbed('1889');                                   // s'annonce à la page d'accueil, si elle héberge cette maquette
 
 // Ce que l'interface doit savoir de cette ville : catégories et lieux, sources.
 const n = (v) => v.toLocaleString('fr-FR');
 const UI = {
+  parcours: PARCOURS,
   cats: CATS, places: makePlaces, absent: '',
+  calque: { legende: STATUTS, set: (on) => app.statuts.set(on) },
   sources: [
     ['Bâtiments encore debout', `${CREDITS.bati}. ${n(COMPTE.R)} bâtiments datés de 1889 ou d’avant sont à leur place, avec leur emprise et leur hauteur d’aujourd’hui ; ${n(COMPTE.P)} autres, sans année connue, sont tenus pour probables d’après leur voisinage.`],
     ['Bâtiments disparus', `${n(COMPTE.V)} bâtiments du centre, remplacés depuis 1889, reprennent l’emprise de l’Atlas de Vasserot (1810-1836). Ailleurs, ${n(COMPTE.E + COMPTE.G)} maisons sont évoquées, sur l’emprise actuelle ou le long des rues de 1900 : aucune base ne décrit le bâti de 1889 maison par maison.`],

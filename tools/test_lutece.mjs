@@ -130,6 +130,15 @@ check('retour au survol', await page.evaluate(() => window.__app.rig.mode !== 'w
 const nu = await page.evaluate(() => { const a = window.__app; a.ui.setHour(21.5); const n = [a.materials.facade.emissiveIntensity, a.materials.rdc.emissiveIntensity]; a.ui.setHour(12); const j = a.materials.facade.emissiveIntensity; a.ui.setHour(10.5); return { n, j, label: document.getElementById('hour-label').textContent }; });
 check('heure : la nuit, les fenêtres s’éclairent ; à midi, non', nu.n.every((v) => v > 0.8) && nu.j < 0.05 && nu.label === '10 h 30', JSON.stringify(nu));
 
+// ---------- parcours commenté : étapes, vol vers chaque lieu, lecture automatique, retour au survol
+const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.visite, $ = (id) => document.getElementById(id), tic = (n) => { for (let i = 0; i < n; i++) { a.rig.update(0.05); a.emit('frame', 0.05); } };
+  $('mode-tour').click(); const t0 = { panneau: !$('tour').hidden, titre: $('tour-title').textContent, compte: $('tour-count').textContent, texte: $('tour-text').textContent.length, mode: $('mode-tour').getAttribute('aria-pressed'), points: document.querySelectorAll('#tour-dots button').length };
+  $('tour-next').click(); tic(80); const e1 = V.etat(), p = a.ui.places.find((q) => q.name === e1.lieu), pres = p ? Math.round(Math.hypot(a.rig.cur.x - p.x, a.rig.cur.z - p.z)) : -1, fiche = !$('tour-card').hidden;
+  for (let i = 0; i < 1500 && V.etat().k === e1.k; i++) tic(1); const e2 = V.etat();
+  $('tour-stop').click(); const fin = { actif: V.etat().actif, panneau: !$('tour').hidden, survol: $('mode-fly').getAttribute('aria-pressed') };
+  return { t0, e1, pres, fiche, e2, fin, manquants: V.manquants }; });
+check('parcours commenté « Lutèce vers 250 » : 12 étapes, la vue se rend à chaque lieu, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Lutèce vers 250' && vi.t0.compte === '1 / 12' && vi.t0.points === 12 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
+
 // ---------- mini-plan, lien partageable, enfoncement de la ville
 const mi = await page.evaluate(() => { const a = window.__app; a.ui.mini.sig = ''; a.ui.drawMini(); const c = document.getElementById('minimap'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let eau = 0, n = d.length / 4; for (let i = 0; i < d.length; i += 4) if (d[i + 2] > d[i] + 8 && d[i] < 120) eau++; return { w: c.width, eau: +(eau / n).toFixed(3) }; });
 check('mini-plan : le fleuve y est dessiné', mi.w > 100 && mi.eau > 0.03, JSON.stringify(mi));

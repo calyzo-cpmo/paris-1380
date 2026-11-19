@@ -11,6 +11,7 @@ import { maison } from './bati.js';
 import { planter } from './arbres.js';
 import { materiauVoie, poserVoies, ilotsFerres } from './fer.js';
 import { NIVEAU_PORT } from './ports.js';
+import { Statuts } from './statuts.js';
 
 const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), DALLE_PORT = hex(0xb8b1a1), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
@@ -131,6 +132,8 @@ function quais(app, B) {
 export async function construire(app, step) {
   const V = app.v89, B = new Builder(1100), mats = (app.materials = makeMaterials89(app.mobile ? 0.5 : 1));
   mats.voie = materiauVoie();
+  // calque « d'où vient ce bâtiment » : greffé sur les matières des maisons, tracé à mesure qu'elles sont bâties
+  const ST = (app.statuts = new Statuts(app)); for (const k of ['facade', 'rdc', 'comble', 'roof', 'ardoise', 'plain', 'nef']) if (mats[k]) ST.greffer(mats[k]);
   app.foot = []; app.landmarks = []; app.gardens = []; app.monuments = {}; app.stats = {};
   const pause = () => new Promise((r) => setTimeout(r, 0)), R = app.navRect;
   const pres = (x, z) => x > R.x && x < R.x + R.w && z > R.z && z < R.z + R.h;
@@ -143,10 +146,10 @@ export async function construire(app, step) {
   const L = bati(); let n = 0, faits = 0;
   for (const e of L) {
     const r = e.rings[0]; let cx = 0, cz = 0; for (const p of r) { cx += p[0]; cz += p[1]; } cx /= r.length; cz /= r.length;
-    if (!reserve(cx, cz)) { maison(app, B, e, n, pres(cx, cz)); faits++; }
+    if (!reserve(cx, cz)) { maison(app, B, e, n, pres(cx, cz)); ST.poser(e); faits++; }
     if (++n % 4000 === 0) { await step('Les maisons de Paris, quartier par quartier…', 0.26 + (0.42 * n) / L.length); await pause(); }
   }
-  app.stats.bati = faits;
+  app.stats.bati = faits; ST.finir();
 
   // enceinte de Thiers : rempart de terre revêtu de pierre, bastion après bastion
   await step('L’enceinte de Thiers et ses bastions…', 0.69);

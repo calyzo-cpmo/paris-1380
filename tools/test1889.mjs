@@ -29,6 +29,8 @@ const J = (a, m, j) => Math.round((Date.UTC(a, m - 1, j) - Date.UTC(1887, 0, 1))
 
 check('la page démarre', await page.evaluate(() => window.__ready === true && !window.__failed), String(await page.evaluate(() => window.__failed || '')));
 await frames(3);
+const ov = await page.evaluate(() => { const L = [...document.querySelectorAll('.label')].filter((e) => e.style.display !== 'none' && !e.classList.contains('dot')).map((e) => e.getBoundingClientRect()); let n = 0; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a.left < b.right - 3 && b.left < a.right - 3 && a.top < b.bottom - 3 && b.top < a.bottom - 3) n++; } return { noms: L.length, chevauchements: n }; });
+check('étiquettes, à l’ouverture : aucun nom n’en chevauche un autre (les moins importants se réduisent à leur pastille)', ov.chevauchements === 0 && ov.noms >= 6, JSON.stringify(ov));
 
 // ---------- la ville recomposée
 const v = await page.evaluate(() => { const a = window.__app, T = a.terrain, V = a.v89; return {
@@ -121,6 +123,16 @@ const co = await page.evaluate(() => { const a = window.__app, P = a.people, cv 
 check('costumes de 1889 : képi et pantalon garance du fantassin, haut-de-forme noir, canotier de paille, bonnet blanc', co.kepi[0] > 140 && co.kepi[1] < 80 && co.garance[0] > 140 && co.garance[1] < 80 && co.haut[0] < 70 && co.haut[2] < 70 && co.canotier[0] > 180 && co.canotier[2] < 180 && co.bonnet[0] > 200 && co.bonnet[2] > 190, JSON.stringify(co));
 check('costumes : le fantassin en capote, la sœur de charité en cornette', co.soldat.v[0] === 7 && co.soldat.col[2] > co.soldat.col[0] && co.soeur.v[0] === 5 && co.soeur.v[1] === 1 && co.soeur.v[2] === 7, JSON.stringify([co.soldat, co.soeur]));
 
+// ---------- calque « origine du bâti »
+const ca = await page.evaluate(() => { const a = window.__app, b = document.getElementById('btn-calque'), S = a.statuts, $ = (id) => document.getElementById(id);
+  const lire = [S.lire(-15, -1), S.lire(145, -381), S.lire(-113, -204)];
+  a.setView([-420, 700, 900], [-80, 20, -80]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0);
+  const px = () => { a.renderNow(); const gl = a.renderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, d = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, d); let vert = 0, rose = 0; for (let i = 0; i < d.length; i += 4) { const r = d[i], g = d[i + 1], bl = d[i + 2]; if (g > r + 25 && g > bl + 12) vert++; if (r > g + 45 && bl > g + 8) rose++; } return [vert, rose]; };
+  const avant = px(); b.click(); const on = S.uniforms.uStatut.value, leg = !$('legend').hidden, items = document.querySelectorAll('#legend-list li').length, apres = px();
+  document.querySelector('#legend [data-close="legend"]').click();
+  return { lire, compte: S.compte, avant, apres, on, leg, items, off: S.uniforms.uStatut.value, presse: b.getAttribute('aria-pressed'), cache: $('legend').hidden }; });
+check('calque « origine du bâti » : chaque maison teintée selon ce qui la justifie (réelle, probable, disparue, évoquée), légende à quatre entrées ; l’Hôtel-Dieu, modelé à part, ne l’est pas', ca.on === 1 && ca.leg && ca.items === 4 && ca.off === 0 && ca.presse === 'false' && ca.cache && ca.lire[0] === 1 && ca.lire[1] === 2 && ca.lire[2] === 0 && ca.compte[1] > 35000 && ca.compte[2] > 5000 && ca.compte[3] > 3000 && ca.compte[4] > 20000 && ca.apres[0] > ca.avant[0] + 2000 && ca.apres[1] > ca.avant[1] + 500, JSON.stringify(ca));
+
 // ---------- le curseur
 const cu = await page.evaluate(async ([j1, fin]) => { const a = window.__app, sl = document.getElementById('ch-date'), jour = document.getElementById('ch-jour'), note = document.getElementById('ch-note'), play = document.getElementById('ch-play'), out = { max: +sl.max, depart: +sl.value, texte0: jour.textContent + ' | ' + note.textContent };
   sl.value = String(j1); sl.dispatchEvent(new Event('input', { bubbles: true })); out.texte1 = jour.textContent + ' | ' + note.textContent; out.h1 = a.v89.chantier.hauteur;
@@ -147,6 +159,15 @@ await page.click('#btn-sources');
 const src = await page.evaluate(() => { const d = document.getElementById('sources'); return { vu: !d.hidden, n: d.querySelectorAll('#sources-list li').length, t: d.textContent }; });
 check('sources : APUR, base « Paris 1900 », atlas de Vasserot, IGN, voies ferrées ; ce qui est réel et ce qui est évoqué', src.vu && src.n === 6 && /Voies ferrées/.test(src.t) && /Chemins de fer/.test(src.t) && /Gares :/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /Paris 1900/.test(src.t) && /Vasserot/.test(src.t) && /IGN/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t), `${src.n} sources`);
 await page.click('#sources [data-close="sources"]');
+
+// ---------- parcours commenté : étapes, vol vers chaque lieu, lecture automatique, retour au survol
+const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.visite, $ = (id) => document.getElementById(id), tic = (n) => { for (let i = 0; i < n; i++) { a.rig.update(0.05); a.emit('frame', 0.05); } };
+  $('mode-tour').click(); const t0 = { panneau: !$('tour').hidden, titre: $('tour-title').textContent, compte: $('tour-count').textContent, texte: $('tour-text').textContent.length, mode: $('mode-tour').getAttribute('aria-pressed'), points: document.querySelectorAll('#tour-dots button').length };
+  $('tour-next').click(); tic(80); const e1 = V.etat(), p = a.ui.places.find((q) => q.name === e1.lieu), pres = p ? Math.round(Math.hypot(a.rig.cur.x - p.x, a.rig.cur.z - p.z)) : -1, fiche = !$('tour-card').hidden;
+  for (let i = 0; i < 1500 && V.etat().k === e1.k; i++) tic(1); const e2 = V.etat();
+  $('tour-stop').click(); const fin = { actif: V.etat().actif, panneau: !$('tour').hidden, survol: $('mode-fly').getAttribute('aria-pressed') };
+  return { t0, e1, pres, fiche, e2, fin, manquants: V.manquants }; });
+check('parcours commenté « Paris en 1889 » : 14 étapes, la vue se rend à chaque lieu, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1889' && vi.t0.compte === '1 / 14' && vi.t0.points === 14 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
 
 // ---------- heure, marche, frise
 const nuit = await page.evaluate(() => { const a = window.__app; a.setHour(22); const n = a.materials.facade.emissiveIntensity; a.setHour(10.5); return [n, a.materials.facade.emissiveIntensity]; });

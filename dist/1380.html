@@ -210,6 +210,7 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #ch-reperes span:nth-child(2) { position: relative; left: -6.5%; }
 #ch-reperes span:nth-child(3) { visibility: hidden; }
 body.morph #chantier { visibility: hidden; }
+@media (max-width: 900px) { body.touring #chantier { display: none; } }      /* sur petit écran, la visite guidée prend la place du curseur du chantier */
 #frise { display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 10px; }
 #frise-play { flex: none; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 50%; }
 #frise-play .ico-pause, #frise-play[aria-pressed="true"] .ico-play { display: none; }
