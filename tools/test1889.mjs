@@ -170,6 +170,8 @@ await page.click('#btn-sources');
 const src = await page.evaluate(() => { const d = document.getElementById('sources'); return { vu: !d.hidden, n: d.querySelectorAll('#sources-list li').length, t: d.textContent }; });
 check('sources : APUR, base « Paris 1900 », atlas de Vasserot, IGN, voies ferrées ; ce qui est réel et ce qui est évoqué', src.vu && src.n === 6 && /Voies ferrées/.test(src.t) && /Chemins de fer/.test(src.t) && /Gares :/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /Paris 1900/.test(src.t) && /Vasserot/.test(src.t) && /IGN/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t), `${src.n} sources`);
 await page.click('#sources [data-close="sources"]');
+{ const og = await page.evaluate(() => (document.querySelector('meta[property="og:image"]') || {}).content || ''), { existsSync } = await import('node:fs');
+  check('partage : l’image de la maquette (og:image, adresse absolue) est dans dist/og/', /^https:\/\/.+\/dist\/og\/1889\.jpg$/.test(og) && existsSync(join(root, 'dist/og/1889.jpg')), og); }
 
 // ---------- parcours commenté : étapes, vol vers chaque lieu, lecture automatique, retour au survol
 const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.visite, $ = (id) => document.getElementById(id), tic = (n) => { for (let i = 0; i < n; i++) { a.rig.update(0.05); a.emit('frame', 0.05); } };

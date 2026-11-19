@@ -1,0 +1,43 @@
+# Intégration continue : reconstruit les pages, vérifie que celles de dist/ sont à jour, puis lance les tests
+# fonctionnels de chaque maquette dans Chromium, cinq en parallèle (rendu logiciel : une demi-heure en tout sur un poste).
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maquettes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [toits-1380, '1789', lutece, '1889', accueil]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Chromium et Playwright
+        run: npm install --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Les pages versionnées dans dist/ sont celles que donnent les sources
+        run: git diff --exit-code --stat -- dist/index.html dist/1380.html dist/1789.html dist/lutece.html dist/1889.html
+      - name: Tests de la maquette
+        run: |
+          case "${{ matrix.suite }}" in
+            toits-1380) node tools/test_toits.mjs && node tools/test.mjs ;;
+            1789) node tools/test1789.mjs ;;
+            lutece) node tools/test_lutece.mjs ;;
+            1889) node tools/test1889.mjs ;;
+            accueil) node tools/test_accueil.mjs ;;
+          esac

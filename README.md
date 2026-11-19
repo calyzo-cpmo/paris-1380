@@ -132,8 +132,11 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
     maisons le long des rues ;
   - les monuments sont placés et orientés d'après les données (emprise donnée par l'atlas, enclos qu'il nomme,
     coordonnées géographiques) et dimensionnés d'après ce que l'on sait de chaque édifice ; leur détail est une
-    évocation, et la hauteur des clochers est conventionnelle. Trois édifices hors de l'atlas ne sont pas encore
-    modelés (Salpêtrière, Gobelins, Saint-Lazare) et leur fiche le dit ;
+    évocation, et la hauteur des clochers est conventionnelle. Trois établissements des faubourgs que l'atlas ne couvre
+    pas — la Salpêtrière et sa chapelle à dôme, les Gobelins, la maison Saint-Lazare — sont évoqués, placés par leurs
+    coordonnées et orientés sur la rue la plus proche, et leur fiche le dit ;
+  - hors du mur, une douzaine de moulins à vent couronnent la butte Montmartre ; le nivellement de Girard ne couvrant
+    pas la butte, ils sont posés à plat autour de son sommet, en nombre et à des places de convention ;
   - les habitants sont une évocation ; ils ne circulent que dans la ville dense (5 × 4,2 km autour du centre) ;
   - il n'y a pas encore d'intérieurs ;
   - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
@@ -317,11 +320,13 @@ tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Sei
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html)
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
-tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
+tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, établissements évoqués et moulins, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
 tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, visite guidée, marche à pied, heure, frise, sources, téléphone
 tools/test_accueil.mjs       test de la page d'accueil : hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
 tools/test_toits.mjs         contrôle géométrique des toits de 1789, sans navigateur : l'aire de chaque toit égale celle de son emprise, cours déduites
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
+tools/og.mjs                 images de partage (og:image) de chaque maquette, 1200 × 630, dans dist/og/
+.github/workflows/tests.yml  intégration continue : construction, pages de dist/ à jour, tests des cinq maquettes en parallèle
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
 tools/inshot.mjs, uishot.mjs captures des intérieurs et de l'interface
 tools/make_thumbs.py         vignettes des sources (réduction locale des images du domaine public)
@@ -417,7 +422,12 @@ npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
 npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html et dist/1889.html
 npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
+node tools/og.mjs # facultatif : refait les images de partage de dist/og/ (SITE_URL=… npm run build pour un autre domaine)
 ```
+
+À chaque envoi sur `main` et à chaque demande de fusion, GitHub Actions refait la construction, vérifie que les pages
+versionnées dans `dist/` sont bien celles que donnent les sources, puis lance les tests des cinq maquettes en parallèle
+(`.github/workflows/tests.yml`).
 
 Dépendances : [three.js](https://threejs.org) (MIT), [clipper-lib](https://www.npmjs.com/package/clipper-lib) (BSL-1.0),
 esbuild (outil de build). Toute la géométrie et toutes les textures sont générées par le code au chargement de la page.

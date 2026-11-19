@@ -56,8 +56,12 @@ ou deux aux adresses <https://calyzo-cpmo.github.io/paris-1380/> (Paris 1380) et
 - **Licence** : le plan ALPAGE est sous CC BY-SA 2.0 FR. L'attribution figure dans le panneau « Sources » de la page et dans
   le `README.md` ; elle doit rester visible, et toute version modifiée du plan doit être partagée sous la même licence.
 - **Intégration dans une autre page** : `<iframe src="https://…/" style="width:100%;height:80vh;border:0" allow="fullscreen" loading="lazy"></iframe>`.
-- **Référencement** : la page porte un titre et une description ; ajouter au besoin un `robots.txt` et une image de partage
-  au niveau du serveur.
+- **Référencement et partage** : chaque page porte un titre, une description et une image de partage (`og:image`,
+  1200 × 630, dans `dist/og/`, refaite par `node tools/og.mjs`). Les réseaux sociaux exigent une adresse absolue : elle
+  est fixée à la construction, par défaut celle de GitHub Pages ; pour un autre domaine, construire avec
+  `SITE_URL=https://exemple.fr/ npm run build` (le Dockerfile sert les images sous `/dist/og/`, comme GitHub Pages).
+  Les quatre pages d'entrée de la racine (`index.html`, `1789.html`, `lutece.html`, `1889.html`) portent les mêmes
+  balises, à l'adresse de GitHub Pages. Ajouter au besoin un `robots.txt` au niveau du serveur.
 
 ## Vérifier après déploiement
 

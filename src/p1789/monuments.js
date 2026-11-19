@@ -6,7 +6,7 @@ import { RAW, bati, batiNom, enclos, bastille, rues, eglises } from './data.js';
 import { hash, hex, ARDOISE, PLOMB, PIERRE, building } from './blocks.js';
 import { cathedrale, gothique, clocher } from './eglises.js';
 import { ccw, walls, cap, box, cyl, cone, disc, crenels, rectCorners, ringCircle } from '../builder.js';
-import { polyArea, centroid, minAreaRect, pointInPoly } from '../geom.js';
+import { polyArea, centroid, minAreaRect, pointInPoly, mulberry32 } from '../geom.js';
 
 const OR = hex(0xd8b85a), BRIQUE = hex(0xc89a80), VIEILLE = hex(0xcfc4a8), DALLE = hex(0xb4aa90);
 let seq = 900000;
@@ -16,6 +16,7 @@ const at = (f, a, c) => [f.cx + f.ux * a - f.uz * c, f.cz + f.uz * a + f.ux * c]
 const rect = (f, a, c, ha, hc) => { const p = at(f, a, c); return rectCorners({ cx: p[0], cz: p[1], ux: f.ux, uz: f.uz, hl: ha, hw: hc }); };
 const span = (ring, f) => { let lo = 1e9, hi = -1e9; for (const p of ring) { const t = (p[0] - f.cx) * f.ux + (p[1] - f.cz) * f.uz; if (t < lo) lo = t; if (t > hi) hi = t; } return [lo, hi]; };
 
+const AILES = hex(0xb8a888);                       // toile et bois des ailes de moulin
 export function buildMonuments(app, B) {
   const T = app.terrain, M = (app.monuments = {}), reserve = (app.reserve = []);
   const ground = (x, z) => Math.max(T.height(x, z), 0.3);
@@ -116,6 +117,44 @@ export function buildMonuments(app, B) {
     if (hl < 14 || hw < 12) continue;
     for (const k of [1, -1]) { wing(f, (hl - 5) * k, 0, 5, hw, 3); wing(f, 0, (hw - 5) * k, hl, 5, 3); }
   }
+
+  // ---- trois établissements des faubourgs que l'atlas ne couvre pas : placés par leurs coordonnées géographiques et
+  // orientés sur la rue la plus proche ; leur plan suit le parti connu de chacun, leurs dimensions et leurs hauteurs
+  // sont une évocation
+  { const q = rep('Salpêtrière');
+    if (q && !app.footAt(q[0], q[1])) { const d = streetDir(q[0], q[1]), f = frame(q[0], q[1], d[0], d[1]), y0 = ground(q[0], q[1]);
+      // la chapelle Saint-Louis de Libéral Bruant : quatre nefs en croix autour d'un dôme octogonal
+      for (const [a, c] of [[19, 0], [-19, 0], [0, 19], [0, -19]]) nave(f, a, c, a ? 12 : 7.5, a ? 7.5 : 12, 13);
+      const top = dome(q[0], q[1], 9.5, y0 + 14, 7, 9, { lantern: 4, spire: 3 });
+      // devant elle, la grande cour d'entrée entre les corps de l'hôpital général
+      for (const k of [1, -1]) wing(f, 90, 62 * k, 58, 6, 3);
+      wing(f, 152, 0, 6, 68, 3); wing(f, 36, 0, 6, 30, 2);
+      note('Salpêtrière', q[0], q[1], top); } }
+  { const q = rep('Gobelins');
+    if (q && !app.footAt(q[0], q[1])) { const d = streetDir(q[0], q[1]), f = frame(q[0], q[1], d[0], d[1]);
+      // les ateliers de la manufacture autour de deux cours, au bord de la Bièvre
+      wing(f, 0, -22, 36, 6, 3); wing(f, 0, 22, 36, 6, 2); const top = wing(f, -30, 0, 6, 28, 3); wing(f, 30, 0, 6, 16, 2);
+      note('Gobelins', q[0], q[1], top); } }
+  { const q = rep('Saint-Lazare');
+    if (q && !app.footAt(q[0], q[1])) { const d = streetDir(q[0], q[1]), f = frame(q[0], q[1], d[0], d[1]);
+      // la maison des Lazaristes : un quadrilatère de bâtiments autour du cloître, l'église le long de la rue
+      for (const k of [1, -1]) { wing(f, 0, 32 * k, 40, 6, 3); wing(f, 40 * k, 0, 6, 26, 3); }
+      nave(f, 0, -48, 26, 8, 14); const t = tower(f, -22, -48, 3.2, 26); spire(at(f, -22, -48)[0], at(f, -22, -48)[1], 4.6, t, t + 9, 4, ARDOISE, Math.atan2(f.uz, f.ux) + Math.PI / 4);
+      note('Saint-Lazare', q[0], q[1], t + 9); } }
+  // ---- moulins à vent de la butte Montmartre, au nord, hors du mur : tours de pierre coiffées d'un toit conique, ailes
+  // en croix. Le nivellement de Girard ne couvre pas la butte : ils sont posés autour de son sommet (celui du repère de la
+  // maquette de 1889), à des places et en nombre de convention
+  { const r = mulberry32(1789), mills = [], S = [-480, -3720];
+    for (let k = 0; k < 400 && mills.length < 12; k++) { const a = r() * 6.283, d = 40 + r() * 230, x = S[0] + Math.cos(a) * d, z = S[1] + Math.sin(a) * d;
+      if (app.footAt(x, z) || mills.some((m) => Math.hypot(m[0] - x, m[1] - z) < 55)) continue; mills.push([x, z]); }
+    for (const [x, z] of mills) {
+      const y0 = ground(x, z), bs = B.at('stone', x, z), bp = B.at('plain', x, z), a = Math.atan2(x + 480, z + 3720);       // ailes tournées vers le dehors de la butte
+      cyl(bs, x, z, 3.2, y0 - 0.8, y0 + 9, { seg: 12, col: PIERRE, s0: 0.82, r1: 2.8 }); cone(B.at('ardoise', x, z), x, z, 3.3, y0 + 9, y0 + 13, { seg: 12, col: ARDOISE });
+      const hx = x + Math.sin(a) * 3.4, hz = z + Math.cos(a) * 3.4, ux = Math.cos(a), uz = -Math.sin(a);
+      for (const v of [0, 1]) box(bp, { cx: hx, cz: hz, ux, uz, hl: v ? 0.35 : 9, hw: 0.15 }, y0 + 9.5 - (v ? 9 : 0.35), y0 + 9.5 + (v ? 9 : 0.35), { col: AILES });      // les quatre ailes, en croix
+      app.foot.push({ ring: ringCircle(x, z, 3.4, 10), top: y0 + 13 });
+    }
+    if (mills.length) note('Moulins de Montmartre', mills[0][0], mills[0][1], ground(mills[0][0], mills[0][1]) + 22); app.stats = app.stats || {}; app.stats.moulins = mills.length; }
 
   // ---- dômes sur des édifices que l'atlas donne déjà
   { const l = landmark('Eglise Sainte Geneviève'); if (l) { const top = dome(l.c[0], l.c[1], 11.5, ground(l.c[0], l.c[1]) + 30, 20, 22, { lantern: 7, spire: 4 }); note('Sainte-Geneviève', l.c[0], l.c[1], top); } }

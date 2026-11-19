@@ -106,6 +106,7 @@ export class App89 {
     this.pave = { value: blank };
     let voirie = null;
     if (monde.voirie) { const v = monde.voirie(this, Math.min(gl, mobile ? 2048 : 4096)), t = new THREE.DataTexture(v.data, v.w, v.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; const l = new THREE.DataTexture(v.large.data, v.large.w, v.large.h, THREE.RedFormat); l.minFilter = l.magFilter = THREE.LinearFilter; l.unpackAlignment = 1; l.needsUpdate = true; voirie = { tex: t, large: l, cadre: CADRE, D: v.D }; this.voirie = v; }
+    this.log('sol peint (plan d’ensemble et toile fine), voirie');
     this.groundMat = makeGround89(wideTex, centreTex, detail, makeCobbleTexture(), this.pave, CENTRE_RECT, voirie);
     const coreMesh = new THREE.Mesh(core, this.groundMat), outerMesh = new THREE.Mesh(outer, makeGroundMaterial(fields, detail));
     coreMesh.receiveShadow = true; outerMesh.receiveShadow = true; coreMesh.matrixAutoUpdate = false; outerMesh.matrixAutoUpdate = false;
@@ -116,9 +117,12 @@ export class App89 {
     this.rig.goal = { ...monde.vue }; this.rig.cur = { ...this.rig.goal };
     this.navRect = CENTRE_RECT;
     await monde.construire(this, step);
+    this.log('ville construite');
     { const n = this.nav, src = this.pavage || n.data, px = new Uint8Array(n.w * n.h); for (let i = 0; i < px.length; i++) px[i] = src[i] ? 255 : 0;      // masque des pavés : la trame des voies, ou celle que la ville désigne (this.pavage)
       const t = new THREE.DataTexture(px, n.w, n.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; this.pave.value = t; }
+    this.log('trame des passants');
     this.people = new People(this, { nav: this.nav, ...monde.figures(mobile), noBeasts: true, groundCell: 3 });
+    this.log('passants');
     this.on('frame', (dt) => this.people.update(dt));
     // maisons, monuments, arbres et habitants vont dans un groupe que le passage d'une époque à l'autre enfonce dans
     // le sol ou dresse (setCityScale) ; le sol, le fleuve et ses quais restent en place

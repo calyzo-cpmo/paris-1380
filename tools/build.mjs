@@ -6,6 +6,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+// Adresse publique du site : les images de partage (dist/og/) doivent y être données en adresse absolue. Par défaut,
+// GitHub Pages ; pour un autre hébergement, construire avec SITE_URL=https://exemple.fr/ npm run build.
+const SITE = (process.env.SITE_URL || 'https://calyzo-cpmo.github.io/paris-1380/').replace(/\/?$/, '/');
+const partage = (img, alt) => `<meta property="og:image" content="${SITE}dist/og/${img}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${alt}">
+<meta name="twitter:card" content="summary_large_image">`;
 const dev = process.argv.includes('--dev');
 const res = await build({
   entryPoints: [join(root, 'src/main.js')], bundle: true, format: 'iife', write: false,
@@ -38,6 +46,7 @@ writeFileSync(join(root, 'dist/1380.html'), `<!DOCTYPE html>
 <meta property="og:description" content="${desc}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
+${partage('1380.jpg', 'La maquette 3D de Paris vers 1380')}
 <meta name="theme-color" content="#0b1230">
 ${fonts}
 <style>${css}</style>
@@ -51,7 +60,7 @@ ${body}
 console.log('build ok', (fragment.length / 1024).toFixed(0) + ' Ko');
 
 // ---- les autres maquettes : même moteur, mêmes styles, autres données
-async function maquette({ entree, corps, sortie, titre, description }) {
+async function maquette({ entree, corps, sortie, titre, description, image }) {
   const r = await build({
     entryPoints: [join(root, entree)], bundle: true, format: 'iife', write: false,
     minify: !dev, target: 'es2020', legalComments: 'none', loader: { '.json': 'json', '.glsl': 'text' },
@@ -68,6 +77,7 @@ async function maquette({ entree, corps, sortie, titre, description }) {
 <meta property="og:description" content="${description}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
+${partage(image, titre)}
 <meta name="theme-color" content="#0b1230">
 ${fonts}
 <style>${css}</style>
@@ -82,15 +92,15 @@ ${readFileSync(join(root, corps), 'utf8')}
   console.log('build', sortie, 'ok', (page.length / 1024).toFixed(0) + ' Ko');
 }
 await maquette({
-  entree: 'src/p1789/main.js', corps: 'src/body1789.html', sortie: '1789.html', titre: 'Paris à travers le temps — Paris 1789 en maquette 3D',
+  entree: 'src/p1789/main.js', corps: 'src/body1789.html', sortie: '1789.html', image: '1789.jpg', titre: 'Paris à travers le temps — Paris 1789 en maquette 3D',
   description: 'Maquette 3D interactive de Paris en 1789, dans le mur des Fermiers généraux : plus de vingt mille bâtiments d’après les plans de Verniquet et de Vasserot, survol et promenade à pied.',
 });
 await maquette({
-  entree: 'src/lutece/main.js', corps: 'src/bodylutece.html', sortie: 'lutece.html', titre: 'Paris à travers le temps — Lutèce vers 250 en maquette 3D',
+  entree: 'src/lutece/main.js', corps: 'src/bodylutece.html', sortie: 'lutece.html', image: 'lutece.jpg', titre: 'Paris à travers le temps — Lutèce vers 250 en maquette 3D',
   description: 'Maquette 3D interactive de Lutèce vers 250 : le forum, les thermes, le théâtre et les arènes de la ville gallo-romaine, l’île et ses ponts de bois, d’après la restitution de Théodore Vacquer.',
 });
 await maquette({
-  entree: 'src/p1889/main.js', corps: 'src/body1889.html', sortie: '1889.html', titre: 'Paris à travers le temps — Paris 1889 en maquette 3D',
+  entree: 'src/p1889/main.js', corps: 'src/body1889.html', sortie: '1889.html', image: '1889.jpg', titre: 'Paris à travers le temps — Paris 1889 en maquette 3D',
   description: 'Maquette 3D interactive de Paris en 1889, l’année de l’Exposition universelle : tout Paris dans son enceinte, et la tour Eiffel qui se monte de 1887 à 1889.',
 });
 
@@ -109,6 +119,7 @@ const shell = `<!DOCTYPE html>
 <meta property="og:description" content="${descShell}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
+${partage('1380.jpg', 'La maquette 3D de Paris vers 1380')}
 <meta name="theme-color" content="#0b1230">
 ${fonts}
 <style>${readFileSync(join(root, 'src/shell/style.css'), 'utf8')}</style>
