@@ -1,6 +1,6 @@
-# Paris à travers le temps — maquettes 3D interactives de Lutèce, de Paris en 1380, en 1789 et en 1889
+# Paris à travers le temps — maquettes 3D interactives de Lutèce, de Paris en 1380, en 1789, en 1889 et en 1900
 
-Paris de Lutèce à 1889 : huit dates et quatre maquettes détaillées — Lutèce vers 250, 1380, 1789 et 1889. La première page est une restitution
+Paris de Lutèce à 1900 : neuf dates et cinq maquettes détaillées — Lutèce vers 250, 1380, 1789, 1889 et 1900. La première page est une restitution
 en trois dimensions de Paris à la fin du règne de Charles V (vers 1380-1400), consultable dans un navigateur :
 survol libre, cinq parcours commentés, promenade à pied dans des rues peuplées et jusque dans la campagne, histoire de
 chaque monument, visite de leurs intérieurs, mini-plan et boussole, heure du jour réglable, calque montrant ce qui est
@@ -18,16 +18,21 @@ Une quatrième page, **Paris 1889**, montre tout Paris dans l'enceinte de Thiers
 près de quatre-vingt mille bâtiments, neuf gares et leurs voies ferrées, et un curseur de date qui fait monter la tour
 Eiffel et les palais du Champ-de-Mars, de janvier 1887 au 6 mai 1889 ; un calque dit d'où vient chaque maison.
 
-Les trois dernières ont chacune leur visite guidée (quinze étapes en 1789, douze pour Lutèce, quatorze en 1889).
+Une cinquième page, **Paris 1900**, reprend le moteur de Paris 1889 sur la ville recomposée à la date de l'été 1900 :
+près de quatre-vingt-dix mille bâtiments, la tour repeinte en jaune, le Champ-de-Mars de l'Exposition universelle, la
+Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la nouvelle gare de Lyon et sa tour de l'horloge.
 
-Une **page d'accueil** héberge les quatre maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
-« Lutèce », « 1380 », « 1789 » ou « 1889 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
+Les quatre dernières ont chacune leur visite guidée (quinze étapes en 1789, douze pour Lutèce, quatorze en 1889,
+seize en 1900).
+
+Une **page d'accueil** héberge les cinq maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
+« Lutèce », « 1380 », « 1789 », « 1889 » ou « 1900 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
 et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent et l'autre ville s'élève.
 
-**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889. Les quatre adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html` et `dist/1889.html`.
-**Les ouvrir sur son ordinateur :** `dist/index.html` (les cinq fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
+**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
+**Les ouvrir sur son ordinateur :** `dist/index.html` (les six fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
-**Prochaines maquettes :** Paris 1900, puis 1937, puis 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
+**Prochaines maquettes :** Paris 1900 est en ligne dans une première version ; viendront la suite de l'Exposition de 1900, puis 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
 **Projet de jeu :** le cadrage d'un « mode classe » (séance animée par un enseignant, sans compte) est dans [`CADRAGE-JEU.md`](CADRAGE-JEU.md) ; rien n'en est encore construit.
 
 ## Ce que montre la maquette
@@ -242,6 +247,34 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   les autres églises et édifices publics sont rendus par leur seul volume. La maquette vise l'ordinateur et la
   tablette ; sur téléphone, les toits sont simplifiés.
 
+## Paris 1900 — la cinquième maquette
+
+- **Ce qu'elle montre** : le même Paris dans l'enceinte de Thiers, à l'été de l'Exposition universelle (inaugurée le
+  14 avril 1900, ouverte du 15 avril au 12 novembre) : 87 000 bâtiments, 35 ponts dont le pont Mirabeau et le pont
+  Alexandre-III, la tour repeinte en 1899 en cinq teintes, du jaune orangé au jaune clair. Le Sacré-Cœur a son dôme
+  (1899), pas encore son campanile ; le palais de l'Industrie, démoli en 1897, a laissé place au Grand et au Petit Palais.
+- **L'Exposition** : sur le Champ-de-Mars recomposé par Joseph Bouvard, six palais en fer à cheval autour du jardin
+  central, le palais de l'Électricité (70 m au Génie de l'Électricité) et le Château d'eau, deux cheminées de 80 m, la
+  Galerie des machines de 1889 gardée derrière eux ; au coin des avenues de Suffren et de La Motte-Picquet, la Grande
+  Roue (93 m) ; la verrière et la coupole du Grand Palais, le dôme du Petit Palais, les quatre pylônes du pont
+  Alexandre-III. Cotes : rapport général de Picard (1902) et *Revue technique de l'Exposition* ; les élévations sont
+  une évocation. Les pavillons des nations (rue des Nations), ceux des quais, de l'Esplanade des Invalides et du
+  Trocadéro, le Vieux Paris, le trottoir roulant et les entrées du métro viendront ensuite.
+- **Gares et voies** : la gare de Lyon de Toudoire (bâtiments tirés des données, tour de l'horloge de 67 m, nefs
+  vitrées), les gares d'Orsay et des Invalides ; le raccordement de Boulainvilliers au Champ-de-Mars franchit la Seine
+  sur le pont Rouelle ; la gare du Champ-de-Mars de 1878, démontée en 1897, a disparu. Les lignes souterraines (Orsay,
+  Invalides, métro) ne sont pas figurées.
+- **D'où vient la ville** : la méthode de 1889, à la date de 1900 (`python3 tools/extract_1889.py 1900`) : **réel**
+  (49 000 bâtiments que l'APUR date de 1900 ou d'avant), **probable** (11 500, sans année ou datés de « 1900 », année
+  ronde que l'APUR donne plus de neuf mille fois), **disparu** (3 700 emprises de l'atlas de Vasserot), **évoqué**
+  (23 000 maisons). Le Grand et le Petit Palais, les gares d'Orsay, des Invalides et de Lyon, que l'APUR range dans la
+  période 1851-1914 sans année, reçoivent l'année de leur histoire. Îlots et rues sont ceux de la base « Paris 1900 »,
+  l'année même.
+- **Comment elle est faite** : la page reprend tout `src/p1889/` ; `src/p1900/` ne contient que ce qui change —
+  l'Exposition (`expo.js`), les lieux, la visite, la page. À l'assemblage, `tools/build.mjs` substitue aux modules de
+  `src/p1889/` leurs homonymes de `src/p1900/`, et `data/paris1900.json` à `data/paris1889.json` ; les petits écarts
+  (tour repeinte, Sacré-Cœur, gares, ponts) sont réglés dans les modules communs par l'année des données.
+
 ## Sources
 
 Le tracé (rues, îlots, enceintes, emprises des édifices) provient intégralement du
@@ -316,10 +349,12 @@ tools/extract_1789.py        GeoPackage → data/paris1789.json (même recalage,
 tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, géométries WKB)
 data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, disparu, évoqué), îlots et rues de 1900, eau, jardins, relief, voies ferrées (actuelles, restituées, évoquées) (ODbL 1.0)
 tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
-tools/extract_1889.py        recompose la ville de 1889 à partir de ces sources et de l'atlas de Vasserot
-tools/fer_1889.py            voies ferrées de 1889 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
+tools/extract_1889.py        recompose la ville de 1889 (ou de 1900 : python3 tools/extract_1889.py 1900) à partir de ces sources et de l'atlas de Vasserot
+data/paris1900.json          Paris 1900 recomposé, même méthode et même format que Paris 1889 (ODbL 1.0)
+tools/fer_1889.py            voies ferrées de 1889 et de 1900 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
 tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
-tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html)
+tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III), monuments, calque, visite, frise, téléphone
+tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html, 1900.html) ; la page de 1900 reprend src/p1889/ par surcouche
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
 tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, établissements évoqués et moulins, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
@@ -409,6 +444,11 @@ src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, 
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
 src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier, Halles, palais de l'Industrie
 src/p1889/figures.js         visages et costumes de 1889
+src/body1900.html            page Paris 1900 (mêmes styles, sans curseur)
+src/p1900/main.js            page Paris 1900 : le moteur de Paris 1889 sur data/paris1900.json
+src/p1900/expo.js            Exposition de 1900 (remplace src/p1889/expo.js à l'assemblage) : Champ-de-Mars, palais de l'Électricité, Grande Roue, Grand et Petit Palais, pylônes du pont Alexandre-III
+src/p1900/places.js          repères de Paris 1900 et leurs notices
+src/p1900/parcours.js        visite guidée de Paris 1900
 src/p1889/arbres.js          alignements d'arbres des boulevards, des avenues et des quais, d'après la largeur des voies
 src/p1889/places.js          repères de Paris 1889 et leurs notices
 src/p1889/monde.js           le monde de Paris 1889

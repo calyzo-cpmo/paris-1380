@@ -121,9 +121,12 @@ export async function batirExpo(app, B) {
   // repères de l'Exposition
   const L = (V.lieux = []);
   L.push(['Tour de 300 mètres', 'expo', 'La tour de Gustave Eiffel, clou de l’Exposition : 18 000 pièces de fer assemblées par 2,5 millions de rivets. Premiers coups de pioche le 28 janvier 1887 ; les piles se rejoignent au premier étage le 7 décembre ; deuxième étage le 14 août 1888 ; drapeau au sommet le 31 mars 1889. Le curseur du chantier la montre à chaque date. Sa forme est une évocation à partir de ses cotes.', M.Tour, 1]);
-  L.push(['Galerie des machines', 'expo', 'La plus vaste nef jamais construite : 420 mètres de long, 115 mètres de portée sans appui, 43,5 mètres sous clef, par l’architecte Dutert et l’ingénieur Contamin. Démolie en 1910. Son élévation est une évocation.', M.Machines, 1]);
+  L.push(['Galerie des machines', 'expo', 'La plus vaste nef jamais construite : 420 mètres de long, 115 mètres de portée sans appui, 43,5 mètres sous clef, par l’architecte Dutert et l’ingénieur Contamin. Gardée pour l’Exposition de 1900, démolie en 1910. Son élévation est une évocation.', M.Machines, 1]);
   L.push(['Dôme central', 'expo', 'L’entrée d’honneur du palais des Industries diverses, par Joseph Bouvard : un dôme de 60 mètres dans l’axe de la tour, d’où part la galerie de trente mètres vers la Galerie des machines.', M.Dome, 1]);
-  L.push(['Palais des Beaux-Arts', 'expo', 'L’un des deux palais jumeaux de Formigé, de fer, de brique et de terre cuite, sous un dôme d’émail bleu. Démoli après l’Exposition de 1900.', M.BeauxArts]);
+  L.push(['Palais des Beaux-Arts', 'expo', 'L’un des deux palais jumeaux de Formigé, de fer, de brique et de terre cuite, sous un dôme d’émail bleu. Démoli en 1897-1898, avec le palais des Arts libéraux et le Dôme central, pour faire place aux palais de l’Exposition de 1900.', M.BeauxArts]);
   L.push(['Palais des Arts libéraux', 'expo', 'Le pendant du palais des Beaux-Arts, côté avenue de Suffren.', M.ArtsLiberaux]);
   L.push(['Palais du Trocadéro', 'expo', 'Bâti pour l’Exposition de 1878 par Davioud et Bourdais : une rotonde, deux tours de 80 mètres et deux ailes courbes. Il a été remplacé en 1937 par le palais de Chaillot, dont les ailes reprennent le tracé. Sa forme est une évocation.', M.Trocadero, 1]);
 }
+
+// Repris par l'Exposition de 1900 (src/p1900/expo.js) : le Trocadéro, la Galerie des machines et les outils des palais.
+export { halle, dome, ensemble, emprise, trocadero, Q, CREME, OCRE, VERRE, VERRE_CLAIR, BLEU, OR, BRIQUE, PIERRE, ARDOISE };

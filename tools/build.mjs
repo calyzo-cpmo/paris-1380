@@ -1,8 +1,8 @@
 // Assemble les pages autonomes de dist/ : les maquettes (1380.html, 1789.html, lutece.html), la page d'accueil qui les héberge et
 // orchestre le passage de l'une à l'autre (index.html), et le fragment publié (paris-1380.artifact.html).
 import { build } from 'esbuild';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { dirname, join, resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,11 +60,32 @@ ${body}
 console.log('build ok', (fragment.length / 1024).toFixed(0) + ' Ko');
 
 // ---- les autres maquettes : même moteur, mêmes styles, autres données
-async function maquette({ entree, corps, sortie, titre, description, image }) {
+// Surcouche : une maquette peut reprendre le moteur d'une autre. Tout module du dossier `de` qui a son homonyme dans le
+// dossier `vers` est remplacé par lui à l'assemblage, et les fichiers de données de `donnees` par leurs remplaçants.
+// Ainsi Paris 1900 reprend tout src/p1889/ ; src/p1900/ ne contient que ce qui change (l'Exposition, les lieux, la
+// visite). Un module de la surcouche peut encore importer celui qu'il remplace (son homonyme, par un chemin explicite).
+function surcouche({ de, vers, donnees = {} }) {
+  const D = resolve(root, de), W = resolve(root, vers), remplace = new Map(Object.entries(donnees).map(([a, b]) => [resolve(root, a), resolve(root, b)]));
+  return {
+    name: 'surcouche',
+    setup(b) {
+      b.onResolve({ filter: /^\.\.?\// }, (args) => {
+        const cible = resolve(args.resolveDir, args.path);
+        if (remplace.has(cible)) return { path: remplace.get(cible) };
+        const rel = relative(D, cible);
+        if (rel.startsWith('..') || isAbsolute(rel)) return undefined;
+        const autre = join(W, rel);
+        if (!existsSync(autre) || resolve(args.importer) === autre) return undefined;
+        return { path: autre };
+      });
+    },
+  };
+}
+async function maquette({ entree, corps, sortie, titre, description, image, sur }) {
   const r = await build({
     entryPoints: [join(root, entree)], bundle: true, format: 'iife', write: false,
     minify: !dev, target: 'es2020', legalComments: 'none', loader: { '.json': 'json', '.glsl': 'text' },
-    define: { __DEV__: dev ? 'true' : 'false' },
+    define: { __DEV__: dev ? 'true' : 'false' }, plugins: sur ? [surcouche(sur)] : [],
   });
   const page = `<!DOCTYPE html>
 <html lang="fr">
@@ -103,11 +124,16 @@ await maquette({
   entree: 'src/p1889/main.js', corps: 'src/body1889.html', sortie: '1889.html', image: '1889.jpg', titre: 'Paris à travers le temps — Paris 1889 en maquette 3D',
   description: 'Maquette 3D interactive de Paris en 1889, l’année de l’Exposition universelle : tout Paris dans son enceinte, et la tour Eiffel qui se monte de 1887 à 1889.',
 });
+await maquette({
+  entree: 'src/p1900/main.js', corps: 'src/body1900.html', sortie: '1900.html', image: '1900.jpg', titre: 'Paris à travers le temps — Paris 1900 en maquette 3D',
+  description: 'Maquette 3D interactive de Paris en 1900, l’été de l’Exposition universelle : tout Paris dans son enceinte, la tour repeinte en jaune, le Champ-de-Mars, la Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III.',
+  sur: { de: 'src/p1889', vers: 'src/p1900', donnees: { 'data/paris1889.json': 'data/paris1900.json' } },
+});
 
 // ---- page d'accueil : héberge les maquettes et fait la transition entre époques
 const resShell = await build({ entryPoints: [join(root, 'src/shell/main.js')], bundle: true, format: 'iife', write: false, minify: !dev, target: 'es2020', legalComments: 'none' });
 const jsShell = resShell.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-const descShell = 'Paris de Lutèce à 1889 : huit dates et quatre maquettes 3D détaillées — Lutèce vers 250, Paris vers 1380, Paris en 1789 et Paris en 1889, avec la tour Eiffel qui se monte : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
+const descShell = 'Paris de Lutèce à 1900 : neuf dates et cinq maquettes 3D détaillées — Lutèce vers 250, Paris vers 1380, Paris en 1789, Paris en 1889 avec la tour Eiffel qui se monte, Paris en 1900, l’été de l’Exposition universelle : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
 const shell = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -115,7 +141,7 @@ const shell = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Paris à travers le temps</title>
 <meta name="description" content="${descShell}">
-<meta property="og:title" content="Paris à travers le temps — maquettes 3D de Lutèce, de Paris en 1380 et en 1789">
+<meta property="og:title" content="Paris à travers le temps — maquettes 3D de Paris, de Lutèce à l’Exposition de 1900">
 <meta property="og:description" content="${descShell}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">

@@ -1,5 +1,8 @@
 // Les gares de Paris en 1889 : six têtes de grandes lignes, les gares de la Bastille et de Sceaux, et la gare bâtie
-// au Champ-de-Mars pour l'Exposition.
+// au Champ-de-Mars pour l'Exposition de 1878. En 1900, celle-ci a été démontée (1897) ; la gare de Lyon de Marius
+// Toudoire a remplacé l'embarcadère de 1855 ; les gares d'Orsay et des Invalides sont neuves. Ces trois-là sont encore
+// debout : leurs bâtiments viennent des données (tools/extract_1889.py les date d'après leur histoire) ; on leur ajoute
+// la tour de l'horloge de la gare de Lyon et, à la place de son grand hall, deux nefs vitrées.
 // Chaque gare est posée au bout de ses voies : son repère a pour origine le milieu de la ligne des butoirs et pour axe
 // le sens des voies (u vers la ligne, v en travers). Pour les gares encore debout (Nord, Est, Saint-Lazare, Orléans),
 // origine et axe sont lus dans les voies d'aujourd'hui ; l'ancienne gare Montparnasse occupe son îlot de 1900, entre la
@@ -7,7 +10,8 @@
 // est placé en tête des voies actuelles. Les dimensions des halles sont celles que donnent les descriptions du temps
 // (Nord : 72 m de portée ; Orléans : 280 m sur 51 m ; Lyon : 220 m sur 42 m) ; le reste — nombre de travées, hauteurs,
 // pavillons — est une évocation.
-import { cyl, cone } from '../builder.js';
+import { box, cyl, cone, rgb } from '../builder.js';
+import { ANNEE } from './data.js';
 import { repere, boite, pan, mur, corps, pavillon, fronton, PIERRE, PIERRE_SOMBRE, BRIQUE, ZINC, VERRE, VERRE_CLAIR, ARDOISE, DALLE } from './corps.js';
 
 
@@ -69,9 +73,27 @@ export function batirGares(app, B) {
     corps(app, B, F, -96, -58, -52, 52, y0 - 1, y0 + 24, { mat: 'facade', comble: 4.5 });
     return y0 + 33;
   });
+  // ---- gare de Lyon de 1900 (Toudoire, 1895-1902) : le bâtiment de tête et l'aile du boulevard Diderot viennent des
+  // données ; sur le pan coupé de leur angle, la tour de l'horloge (67 m : un fût de 8,50 m de côté, le cube de
+  // l'horloge de 10 m, quatre cadrans de 6,40 m) ; derrière, deux nefs vitrées à la place du grand hall, que les données rendent en bloc
+  if (ANNEE >= 1900) gare('GareLyon', [1694, 918], [0.766, 0.643], [-30, 170, -48, 52], [-40, 0], (F, y0) => {
+    for (const v0 of [-48, -6]) nef(app, B, F, -30, 150, v0, v0 + 42, y0 - 0.5, y0 + 12, y0 + 25, { murs: [v0 === -48, v0 === -6] });
+    const c = F.P(-51, -64), bs = B.at('stone', c[0], c[1]), bp = B.at('plain', c[0], c[1]), d = { cx: c[0], cz: c[1], ux: F.d[0], uz: F.d[1] }, yt = T.height(c[0], c[1]);
+    box(bs, { ...d, hl: 4.25, hw: 4.25 }, yt - 1, yt + 48, { col: PIERRE, s0: 0.82 });
+    box(bs, { ...d, hl: 5, hw: 5 }, yt + 48, yt + 58, { col: PIERRE, s0: 0.92 });
+    for (const [a, b] of [[F.d, F.n], [F.n, F.d]]) for (const s of [-1, 1]) {                                     // quatre cadrans, un par face
+      const ox = c[0] + a[0] * s * 5.06, oz = c[1] + a[1] * s * 5.06, h = 3.2, bx = b[0] * h * s, bz = b[1] * h * s;
+      pan(bp, [[ox - bx, yt + 49.8, oz - bz], [ox + bx, yt + 49.8, oz + bz], [ox + bx, yt + 56.2, oz + bz], [ox - bx, yt + 56.2, oz - bz]], rgb(236, 230, 210), 1, true);
+    }
+    cone(bp, c[0], c[1], 7.4, yt + 58, yt + 63.5, { col: ARDOISE, seg: 4, a0: Math.atan2(F.d[1], F.d[0]) + Math.PI / 4 });
+    cyl(bp, c[0], c[1], 0.9, yt + 63.5, yt + 65.5, { col: rgb(200, 170, 96), seg: 8 }); cone(bp, c[0], c[1], 0.7, yt + 65.5, yt + 67, { col: rgb(200, 170, 96), seg: 8 });
+    app.foot.push({ ring: F.rect(-55.25, -46.75, -68.25, -59.75), top: yt + 67 }); app.landmarks.push({ x: c[0], z: c[1], top: yt + 67 });
+    M.HorlogeLyon = { x: c[0], z: c[1], top: yt + 75 };
+    return y0 + 30;
+  });
   // ---- embarcadère de Lyon (Cendrier, 1855) : une halle de 220 m sur 42 m entre le bâtiment du départ et celui de
   // l'arrivée ; la gare actuelle le remplacera en 1900
-  gare('GareLyon', [1694, 918], [0.766, 0.643], [-110, 230, -90, 90], [-13, 0], (F, y0) => {
+  else gare('GareLyon', [1694, 918], [0.766, 0.643], [-110, 230, -90, 90], [-13, 0], (F, y0) => {
     nef(app, B, F, 0, 220, -21, 21, y0 - 0.5, y0 + 11, y0 + 21);
     for (const s of [-1, 1]) corps(app, B, F, 0, 150, s * 21, s * 36, y0 - 1, y0 + 11, { comble: 3 });
     corps(app, B, F, -24, 0, -46, 46, y0 - 1, y0 + 14, { comble: 3.5 });
@@ -116,9 +138,9 @@ export function batirGares(app, B) {
     nef(app, B, F, -2, 66, -9, 9, y0 + 5, y0 + 5, y0 + 8, { pied: false });
     return y0 + 15.5;
   });
-  // ---- gare du Champ-de-Mars (Juste Lisch, 1889) : fer, brique et faïence, sur la berge, à l'angle du quai d'Orsay et
+  // ---- gare du Champ-de-Mars (Juste Lisch, 1878) : fer, brique et faïence, sur la berge, à l'angle du quai d'Orsay et
   // de l'avenue de Suffren ; démontée en 1897, elle sera remontée à Asnières
-  gare('GareChampDeMars', [-4368, -458], [-0.332, 0.943], [0, 84, -26, 12], [42, -15], (F, y0) => {
+  if (ANNEE < 1897) gare('GareChampDeMars', [-4368, -458], [-0.332, 0.943], [0, 84, -26, 12], [42, -15], (F, y0) => {
     corps(app, B, F, 12, 72, -21, -9, y0 - 1, y0 + 8, { col: BRIQUE, comble: 2.6, toit: ZINC, travee: 5 });
     pavillon(app, B, F, 42, -15, 9, 7.5, y0 - 1, y0 + 12, { col: BRIQUE, comble: 4, toit: ZINC });
     nef(app, B, F, 6, 78, -8.5, 8.5, y0 + 5, y0 + 5, y0 + 7.6, { pied: false });

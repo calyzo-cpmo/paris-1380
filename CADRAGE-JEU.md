@@ -15,12 +15,12 @@ hébergement, et les décisions qui restent à prendre avant de commencer.
 ## Le principe
 
 **L'enseignant**
-- Ouvre la page « Classe », choisit une époque (Lutèce, 1380, 1789, 1889) et une quête, et lance une séance.
+- Ouvre la page « Classe », choisit une époque (Lutèce, 1380, 1789, 1889, 1900) et une quête, et lance une séance.
 - Obtient un **code à 6 caractères**, à donner aux élèves, et un **lien d'animation secret**, gardé dans son navigateur.
   Ce lien tient lieu de compte : qui l'a anime la séance.
 - Voit en direct, sur le plan, la position et la progression de chaque équipe.
 - Peut tout mettre en pause, révéler les réponses, ou ramener toutes les vues sur la sienne (« Tous avec moi »). Ce
-  dernier bouton reprend le moteur des visites guidées, déjà en place dans les quatre maquettes.
+  dernier bouton reprend le moteur des visites guidées, déjà en place dans les cinq maquettes.
 - Récupère en fin de séance un **bilan anonyme** : équipes, étapes réussies, temps passé.
 
 **Les élèves**

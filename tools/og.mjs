@@ -11,10 +11,13 @@ const MAQUETTES = [
   { page: '1789.html', sortie: '1789.jpg', titre: 'Paris en 1789', sous: 'Vingt mille bâtiments dans le mur des Fermiers généraux, à la veille de la Révolution' },
   { page: 'lutece.html', sortie: 'lutece.jpg', titre: 'Lutèce vers 250', sous: 'Le forum, les thermes, le théâtre et les arènes de la ville gallo-romaine' },
   { page: '1889.html', sortie: '1889.jpg', titre: 'Paris en 1889', sous: 'Tout Paris dans l’enceinte de Thiers, l’Exposition universelle et la tour de 300 mètres' },
+  { page: '1900.html', sortie: '1900.jpg', titre: 'Paris en 1900', sous: 'L’été de l’Exposition universelle : la tour repeinte, le Champ-de-Mars, la Grande Roue' },
 ];
+// node tools/og.mjs 1900 : seulement les maquettes nommées (sans argument, toutes)
+const SEULES = process.argv.slice(2);
 mkdirSync(join(root, 'dist/og'), { recursive: true });
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-for (const m of MAQUETTES) {
+for (const m of MAQUETTES.filter((q) => !SEULES.length || SEULES.some((n) => q.page === n + '.html'))) {
   const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, screen: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });      // grand écran : la version complète, pas celle du téléphone
   await page.goto('file://' + join(root, 'dist', m.page) + '#shot');
   await page.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 400000 });

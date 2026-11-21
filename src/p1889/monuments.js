@@ -1,11 +1,11 @@
-// Silhouettes des monuments de Paris en 1889 : dômes, tours, flèches, colonnes, et l'Arc de triomphe.
+// Silhouettes des monuments de Paris en 1889 et en 1900 : dômes, tours, flèches, colonnes, et l'Arc de triomphe.
 // Les corps de bâtiment viennent des données (emprise et hauteur réelles, src/p1889/bati.js) ; ce fichier leur ajoute ce
 // qui se voit de loin. Les positions sont lues dans ces mêmes données (tambours des Invalides et du Panthéon, piles de
 // l'Arc, emprises des églises, îlots des places) ; les hauteurs sont celles des édifices ; le détail est une évocation.
 import { box, cyl, cone, ccw, rgb } from '../builder.js';
 import { facade } from '../p1789/blocks.js';
 import { pointInPoly, polyArea } from '../geom.js';
-import { bati, ilots } from './data.js';
+import { bati, ilots, ANNEE } from './data.js';
 
 const PIERRE = rgb(226, 214, 190), PIERRE_BLANCHE = rgb(238, 232, 220), PLOMB = rgb(128, 136, 142), OR = rgb(226, 188, 96), CUIVRE = rgb(118, 152, 134), BRONZE = rgb(74, 84, 72), BOIS = rgb(190, 156, 110), GRANIT = rgb(196, 150, 132), ARDOISE = rgb(84, 92, 106);
 
@@ -90,6 +90,20 @@ function arc(app, B) {
 }
 
 // Sacré-Cœur en 1889 : la crypte est achevée, les murs de la nef montent dans leurs échafaudages ; ni dôme ni campanile.
+// En 1900, le grand dôme est achevé (1899) : 83 mètres au sommet du lanternon ; le campanile ne sera bâti qu'à partir de
+// 1904. La façade, tournée vers Paris (au sud), porte deux petits dômes. Cotes d'ensemble ; le détail est une évocation.
+function sacreCoeur1900(app, B) {
+  const V = app.v89, x = -504, z = -3712, y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), col = PIERRE_BLANCHE;
+  V.reserves.push({ ring: [[x - 40, z - 52], [x + 40, z - 52], [x + 40, z + 52], [x - 40, z + 52]], x0: x - 40, z0: z - 52, x1: x + 40, z1: z + 52 });
+  box(bs, { cx: x, cz: z, ux: 0, uz: 1, hl: 40, hw: 17 }, y0 - 4, y0 + 27, { col, s0: 0.8 });                      // nef et chœur
+  box(bs, { cx: x, cz: z - 4, ux: 1, uz: 0, hl: 29, hw: 12 }, y0 - 4, y0 + 25, { col, s0: 0.8 });                  // transept
+  cyl(bs, x, z - 40, 17, y0 - 4, y0 + 22, { col, seg: 16, s0: 0.8 });                                                // chevet
+  for (const s of [-1, 1]) coupole(app, B, x + s * 13, z - 17, 5.5, 25, 31, 39, 42, 44, col, { pierre: col, lanterne: col, debord: 1.06 });      // petits dômes autour du grand
+  for (const s of [-1, 1]) coupole(app, B, x + s * 12, z + 35, 4.6, 24, 30, 37, 40, 42, col, { pierre: col, lanterne: col, debord: 1.06 });      // dômes de la façade
+  const top = coupole(app, B, x, z - 4, 11.5, 27, 50, 74, 79, 83, col, { pierre: col, lanterne: col, debord: 1.04, seg: 24 });
+  app.foot.push({ ring: [[x - 19, z - 42], [x + 19, z - 42], [x + 19, z + 42], [x - 19, z + 42]], top: y0 + 50 });
+  app.monuments.SacreCoeur = { x, z, top };
+}
 function sacreCoeur(app, B) {
   const V = app.v89, x = -504, z = -3712, y0 = app.terrain.height(x, z), bp = B.at('plain', x, z), bs = bp, col = PIERRE_BLANCHE;      // pierre de Château-Landon, très blanche
   V.reserves.push({ ring: [[x - 40, z - 52], [x + 40, z - 52], [x + 40, z + 52], [x - 40, z + 52]], x0: x - 40, z0: z - 52, x1: x + 40, z1: z + 52 });
@@ -201,7 +215,7 @@ export function batirMonuments(app, B) {
     cyl(bp, x, z, 1.7, y0 + 4.5, y0 + 26, { col: GRANIT, seg: 4, r1: 1.05, s0: 0.9 }); cone(bp, x, z, 1.05, y0 + 26, y0 + 27.6, { col: OR, seg: 4 });
     app.foot.push({ ring: [[x - 2.4, z - 2.4], [x + 2.4, z - 2.4], [x + 2.4, z + 2.4], [x - 2.4, z + 2.4]], top: y0 + 27.6 }); M.Obelisque = { x, z, top: y0 + 27.6 }; }
   arc(app, B);
-  sacreCoeur(app, B);
+  if (ANNEE >= 1900) sacreCoeur1900(app, B); else sacreCoeur(app, B);
   halles(app, B);
-  industrie(app, B);
+  if (ANNEE < 1897) industrie(app, B);                                    // démoli de février à octobre 1897
 }

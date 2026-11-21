@@ -1,12 +1,13 @@
 // Données de la page « Paris 1889 » : la ville recomposée par tools/extract_1889.py dans data/paris1889.json — bâti daté
 // de l'Atelier parisien d'urbanisme, îlots et rues de la base « Paris 1900 », atlas de Vasserot pour les bâtiments
 // disparus, relief de l'IGN. Repère : celui des autres maquettes (mètres, x vers l'est, z vers le sud, origine au
-// parvis de Notre-Dame).
+// parvis de Notre-Dame). La page « Paris 1900 » reprend ce module : à l'assemblage, data/paris1900.json remplace
+// data/paris1889.json (tools/build.mjs, surcouche) ; ANNEE dit quelle ville est chargée.
 import D from '../../data/paris1889.json';
 import { decodeLines, decodePolys, decodeInts } from '../vlq.js';
 import { decodeRelief } from '../relief.js';
 
-export const META = D.meta, EXPO = D.meta.expo;
+export const META = D.meta, EXPO = D.meta.expo, ANNEE = D.meta.annee;
 export const CADRE = { x0: D.meta.cadre[0], z0: D.meta.cadre[1], x1: D.meta.cadre[2], z1: D.meta.cadre[3] };
 export const CREDITS = { bati: D.bati.credit, ilots: D.ilots.credit, rues: D.rues.credit, eau: D.eau.credit, parcs: D.parcs.credit, relief: D.relief.credit, fer: D.fer.credit, source: D.meta.source };
 
