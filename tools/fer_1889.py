@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Voies ferrées de Paris en 1889, pour tools/extract_1889.py.
+"""Voies ferrées de Paris en 1889 et en 1900, pour tools/extract_1889.py.
 
-Aucune base ne donne le tracé des voies de 1889. Il est recomposé, et chaque voie garde la trace de ce qui la justifie :
+Aucune base ne donne le tracé des voies de 1889 ni de 1900. Il est recomposé, et chaque voie garde la trace de ce qui la justifie :
   a  actuel     voie d'aujourd'hui (couche VOIE_FERREE de l'APUR) posée sur une emprise du chemin de fer qui existait
                 en 1889 : faisceaux des six grandes gares, ligne de Sceaux, Petite Ceinture là où ses rails subsistent,
                 embranchement du Champ-de-Mars le long de la Seine. Le métro, le tramway et les lignes ouvertes depuis
@@ -15,13 +15,25 @@ Aucune base ne donne le tracé des voies de 1889. Il est recomposé, et chaque v
                 Belliard, ligne de Vincennes sur son viaduc de l'avenue Daumesnil puis vers Bel-Air, arrivée à
                 l'ancienne gare Montparnasse, gare du Champ-de-Mars.
 Les souterrains de 1889 (Belleville, Charonne, Montsouris) ne sont pas tracés ; le raccordement de Courcelles non plus.
+
+En 1900, pour l'Exposition, deux lignes nouvelles : la ligne des Invalides, qui prolonge celle des Moulineaux le long
+du quai d'Orsay, en contrebas (ses voies d'aujourd'hui sont souterraines : seule sa gare paraît), et le raccordement de
+Boulainvilliers au Champ-de-Mars, qui
+franchit la Seine sur le pont Rouelle. Leurs emprises et leurs voies sont gardées ; la gare du Champ-de-Mars de 1889,
+démontée en 1897, ne l'est plus. Le prolongement de la ligne d'Orléans jusqu'à Orsay, souterrain, n'est pas tracé.
 """
 import glob, json, math, os, re
 
 ENTRAXE = 3.6                 # d'axe en axe entre deux voies (m)
 # Emprises du chemin de fer d'aujourd'hui (équipements de l'APUR, codes 2011x : réseau ferré national) tenues pour
-# celles de 1889, sauf celles des lignes ouvertes depuis.
-ECARTE = re.compile(r"VOIES FERR.ES DU (16|5)E ARDT|INVALIDES|REGION DE L.OUEST|PORT-ROYAL|RER LIGNE A|BOULAINVILLIERS|PARKING|PARVIS|PARC DE|ROUTI|CHAMPS DE MARS", re.I)
+# celles de la date, sauf celles des lignes ouvertes depuis.
+ECARTE = {1889: re.compile(r"VOIES FERR.ES DU (16|5)E ARDT|INVALIDES|REGION DE L.OUEST|PORT-ROYAL|RER LIGNE A|BOULAINVILLIERS|PARKING|PARVIS|PARC DE|ROUTI|CHAMPS DE MARS", re.I),
+          1900: re.compile(r"VOIES FERR.ES DU 5E ARDT|PORT-ROYAL|RER LIGNE A|PARKING|PARVIS|PARC DE|ROUTI|CHAMPS DE MARS", re.I)}
+# Pont Rouelle (1900) : ses deux travées, de part et d'autre de l'île aux Cygnes. Les voies d'aujourd'hui y franchissent
+# la Seine ; partout ailleurs, aucune voie n'est gardée au-dessus du fleuve.
+ROUELLE = (-4990.0, -10.0, -4730.0, 100.0)
+# Tracés qui n'existent plus à une date : nom → première année où ils ont disparu.
+DISPARUS = {'Gare du Champ-de-Mars': 1897}
 # La ligne de Sceaux, aujourd'hui RER B, est exploitée par la RATP : ses emprises sont rangées avec le métro.
 SCEAUX = re.compile(r"RER B|DENFERT|CIT. UNIVERSITAIRE|GENTILLY|LAPLACE", re.I)
 CEINTURE = re.compile(r"PETITE CEINTURE", re.I)
@@ -186,17 +198,17 @@ class Voisinage:
         return False
 
 
-def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine):
-    """Rend la liste des voies de 1889, dans le repère de la maquette : { 'pts', 's' (statut a, r ou e), 'h' (hauteur
+def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine, annee=1889):
+    """Rend la liste des voies de l'année (1889 ou 1900), dans le repère de la maquette : { 'pts', 's' (statut a, r ou e), 'h' (hauteur
     de chaque point au-dessus du sol, pour les viaducs, ou rien), 'nom' (tracés à la main) }.
     T : Lambert-93 → maquette ; X : outils de tools/extract_epochs.py ; equip : équipements de l'APUR ; ilots : îlots
     de 1900 ({ rings, c }) ; seine(x, z) : le point est-il sur le fleuve ?"""
-    E = Emprises(); PC = []; VETO = Emprises()
+    E = Emprises(); PC = []; VETO = Emprises(); ECART = ECARTE[annee]
     for f in equip:
         at = f['attributes']; nom = (at.get('l_ee_maj') or '').strip(); n3 = at.get('c_niv3') or 0
         if at.get('c_niv1') != 20: continue
-        sceaux = bool(SCEAUX.search(nom)) and not ECARTE.search(nom)
-        sncf = 20111 <= n3 <= 20120 and not ECARTE.search(nom)
+        sceaux = bool(SCEAUX.search(nom)) and not ECART.search(nom)
+        sncf = 20111 <= n3 <= 20120 and not ECART.search(nom)
         for poly in anneaux_esri(f.get('geometry')):
             rings = [[T(p[0], p[1]) for p in r] for r in poly]
             if abs(aire(rings[0])) < 60: continue
@@ -207,13 +219,14 @@ def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine):
     # Hors de ces emprises, une voie d'aujourd'hui est encore gardée si elle court dans un îlot de 1900 : c'est le cas
     # de la Petite Ceinture, dont les emprises ne sont décrites que par endroits. Le métro aérien et le tramway, eux,
     # suivent les boulevards, hors de tout îlot. Aucune voie d'aujourd'hui n'est gardée au-dessus de la Seine : les ponts
-    # du chemin de fer de 1889 (pont National, viaduc d'Auteuil) ne portent plus de rails, et le pont Rouelle date de 1900.
+    # du chemin de fer de 1889 (pont National, viaduc d'Auteuil) ne portent plus de rails ; le pont Rouelle (1900) est gardé en 1900.
     IL = Emprises(120)
     for i in ilots:
         if i.get('c') == 'B': IL.ajoute(i['rings'])
     print('voies ferrées : %d emprises du chemin de fer retenues, dont %d de la Petite Ceinture ; %d écartées (métro, tramway, lignes ouvertes depuis)' % (E.n, len(PC), VETO.n))
     m = 60; dedans = lambda p: cadre[0] + m < p[0] < cadre[2] - m and cadre[1] + m < p[1] < cadre[3] - m
     tunnel = lambda p: any(dseg(p[0], p[1], a, b) < 30 for _, l in TUNNELS for a, b in zip(l, l[1:]))
+    pont = lambda p: annee >= 1900 and ROUELLE[0] < p[0] < ROUELLE[2] and ROUELLE[1] < p[1] < ROUELLE[3]
 
     # ---- voies d'aujourd'hui posées sur ces emprises
     voies = []; total = 0.0; V = Voisinage()
@@ -226,8 +239,8 @@ def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine):
                 if len(pts) < 2 or not any(dedans(p) for p in pts): continue
                 total += longueur(pts)
                 ech = pas_a_pas(pts, 8.0)
-                libre = [dedans(p) and not tunnel(p) and not seine(p[0], p[1]) and VETO.en(p[0], p[1], 2.0) is None for p in ech]
-                ok = [libre[k] and (E.en(p[0], p[1], 9.0) is not None or IL.en(p[0], p[1]) is not None) for k, p in enumerate(ech)]
+                libre = [dedans(p) and not tunnel(p) and (pont(p) or not seine(p[0], p[1])) and VETO.en(p[0], p[1], 2.0) is None for p in ech]
+                ok = [libre[k] and (pont(p) or E.en(p[0], p[1], 9.0) is not None or IL.en(p[0], p[1]) is not None) for k, p in enumerate(ech)]
                 # un pont au-dessus d'une rue interrompt l'emprise : les trous de moins de 45 m sont franchis
                 i = 0
                 while i < len(ok):
@@ -282,7 +295,8 @@ def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine):
         for v in nouvelles: garde(*v)
         return km
     km = {'r': 0.0, 'e': 0.0}
-    for nom, statut, n, axe_, h0, h1 in TRACES: km[statut] += pose(nom, statut, n, axe_, h0, h1)
+    for nom, statut, n, axe_, h0, h1 in TRACES:
+        if annee < DISPARUS.get(nom, 9999): km[statut] += pose(nom, statut, n, axe_, h0, h1)
     # Ancienne gare Montparnasse (1852) : elle occupait l'îlot compris entre la rue de l'Arrivée et la rue du Départ, face
     # à la place de Rennes, dans l'axe exact du faisceau d'aujourd'hui, qui s'arrête 400 m plus au sud. Six voies sont
     # prolongées jusqu'à elle ; elles montent de plain-pied à l'étage de la gare et franchissent l'avenue du Maine.
@@ -304,7 +318,8 @@ def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine):
         kmpc += pose(None, 'r', 2, l, 0, 0, rayon=16.0, adoucir=False)
     print('  Petite Ceinture restituée dans l’axe de ses emprises : %.1f km' % (kmpc / 1000))
     # Une voie d'aujourd'hui qui s'arrête au bord de la Seine menait à un pont : elle n'est gardée que si une voie
-    # restituée prend le relais (pont National). Les amorces du pont Rouelle (1900) disparaissent ainsi.
+    # restituée prend le relais (pont National), ou, à partir de 1900, si elle s'arrête sur le pont Rouelle (sur l'île
+    # aux Cygnes, entre ses deux travées). Avant 1900, les amorces du pont Rouelle disparaissent ainsi.
     W = Voisinage()
     for v in voies[actuelles:]: W.ajoute(v['pts'])
     def au_bord(a, b):
@@ -313,7 +328,7 @@ def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine):
     out = []; retirees = 0
     for k, v in enumerate(voies):
         p = v['pts']
-        if k < actuelles and ((au_bord(p[1], p[0]) and not W.pres(p[0], None, 40)) or (au_bord(p[-2], p[-1]) and not W.pres(p[-1], None, 40))): retirees += 1; continue
+        if k < actuelles and ((au_bord(p[1], p[0]) and not pont(p[0]) and not W.pres(p[0], None, 40)) or (au_bord(p[-2], p[-1]) and not pont(p[-1]) and not W.pres(p[-1], None, 40))): retirees += 1; continue
         out.append(v)
-    print('  amorces de ponts postérieurs à 1889 retirées : %d' % retirees)
+    print('  amorces de ponts postérieurs à %d retirées : %d' % (annee, retirees))
     return out

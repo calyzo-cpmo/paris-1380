@@ -1,6 +1,6 @@
-// Le monde de la page « Paris 1889 » : tout Paris dans l'enceinte de Thiers, l'année de l'Exposition universelle.
-// L'application qui le fait vivre est celle de la page « Paris 1789 » (src/p1789/app.js).
-import { CADRE, COMPTE, eau, relief } from './data.js';
+// Le monde des pages « Paris 1889 » et « Paris 1900 » : tout Paris dans l'enceinte de Thiers, l'année d'une Exposition
+// universelle. L'application qui le fait vivre est celle de la page « Paris 1789 » (src/p1789/app.js).
+import { CADRE, COMPTE, ANNEE, eau, relief } from './data.js';
 import { TUILE_SOL, CENTRE_RECT, motifBanlieue, enveloppe, peindre, voirie } from './sol.js';
 import { construire } from './ville.js';
 import { makeFigureAtlas1889, outfit1889 } from './figures.js';
@@ -27,7 +27,7 @@ function prolongements(S) {
 
 export const MONDE_1889 = {
   cadre: CADRE, centre: CENTRE_RECT, vue: { x: -3900, z: -480, dist: 1950, az: -2.5, el: 0.3 }, tuile: TUILE_SOL,
-  etapes: ['Lecture des plans de Paris, de 1887 à 1900…', 'Les collines, la Seine et les canaux…', 'Rues, îlots et jardins de la ville…'],
+  etapes: [ANNEE >= 1900 ? 'Lecture des plans de Paris en 1900…' : 'Lecture des plans de Paris, de 1887 à 1900…', 'Les collines, la Seine et les canaux…', 'Rues, îlots et jardins de la ville…'],
   terrain: (app) => {
     const S = eau().filter((e) => e.t === 'S').map((e) => e.rings);
     app.v89 = { ...(app.v89 || {}), seine: S, enveloppe: enveloppe(), monuments: batirExpo, peindreExpo, esplanades: ESPLANADES(), jardins: jardinsExpo };

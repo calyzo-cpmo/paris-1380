@@ -551,9 +551,10 @@ export function initUI(app) {
     else { b.type = 'button'; b.title = j.titre; b.addEventListener('click', () => { stopEpochPlay(); setEpoch(j.id); }); }
     jl.appendChild(b);
   }
-  { // Paris 1889 n'a pas de calque sur cette maquette : un simple lien vers la sienne
-    const b = el('a', 'maquette', '1889'); b.href = 'index.html#m=1889'; b.title = 'Passer à la maquette détaillée de Paris en 1889, l’année de la tour Eiffel'; b.dataset.m = '1889';
-    b.addEventListener('click', (e) => { stopEpochPlay(); goEra(e, '1889'); }); jl.appendChild(b); }
+  // Paris 1889 et Paris 1900 n'ont pas de calque sur cette maquette : un simple lien vers la leur
+  for (const [m, t] of [['1889', 'Passer à la maquette détaillée de Paris en 1889, l’année de la tour Eiffel'], ['1900', 'Passer à la maquette détaillée de Paris en 1900, l’été de l’Exposition universelle']]) {
+    const b = el('a', 'maquette', m); b.href = 'index.html#m=' + m; b.title = t; b.dataset.m = m;
+    b.addEventListener('click', (e) => { stopEpochPlay(); goEra(e, m); }); jl.appendChild(b); }
 
   function setEpoch(id) {
     const j = epochs.set(id), s = epochStats(j), nf = (n) => n.toLocaleString('fr-FR');

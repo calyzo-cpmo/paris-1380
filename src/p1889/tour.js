@@ -5,7 +5,7 @@
 // des cotes connues (125 m d'empattement, étages à 57,6 m, 115,7 m et 276,1 m, sommet à 300 m).
 import * as THREE from 'three';
 import { Builder, box, cyl, cone, rgb } from '../builder.js';
-import { expoXZ, EXPO } from './data.js';
+import { expoXZ, EXPO, ANNEE } from './data.js';
 
 export const JOUR = (a, m, j) => Math.round((Date.UTC(a, m - 1, j) - Date.UTC(1887, 0, 1)) / 864e5);
 export const DATE = (j) => new Date(Date.UTC(1887, 0, 1) + j * 864e5);
@@ -33,6 +33,11 @@ export function hauteur(j) {
 
 const E1 = 57.6, E2 = 115.7, E3 = 276.1;
 const FER = rgb(134, 66, 48), FER_SOMBRE = rgb(96, 50, 40), BOIS = rgb(196, 160, 112), MACONNERIE = rgb(206, 196, 172);
+// Teinte de la tour à la hauteur y : rouge de Venise en 1889 ; repeinte en 1899 en cinq teintes dégradées, du jaune
+// orangé à la base au jaune clair au sommet (site officiel de la tour Eiffel). Les bandes sont de convention.
+const BANDES = [[214, 150, 70], [222, 166, 86], [228, 180, 102], [234, 194, 120], [238, 208, 140]].map((c) => rgb(...c));
+const teinte = (y) => (ANNEE >= 1899 ? BANDES[Math.max(0, Math.min(4, Math.floor(y / 62)))] : FER);
+const SOMBRE = ANNEE >= 1899 ? rgb(160, 112, 56) : FER_SOMBRE;
 // Axe d'une pile (distance à l'axe de la tour) et demi-côté de sa section, à la hauteur y.
 const axe = (y) => 66.88 * Math.exp(-0.008759 * y) - 11.88, demi = (y) => 7.5 - 0.025 * y;
 // Demi-côté du fût, au-dessus du deuxième étage.
@@ -91,7 +96,7 @@ export function batirTour(app) {
     let v = 0;
     for (let k = 0; k < NS; k++) {
       const ya = (E2 * k) / NS, yb = (E2 * (k + 1)) / NS, w = (demi(ya) + demi(yb)) / 2, dv = (yb - ya) / (2 * w);
-      pans(fer, su * axe(ya), sv * axe(ya), demi(ya), ya, su * axe(yb), sv * axe(yb), demi(yb), yb, v, v + dv, 1, FER, 0.84 + 0.1 * (k / NS), 0.84 + 0.1 * ((k + 1) / NS));
+      pans(fer, su * axe(ya), sv * axe(ya), demi(ya), ya, su * axe(yb), sv * axe(yb), demi(yb), yb, v, v + dv, 1, teinte((ya + yb) / 2), 0.84 + 0.1 * (k / NS), 0.84 + 0.1 * ((k + 1) / NS));
       v += dv;
     }
   }
@@ -99,26 +104,26 @@ export function batirTour(app) {
   { let v = 0; const NF = 22;
     for (let k = 0; k < NF; k++) {
       const ya = E2 + ((E3 - E2) * k) / NF, yb = E2 + ((E3 - E2) * (k + 1)) / NF, w = (fut(ya) + fut(yb)) / 2, nu = w > 9 ? 2 : 1, dv = ((yb - ya) / (2 * w)) * nu;
-      pans(fer, 0, 0, fut(ya), ya, 0, 0, fut(yb), yb, v, v + dv, nu, FER, 0.94 + 0.08 * (k / NF), 0.94 + 0.08 * ((k + 1) / NF));
+      pans(fer, 0, 0, fut(ya), ya, 0, 0, fut(yb), yb, v, v + dv, nu, teinte((ya + yb) / 2), 0.94 + 0.08 * (k / NF), 0.94 + 0.08 * ((k + 1) / NF));
       v += dv;
     } }
   // ---- les étages : ceinture de treillis, plancher
-  const etage = (y, r, h, trou) => { pans(fer, 0, 0, r, y, 0, 0, r, y + h, 0, 1, Math.max(2, Math.round((2 * r) / h / 1.6)), FER, 0.8, 0.92); plancher(r, y + 0.2, FER_SOMBRE, trou); plancher(r, y + h, FER_SOMBRE, trou); };
+  const etage = (y, r, h, trou) => { pans(fer, 0, 0, r, y, 0, 0, r, y + h, 0, 1, Math.max(2, Math.round((2 * r) / h / 1.6)), teinte(y), 0.8, 0.92); plancher(r, y + 0.2, SOMBRE, trou); plancher(r, y + h, SOMBRE, trou); };
   etage(E1, 35.5, 4.6, 13); etage(E2, 20.5, 3.8, 6); etage(E3, 8.4, 3, 0);
   // ---- les grands arcs décoratifs, sous le premier étage
   for (let f = 0; f < 4; f++) {
     const N = 18, pt = (k, dr) => { const t = 0.1 * Math.PI + (0.8 * Math.PI * k) / N, s = (37 + dr) * Math.cos(t), y = 5 + (41 + dr) * Math.sin(t), o = axe(y) + demi(y) - 0.4; return [f === 0 ? P(s, o) : f === 1 ? P(s, -o) : f === 2 ? P(o, s) : P(-o, s), y]; };
     for (let k = 0; k < N; k++) {
       const [a, ya] = pt(k, -2.6), [c, yc] = pt(k + 1, -2.6), [a2, ya2] = pt(k, 2.2), [c2, yc2] = pt(k + 1, 2.2);
-      fer.quad(a[0], y0 + ya, a[1], c[0], y0 + yc, c[1], c2[0], y0 + yc2, c2[1], a2[0], y0 + ya2, a2[1], k * 0.7, 0, (k + 1) * 0.7, 1, FER, 0.9, 1);
+      fer.quad(a[0], y0 + ya, a[1], c[0], y0 + yc, c[1], c2[0], y0 + yc2, c2[1], a2[0], y0 + ya2, a2[1], k * 0.7, 0, (k + 1) * 0.7, 1, teinte(ya), 0.9, 1);
     }
   }
   // ---- le sommet : cabine, campanile, lanterne, hampe et drapeau
-  pans(plein, 0, 0, 5.2, E3 + 3, 0, 0, 5.2, E3 + 9.5, 0, 1, 1, rgb(176, 150, 118), 0.9, 1); plancher(5.6, E3 + 9.5, FER_SOMBRE);
-  pans(fer, 0, 0, 3.6, E3 + 9.5, 0, 0, 2.6, E3 + 17, 0, 1, 1, FER, 1, 1.05);
+  pans(plein, 0, 0, 5.2, E3 + 3, 0, 0, 5.2, E3 + 9.5, 0, 1, 1, rgb(176, 150, 118), 0.9, 1); plancher(5.6, E3 + 9.5, SOMBRE);
+  pans(fer, 0, 0, 3.6, E3 + 9.5, 0, 0, 2.6, E3 + 17, 0, 1, 1, teinte(E3), 1, 1.05);
   cyl(plein, O[0], O[1], 2.3, y0 + E3 + 17, y0 + E3 + 20.5, { col: rgb(170, 140, 104), seg: 10 });
-  cone(plein, O[0], O[1], 2.6, y0 + E3 + 20.5, y0 + 300, { col: FER_SOMBRE, seg: 10 });
-  box(plein, { cx: O[0], cz: O[1], ux: 1, uz: 0, hl: 0.14, hw: 0.14 }, y0 + 300, y0 + 312, { col: FER_SOMBRE });
+  cone(plein, O[0], O[1], 2.6, y0 + E3 + 20.5, y0 + 300, { col: SOMBRE, seg: 10 });
+  box(plein, { cx: O[0], cz: O[1], ux: 1, uz: 0, hl: 0.14, hw: 0.14 }, y0 + 300, y0 + 312, { col: SOMBRE });
   { const u = EXPO.u, w = 1.9, h = 3.6, yt = y0 + 311.6; let k = 0;
     for (const col of [rgb(30, 60, 150), rgb(245, 245, 240), rgb(200, 40, 40)]) { const xa = O[0] + u[0] * (0.2 + k * w), za = O[1] + u[1] * (0.2 + k * w), xb = xa + u[0] * w, zb = za + u[1] * w; plein.quad(xa, yt - h, za, xb, yt - h, zb, xb, yt, zb, xa, yt, za, 0, 0, 1, 1, col, 1, 1); k++; } }
 

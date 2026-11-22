@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
-"""Extrait les données de la page « Paris 1889 » vers data/paris1889.json.
+"""Extrait les données des pages « Paris 1889 » et « Paris 1900 » : la ville recomposée à une date.
 
-Aucune base vectorielle ne décrit le bâti de Paris en 1889. La ville est donc recomposée, et chaque bâtiment garde la
-trace de ce qui le justifie (champ `s`) :
-  R  réel       bâtiment d'aujourd'hui que l'Atelier parisien d'urbanisme (APUR) date de 1889 ou d'avant : son emprise et
-                sa hauteur sont celles que l'on mesure aujourd'hui ;
-  P  probable   bâtiment d'aujourd'hui daté « 1851-1914 » sans année (ou « 1890 », date arrondie), dans un voisinage
-                dont les bâtiments datés sont en majorité antérieurs à 1890 ;
-  V  disparu    emprise de l'Atlas de Vasserot (1810-1836) là où le bâtiment actuel est postérieur à 1889 : dans le
+  python3 tools/extract_1889.py          Paris 1889 → data/paris1889.json
+  python3 tools/extract_1889.py 1900     Paris 1900 → data/paris1900.json
+
+Aucune base vectorielle ne décrit le bâti de Paris à ces dates. La ville est donc recomposée, et chaque bâtiment garde
+la trace de ce qui le justifie (champ `s`) ; AN désigne l'année de la maquette :
+  R  réel       bâtiment d'aujourd'hui que l'Atelier parisien d'urbanisme (APUR) date de AN ou d'avant : son emprise et
+                sa hauteur sont celles que l'on mesure aujourd'hui. Quelques grands édifices que l'APUR ne date pas
+                (Grand et Petit Palais, gares d'Orsay, des Invalides et de Lyon) reçoivent l'année de leur histoire ;
+  P  probable   bâtiment d'aujourd'hui daté « 1851-1914 » sans année (ou d'une année ronde proche de AN : 1890, 1900,
+                dates arrondies), dans un voisinage dont les bâtiments datés sont en majorité antérieurs à AN ;
+  V  disparu    emprise de l'Atlas de Vasserot (1810-1836) là où le bâtiment actuel est postérieur à AN : dans le
                 centre, c'est la meilleure trace de ce qui se trouvait là ;
-  E  évoqué     hors de l'atlas de Vasserot, là où le bâtiment actuel est postérieur à 1889 mais où le quartier était
+  E  évoqué     hors de l'atlas de Vasserot, là où le bâtiment actuel est postérieur à AN mais où le quartier était
                 bâti : un immeuble de l'époque est évoqué sur l'emprise actuelle ;
   G  évoqué     ailleurs, le long des rues de 1900 : des maisons de faubourg, d'autant plus serrées que le voisinage
                 garde de bâtiments anciens. Sans elles, les arrondissements extérieurs — peuplés autant qu'aujourd'hui
                 en 1889, mais presque entièrement rebâtis depuis — paraîtraient vides.
-Îlots et rues sont ceux de la base « Paris 1900 » (onze ans plus tard) ; son pourtour dessine l'enceinte de Thiers.
+Îlots et rues sont ceux de la base « Paris 1900 » ; son pourtour dessine l'enceinte de Thiers.
 Les voies ferrées sont recomposées de la même façon (tools/fer_1889.py) : voies d'aujourd'hui sur les emprises de
-1889, lignes déposées restituées dans l'axe de leur emprise ou évoquées le long des rues qu'elles longeaient.
+AN, lignes déposées restituées dans l'axe de leur emprise ou évoquées le long des rues qu'elles longeaient.
 
 Sources (tools/fetch_1889.py les télécharge) : APUR, données ouvertes, ODbL 1.0 ; base « Paris 1900 — les îlots, les
 voies et les adresses », Projets Time Machine, ODbL 1.0, DOI 10.34847/nkl.cbf5ecd0 ; Atlas de Vasserot © ALPAGE, ODbL
@@ -30,9 +34,25 @@ import extract_epochs as X
 import fer_1889 as FER
 
 SRC = os.path.join(HERE, '..', 'data', 'source', '1889')
-OUT = os.path.join(HERE, '..', 'data', 'paris1889.json')
+OUT = None          # data/parisAN.json, fixé par main()
 P1789 = os.path.join(HERE, '..', 'data', 'paris1789.json')
-AN = 1889
+AN = 1889           # année de la maquette, fixée par main()
+ARRONDIES = (1880, 1890, 1900, 1910)                 # années rondes que l'APUR donne en grand nombre : des dates arrondies
+def arrondie(an): return bool(an) and an in ARRONDIES and abs(an - AN) <= 5
+# Grands édifices que l'APUR range dans la période 1851-1914 sans année : l'année vient de leur histoire. Chaque entrée
+# donne un polygone dans le repère de la maquette ; les bâtiments de cette période dont le centre y tombe reçoivent
+# l'année. Seulement pour les maquettes de cette année ou d'après : avant, les monuments modelés tiennent ces emprises à
+# l'écart (palais de l'Industrie, embarcadère de Lyon de 1855), et les données de 1889 restent celles d'avant.
+def _rect(cx, cz, ux, uz, u0, u1, v0, v1):
+    return [(cx + ux * u - uz * v, cz + uz * u + ux * v) for u, v in ((u0, v0), (u1, v0), (u1, v1), (u0, v1))]
+HISTOIRE = [
+    ('Grand Palais', 1900, _rect(-2780, -1455, 1, 0, -130, 130, -60, 60)),
+    ('Petit Palais', 1900, _rect(-2556, -1440, 1, 0, -70, 70, -70, 70)),
+    ('Gare d’Orsay', 1900, _rect(-1696, -791, 1, 0, -40, 40, -40, 40)),
+    ('Gare des Invalides', 1900, _rect(-2581, -1011, 1, 0, -30, 30, -30, 30)),
+    # gare de Lyon de Marius Toudoire (1895-1902), ouverte pour l'Exposition : le repère est celui des butoirs, voies vers u
+    ('Gare de Lyon', 1900, _rect(1694, 918, 0.766, 0.643, -80, 120, -95, 95)),
+]
 PAS = 50           # pas de la grille de relief (m)
 MARGE = 500        # marge autour des îlots de 1900 (m)
 VOISIN = 130       # rayon du voisinage qui décide des bâtiments sans année (m)
@@ -113,6 +133,8 @@ def decode_polys(s, q):
 
 
 def main():
+    global OUT
+    OUT = OUT or os.path.join(HERE, '..', 'data', 'paris%d.json' % AN)
     T, reg = X.register()
     print('recalage :', reg)
     o, ex, ny = T(0, 0), T(1, 0), T(0, 1); a_, b_ = ex[0] - o[0], -(ex[1] - o[1]); tx, ty = o[0], -o[1]
@@ -212,7 +234,7 @@ def main():
             for rings in polys_de(anneaux_esri(f.get('geometry')), 3.0, 600.0, 1e9):
                 r = rings[0]; c = (sum(p[0] for p in r) / len(r), sum(p[1] for p in r) / len(r))
                 if cadre[0] < c[0] < cadre[2] and cadre[1] < c[1] < cadre[3]: lieux.append([round(c[0]), round(c[1]), {21: 'c', 24: 'm', 20: 'g'}[n1], nom.title(), round(abs(aire_signee(r)))])
-    data['parcs'] = {'q': 1, 'g': X.enc_polys(parcs, 1), 'n': len(parcs), 'noms': noms_parcs, 'credit': 'Jardins et bois : APUR (emprise actuelle des jardins qui existaient en 1889)'}
+    data['parcs'] = {'q': 1, 'g': X.enc_polys(parcs, 1), 'n': len(parcs), 'noms': noms_parcs, 'credit': 'Jardins et bois : APUR (emprise actuelle des jardins qui existaient en %d)' % AN}
     data['cimetieres'] = {'q': 1, 'g': X.enc_polys(cim, 1), 'n': len(cim)}
     data['lieux'] = lieux
     print('jardins', len(parcs), '; cimetières', len(cim), '; lieux nommés', len(lieux))
@@ -229,26 +251,26 @@ def main():
             r = rings[0]; bb = boite(r)
             if bb[2] < cadre[0] or bb[0] > cadre[2] or bb[3] < cadre[1] or bb[1] > cadre[3]: continue
             eau.append(rings); types += 'S' if t == 1 else 'c' if t in (4, 5, 11) else 'l'
-    data['eau'] = {'q': 1, 'g': X.enc_polys(eau, 1), 'n': len(eau), 't': types, 'credit': 'Seine, canaux et lacs : APUR (tracé actuel, peu différent de celui de 1889)'}
+    data['eau'] = {'q': 1, 'g': X.enc_polys(eau, 1), 'n': len(eau), 't': types, 'credit': 'Seine, canaux et lacs : APUR (tracé actuel, peu différent de celui de %d)' % AN}
     print('eau :', len(eau), 'polygones', {k: types.count(k) for k in 'Scl'})
 
-    # ---------------------------------------------------------------- voies ferrées de 1889
+    # ---------------------------------------------------------------- voies ferrées de AN
     gs = Grille(200)
     for rings, t in zip(eau, types):
         if t == 'S': gs.boite(boite(rings[0]), rings)
     def sur_seine(x, z): return any(dans_poly(r, x, z) for r in gs.en(x, z))
-    voies = FER.extraire(SRC, T, X, cadre, equip, anneaux_esri, [{'rings': i['rings'], 'c': code(i)} for i in ilots], sur_seine)
+    voies = FER.extraire(SRC, T, X, cadre, equip, anneaux_esri, [{'rings': i['rings'], 'c': code(i)} for i in ilots], sur_seine, AN)
     kmf = {k: round(sum(FER.longueur(v['pts']) for v in voies if v['s'] == k) / 1000, 1) for k in 'are'}
     data['fer'] = {'q': 2, 'g': X.enc_lines([v['pts'] for v in voies], 2), 'n': len(voies), 's': ''.join(v['s'] for v in voies),
                    'h': {str(k): [round(h * 10) for h in v['h']] for k, v in enumerate(voies) if v['h']}, 'km': kmf,
-                   'credit': 'Voies ferrées : tracé actuel des voies (Atelier parisien d’urbanisme, données ouvertes) sur les emprises du chemin de fer de 1889 ; lignes déposées restituées d’après les emprises qui subsistent (APUR) et les îlots de la base « Paris 1900 »'}
+                   'credit': 'Voies ferrées : tracé actuel des voies (Atelier parisien d’urbanisme, données ouvertes) sur les emprises du chemin de fer de %d ; lignes déposées restituées d’après les emprises qui subsistent (APUR) et les îlots de la base « Paris 1900 »' % AN}
     data['meta']['fer'] = kmf
-    print('voies ferrées de 1889 :', len(voies), 'voies,', kmf, 'km ;', sum(len(v['pts']) for v in voies), 'points ;', len(data['fer']['g']) // 1024, 'Ko')
-    gt = Grille(40)                                                      # points des voies de 1889, tous les 5 m
+    print('voies ferrées de', AN, ':', len(voies), 'voies,', kmf, 'km ;', sum(len(v['pts']) for v in voies), 'points ;', len(data['fer']['g']) // 1024, 'Ko')
+    gt = Grille(40)                                                      # points des voies de AN, tous les 5 m
     for v in voies:
         for q in FER.pas_a_pas(v['pts'], 5.0): gt.point(q[0], q[1], q)
     def sur_voie(b, d=5.0):
-        """Une voie de 1889 traverse-t-elle l'emprise du bâtiment, ou la frôle-t-elle à moins de d mètres ?"""
+        """Une voie de AN traverse-t-elle l'emprise du bâtiment, ou la frôle-t-elle à moins de d mètres ?"""
         bb = b['bb']; r = b['rings'][0]; vus = set()
         for i in range(int((bb[0] - d) // 40), int((bb[2] + d) // 40) + 1):
             for k in range(int((bb[1] - d) // 40), int((bb[3] + d) // 40) + 1):
@@ -258,8 +280,9 @@ def main():
                     if dans(r, q[0], q[1]) or any(FER.dseg(q[0], q[1], r[j], r[(j + 1) % len(r)]) < d for j in range(len(r))): return True
         return False
 
-    # ---------------------------------------------------------------- emprise de l'Exposition : le Champ-de-Mars de 1889
-    # Il allait alors de l'avenue de La Bourdonnais à l'avenue de Suffren (ses bords n'ont été lotis qu'après 1900).
+    # ---------------------------------------------------------------- emprise de l'Exposition : le Champ-de-Mars
+    # Il allait en 1889 et en 1900 de l'avenue de La Bourdonnais à l'avenue de Suffren (ses bords n'ont été lotis qu'au
+    # début du XXe siècle).
     # Repère de l'Exposition : origine au centre de la tour, u vers l'École militaire, v vers l'avenue de Suffren.
     tour = (-4039.4, -604.3); ax = (-3352.9 + 4470.7, 40.0 + 1002.8); na = math.hypot(*ax); U = (ax[0] / na, ax[1] / na); Vv = (-U[1], U[0])
     def uv(x, z): return ((x - tour[0]) * U[0] + (z - tour[1]) * U[1], (x - tour[0]) * Vv[0] + (z - tour[1]) * Vv[1])
@@ -287,7 +310,7 @@ def main():
     expo = {'tour': [tour[0], tour[1]], 'u': [round(U[0], 5), round(U[1], 5)], 'u0': -230, 'u1': round(u1 - 14, 1), 'v0': round(v0 + 13, 1), 'v1': round(v1 - 13, 1), 'vc': round((v0 + v1) / 2, 1)}
     data['meta']['expo'] = expo
     def dans_expo(x, z): u, v = uv(x, z); return expo['u0'] < u < expo['u1'] and expo['v0'] < v < expo['v1']
-    print('Champ-de-Mars de 1889 :', expo)
+    print('Champ-de-Mars de', AN, ':', expo)
     for motif in ('baltard',):                                          # repérage des pavillons des Halles, pour la suite
         pts = [q for l, k in zip(lignes, idx) if k >= 0 and re.search(motif, noms[k], re.I) for q in l]
         vus = {}
@@ -310,12 +333,20 @@ def main():
     print('bâti actuel :', len(B), 'emprises')
     for b in B:
         per, an = b['per'], b['an']
-        b['st'] = 'R' if per in (1, 2) or (per == 3 and an and an <= AN) else 'N' if (5 <= per < 99) or (per == 3 and an and an > AN + 1) else 'A'
+        if per == 3 and (not an or arrondie(an)):                       # grands édifices datés d'après leur histoire
+            for nom, annee, ring in HISTOIRE:
+                if annee <= AN and dans(ring, b['c'][0], b['c'][1]): b['an'] = an = annee; b['histoire'] = nom; break
+        if b.get('histoire'): b['st'] = 'R'; continue
+        b['st'] = 'R' if per in (1, 2) or (per == 3 and an and an <= AN and not arrondie(an)) else 'N' if (5 <= per < 99) or (per == 3 and an and an > AN and not arrondie(an)) else 'A'
+    hist = {}
+    for b in B:
+        if b.get('histoire'): hist[b['histoire']] = hist.get(b['histoire'], 0) + 1
+    if hist: print('  datés d’après leur histoire :', hist)
     gc = Grille(VOISIN)
     for b in B:
         if b['st'] != 'A': gc.point(b['c'][0], b['c'][1], b)
     def voisinage(b):
-        """Part des bâtiments datés d'avant 1890 autour d'un bâtiment (pondérée par l'emprise, plafonnée), hauteur médiane et toit dominant des anciens."""
+        """Part des bâtiments datés de AN ou d'avant autour d'un bâtiment (pondérée par l'emprise, plafonnée), hauteur médiane et toit dominant des anciens."""
         for rayon in (VOISIN, 2.5 * VOISIN, 5 * VOISIN):          # un édifice public isolé regarde plus loin
             vieux = neuf = 0.0; hs = []; toits = {}
             for o in gc.autour(b['c'][0], b['c'][1], rayon):
@@ -329,10 +360,10 @@ def main():
         if b['st'] == 'R': continue
         part, hmed, toit = voisinage(b); b['part'] = part; b['hv'] = hmed; b['tv'] = toit
         if b['st'] == 'A' and part is not None:
-            seuil = 0.4 if b['an'] == AN + 1 else 0.5 if b['per'] == 3 else 0.65
+            seuil = 0.4 if arrondie(b['an']) else 0.5 if b['per'] == 3 else 0.65
             if part >= seuil: b['st'] = 'P'
     n = {k: sum(1 for b in B if b['st'] == k) for k in 'RPAN'}
-    print('  réels', n['R'], '; probables', n['P'], '; écartés faute de date', n['A'], '; postérieurs à 1889', n['N'])
+    print('  réels', n['R'], '; probables', n['P'], '; écartés faute de date', n['A'], '; postérieurs à', AN, n['N'])
     # Un bâtiment tenu pour ancien mais posé dans une rue de 1900 n'y était pas en 1889 : il est mal daté, ou la rue a
     # été bâtie depuis. On le reconnaît à ses points (centre et milieux des côtés) qui tombent hors de tout îlot, dans
     # la ville. Les bois, hors de l'enceinte, ne sont pas découpés en îlots : leurs pavillons sont gardés.
@@ -406,7 +437,7 @@ def main():
         E.append({**b, 'st': 'E', 'h': min(b['h'] if b['h'] > 3 else 12.0, (b.get('hv') or 15.0) + 1.5), 'toit': b.get('tv') or 4, 'sur': None})
     n0 = len(E); E = [b for b in E if not sur_voie(b)]
     print('  évoqués sur emprise actuelle :', len(E), '; écartés des voies ferrées :', n0 - len(E))
-    print('  bâtiments réels ou probables que touche une voie de 1889 (halles des gares, bâtiments des voyageurs) :', sum(1 for b in B if b['st'] in 'RP' and sur_voie(b, 0.5)))
+    print('  bâtiments réels ou probables que touche une voie de', AN, '(halles des gares, bâtiments des voyageurs) :', sum(1 for b in B if b['st'] in 'RP' and sur_voie(b, 0.5)))
 
     # ---- maisons évoquées le long des rues de 1900, là où rien d'autre ne parle
     pose = [b for b in B if b['st'] in 'RP'] + V + E
@@ -424,7 +455,7 @@ def main():
                 for a, b in zip(pts, pts[1:]):
                     n = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 10))
                     for k in range(n + 1): gr.point(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, (a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n))
-    for v in voies:                                                      # et les voies de 1889 qui n'existent plus
+    for v in voies:                                                      # et les voies de AN qui n'existent plus
         for q in FER.pas_a_pas(v['pts'], 10.0): gr.point(q[0], q[1], q)
     def sur_rails(x, z): return any(math.hypot(q[0] - x, q[1] - z) < 15 for q in gr.autour(x, z, 15))
     def hasard(*v):
@@ -488,7 +519,7 @@ def main():
                     'credit': 'Emprise, datation et hauteur des bâtiments : Atelier parisien d’urbanisme (APUR), données ouvertes ; bâtiments disparus : Atlas par îlots de Vasserot (1810-1836) — Arch. nat. F31 73-96 – Arch. Paris © ALPAGE : A.-L. Bethe'}
     cpt = {k: sum(1 for b in tout if b['st'] == k) for k in 'RPVEG'}
     data['meta']['bati'] = cpt
-    print('bâti de 1889 :', len(tout), cpt, ';', sum(len(r) for b in tout for r in b['rings']), 'sommets ;', len(data['bati']['g']) // 1024, 'Ko ; emprise', round(sum(b['aire'] for b in tout) / 1e4), 'ha')
+    print('bâti de', AN, ':', len(tout), cpt, ';', sum(len(r) for b in tout for r in b['rings']), 'sommets ;', len(data['bati']['g']) // 1024, 'Ko ; emprise', round(sum(b['aire'] for b in tout) / 1e4), 'ha')
 
     # ---------------------------------------------------------------- relief : RGE ALTI, ramené à la grille de la maquette
     rp = os.path.join(SRC, 'relief_ign.json')
@@ -523,4 +554,6 @@ def main():
 
 
 if __name__ == '__main__':
+    AN = int(sys.argv[1]) if len(sys.argv) > 1 else 1889
+    if AN not in (1889, 1900): raise SystemExit('année inconnue : %d (1889 ou 1900)' % AN)
     main()

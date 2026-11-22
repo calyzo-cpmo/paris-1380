@@ -24,6 +24,16 @@ l'année (`an_const`). Une borne de période qui tombe sur la date choisie simpl
 
 ## 1. Paris 1900 — la plus simple, à faire en premier
 
+**Fait (première version)** : extraction à la date de 1900 (`python3 tools/extract_1889.py 1900`, même script que
+1889), page `dist/1900.html` qui reprend `src/p1889/` par surcouche (`src/p1900/`), frise, accueil, test, image de
+partage. Montrés : la tour repeinte (1899), le Champ-de-Mars de 1900 (six palais, palais de l'Électricité et Château
+d'eau, Galerie des machines gardée), la Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III et ses
+pylônes, la gare de Lyon et sa tour, les gares d'Orsay et des Invalides, le pont Rouelle, le Sacré-Cœur et son dôme.
+
+**Reste à faire** : la rue des Nations (quai d'Orsay), les pavillons des quais de la rive droite, de l'Esplanade des
+Invalides et du Trocadéro, le Vieux Paris, le trottoir roulant, les entrées Guimard du métro ; le curseur de date du
+montage de l'Exposition (1896-1900).
+
 **Pourquoi d'abord** : les îlots et les rues viennent déjà de la base « Paris 1900 », utilisée pour 1889. L'essentiel de
 la ville est en place ; on change l'année (`AN = 1900`) et on modèle ce qui est nouveau.
 
@@ -37,7 +47,7 @@ la ville est en place ; on change l'année (`AN = 1900`) et on modèle ce qui es
 - Les gares neuves : gare d'Orsay, gare de Lyon (actuelle, avec sa tour de l'horloge), gare des Invalides.
 - Le métro : la ligne 1 (porte de Vincennes à porte Maillot) ouvre le 19 juillet 1900 ; ses entrées Art nouveau de
   Guimard.
-- Le Sacré-Cœur sans son campanile, encore à bâtir (à vérifier).
+- Le Sacré-Cœur avec son dôme (1899), sans son campanile, achevé en 1912 (vérifié).
 
 **Réutilisable** : tout `src/p1889/` (ville, ports bas, gares, trains, bateaux, souches, édifices, calque), le curseur
 de date (pour le montage de l'Exposition 1900, comme pour la tour en 1889).

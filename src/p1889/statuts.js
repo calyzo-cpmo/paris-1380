@@ -1,13 +1,13 @@
-// Calque « d'où vient ce bâtiment » de la page Paris 1889 : chaque maison est teintée selon ce qui la justifie — réelle
-// (bâti daté de 1889 ou d'avant par l'APUR), probable, disparue (emprise de l'atlas de Vasserot) ou évoquée. Les
+// Calque « d'où vient ce bâtiment » des pages Paris 1889 et Paris 1900 : chaque maison est teintée selon ce qui la
+// justifie — réelle (bâti daté de l'année ou d'avant par l'APUR), probable, disparue (emprise de l'atlas de Vasserot) ou évoquée. Les
 // monuments, les gares, l'Exposition et les édifices modelés gardent leur couleur. Même procédé que le calque de
 // certitude de la page de 1380 : une trame des emprises (4 m, 8 m sur téléphone), lue par les matières du bâti.
 import * as THREE from 'three';
-import { CADRE } from './data.js';
+import { CADRE, ANNEE } from './data.js';
 
 export const STATUTS = [
-  { code: 1, s: 'R', nom: 'Réel', css: '#3f9a54', note: 'Encore debout, daté de 1889 ou d’avant par l’APUR : emprise et hauteur réelles.' },
-  { code: 2, s: 'P', nom: 'Probable', css: '#4f8fd6', note: 'Bâti entre 1851 et 1914, sans année connue, dans un voisinage ancien.' },
+  { code: 1, s: 'R', nom: 'Réel', css: '#3f9a54', note: `Encore debout, daté de ${ANNEE} ou d’avant par l’APUR : emprise et hauteur réelles.` },
+  { code: 2, s: 'P', nom: 'Probable', css: '#4f8fd6', note: ANNEE >= 1900 ? 'Bâti entre 1851 et 1914, sans année connue ou daté de « 1900 », année ronde des relevés, dans un voisinage ancien.' : 'Bâti entre 1851 et 1914, sans année connue, dans un voisinage ancien.' },
   { code: 3, s: 'V', nom: 'Disparu', css: '#e2a92e', note: 'Emprise de l’atlas de Vasserot (1810-1836), là où le bâtiment actuel est plus récent.' },
   { code: 4, s: 'EG', nom: 'Évoqué', css: '#d77393', note: 'Maison évoquée, sur l’emprise actuelle ou le long des rues de 1900.' },
 ];

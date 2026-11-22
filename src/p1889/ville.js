@@ -6,7 +6,7 @@ import { makeMaterials89 } from '../p1789/textures.js';
 import { ring, fill, lines, indexFoot, buildTrees } from '../p1789/outils.js';
 import { hex, hash } from '../p1789/blocks.js';
 import { pointInPoly, polylineLength, pointAt } from '../geom.js';
-import { bati, rues, ilots, parcs, dansExpo, FER } from './data.js';
+import { bati, rues, ilots, parcs, dansExpo, FER, ANNEE } from './data.js';
 import { maison } from './bati.js';
 import { planter } from './arbres.js';
 import { materiauVoie, poserVoies, ilotsFerres } from './fer.js';
@@ -18,16 +18,19 @@ import { bateaux } from './bateaux.js';
 
 const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), DALLE_PORT = hex(0xb8b1a1), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
-// Ponts de la Seine : tablier en léger dos d'âne, arches surbaissées sur des piles, parapets.
+// Ponts de la Seine : tablier en léger dos d'âne, arches surbaissées sur des piles, parapets. Le pont Alexandre-III
+// franchit le fleuve d'une seule arche.
+const RECENTS = ANNEE >= 1900 ? /Rouelle|Bir.Hakeim/i : /Alexandre|Mirabeau|Debilly|Rouelle|Bir.Hakeim/i;
 function ponts(app, B) {
   const T = app.terrain, out = [], mouille = (x, z) => T.wetAt(x, z) > 0.5;
   // 1. Toute voie qui passe au-dessus du fleuve désigne un franchissement (la base de 1900 ne signale pas tous les
-  //    ponts) ; ceux d'après 1889 sont écartés. La base décrit souvent un pont en deux moitiés, ou en deux chaussées :
+  //    ponts) ; ceux d'après la date sont écartés (Mirabeau, 1896 ; Alexandre-III et passerelle Debilly, 1900 ; le pont
+  //    Rouelle ne porte que le chemin de fer, posé avec les voies). La base décrit souvent un pont en deux moitiés, ou en deux chaussées :
   //    on ne retient du tronçon que son milieu au-dessus de l'eau et sa direction, puis on cherche la rive de chaque
   //    côté, dans cet axe. Le pont va ainsi toujours d'une rive à l'autre, quel que soit le découpage.
   const cand = [];
   for (const r of rues()) {
-    if (/Alexandre|Mirabeau|Debilly|Rouelle|Bir.Hakeim/i.test(r.nom) || /^(All.e|Quai|Port|Berge)\b/i.test(r.nom)) continue;      // l'allée des Cygnes court sur son île, au milieu du fleuve
+    if (RECENTS.test(r.nom) || /^(All.e|Quai|Port|Berge)\b/i.test(r.nom)) continue;      // l'allée des Cygnes court sur son île, au milieu du fleuve
     const L = polylineLength(r.pts); if (L < 8) continue;
     let s0 = -1, s1 = -1; for (let s = 0; s <= L; s += 2) { const p = pointAt(r.pts, s); if (mouille(p.x, p.z)) { if (s0 < 0) s0 = s; s1 = s; } }
     if (s0 < 0 || s1 - s0 < 6) continue;
@@ -55,7 +58,7 @@ function ponts(app, B) {
     const nom = (g.m.find((c) => /^(Pont|Passerelle|Viaduc)/i.test(c.nom)) || g.m[0]).nom;
     const ya = Math.max(T.land(a[0], a[1]), 5.2), yb = Math.max(T.land(b[0], b[1]), 5.2);
     const yAt = (t) => ya + (yb - ya) * t + 0.9 * Math.sin(Math.PI * t), cx = (a[0] + b[0]) / 2, cz = (a[1] + b[1]) / 2;
-    const bs = B.at('stone', cx, cz), bp = B.at('plain', cx, cz), nA = Math.max(2, Math.round(len / 30)), SEG = 6;
+    const bs = B.at('stone', cx, cz), bp = B.at('plain', cx, cz), nA = /Alexandre/.test(nom) ? 1 : Math.max(2, Math.round(len / 30)), SEG = 6;
     for (let k = 0; k < nA; k++) {
       for (let j = 0; j < SEG; j++) {
         const t0 = (k + j / SEG) / nA, t1 = (k + (j + 1) / SEG) / nA, y0 = yAt(t0), y1 = yAt(t1), x0 = a[0] + ux * len * t0, z0 = a[1] + uz * len * t0, x1 = a[0] + ux * len * t1, z1 = a[1] + uz * len * t1;
@@ -206,7 +209,7 @@ export async function construire(app, step) {
       return best; }; }
 
   // trame des passants, autour de l'Exposition : rues, promenades, jardins, ponts ; ni l'eau ni les bâtiments
-  await step('Les Parisiens de 1889…', 0.93);
+  await step(`Les Parisiens de ${ANNEE}…`, 0.93);
   { const cell = app.mobile ? 2.5 : 1.5, w = Math.round(R.w / cell), h = Math.round(R.h / cell), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const x = cv.getContext('2d', { willReadFrequently: true }), TT = { s: 1 / cell, x: (v) => (v - R.x) / cell, y: (v) => (v - R.z) / cell };
     x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
