@@ -24,7 +24,7 @@ const UI = {
     ['Seine, canaux, jardins', `${CREDITS.eau}. ${CREDITS.parcs}.`],
     ['Relief', CREDITS.relief],
     ['Voies ferrées', `${CREDITS.fer}. ${n(Math.round(FER.a))} km de voies d’aujourd’hui sont gardés, sur les emprises de 1900 ; ${n(Math.round(FER.r + FER.e))} km sont restitués ou évoqués, là où la ligne a disparu.`],
-    ['Exposition de 1900', 'Plan et cotes : A. Picard, Rapport général administratif et technique de l’Exposition universelle internationale de 1900 (1902) ; Revue technique de l’Exposition universelle de 1900 (Conservatoire national des arts et métiers, Cnum). Dates des gares, des palais et du métro : sources historiques publiées.'],
+    ['Exposition de 1900', 'Plan et cotes : A. Picard, Rapport général administratif et technique de l’Exposition universelle internationale de 1900 (1902) ; guide Paris Exposition 1900 (Hachette) ; Revue technique de l’Exposition universelle de 1900 (Conservatoire national des arts et métiers, Cnum). Entrées du métro : état de l’été 1900 d’après Descouturelle, Mignard et Rodriguez (2012). Dates des gares, des palais et du métro : sources historiques publiées.'],
   ],
 };
 const app = new App89(document.getElementById('scene'), MONDE_1889);

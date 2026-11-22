@@ -12,20 +12,28 @@ Le jeu en ligne (`CADRAGE-JEU.md`) reste au stade du cadrage : pas de migration 
 **En ligne** : cinq maquettes — Lutèce, 1380, 1789, 1889, **1900** — et l'**écran d'accueil** : sans adresse, le site
 montre les cinq époques en cartes au-dessus d'une maquette « en vitrine » qui tourne lentement ; le nom du site, en tête
 de chaque maquette, y ramène. Paris 1900 montre la ville à la date, la tour repeinte, le Champ-de-Mars de 1900, la
-Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la rue des Nations, la rive droite, le Vieux Paris, le
-palais des Armées et la passerelle Debilly, l'Esplanade des Invalides, les colonies du Trocadéro et le trottoir roulant.
+Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la rue des Nations, la porte monumentale de Binet, les
+jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le palais des Armées et la passerelle
+Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
+roulant et les entrées du métro.
 
 **La suite, dans l'ordre**
-1. **Paris 1900, finitions** (petites, indépendantes les unes des autres) :
-   - les pavillons de la rive droite entre le pont de la Concorde et le pont Alexandre-III, la rue de Paris (les
-     attractions du Cours-la-Reine, du pont des Invalides au pont de l'Alma), la porte
-     monumentale de la place de la Concorde et sa « Parisienne », le Globe céleste et le palais de l'Optique au pied de
-     la tour ;
-   - les entrées Guimard de la ligne 1 (huit stations ouvertes le 19 juillet 1900, les dix autres avant le 1er
-     septembre) : entourages de fonte et, à Bastille et à l'Étoile, pavillons ; à placer d'après les rues de la base
-     « Paris 1900 » ;
-   - les cotes d'élévation de la rue des Nations restent une évocation : à affiner pavillon par pavillon si l'on trouve
-     les plans (Picard, Revue technique, cartes postales).
+1. **Paris 1900, finitions** — *faites le 22 novembre*, sauf la dernière :
+   - la porte monumentale de Binet et sa « Parisienne », les jardins du Cours-la-Reine, la rive droite refaite dans
+     l'ordre de Picard (serres à leurs cotes, palais de la Danse, phare, Congrès de 100 m), la rue de Paris (quinze
+     établissements et le palais de la Danse), le Globe céleste et le palais de l'Optique ;
+   - les entrées de Guimard de la ligne 1 : une par station, au carrefour qui la nomme, d'après les rues de la base ;
+   - **reste** : les cotes d'élévation de la rue des Nations, une évocation, à affiner pavillon par pavillon si l'on
+     trouve les plans (Picard, Revue technique, cartes postales).
+   - *Ce que les sources ont corrigé* : entre la Concorde et le pont des Invalides, il n'y avait pas de pavillons mais
+     des jardins « parsemés de serres » (Picard, t. I, p. 271-272) ; les serres et le palais de la Ville de Paris
+     étaient bien en aval du pont des Invalides. À l'été 1900, les entrées du métro n'avaient que leurs balustrades :
+     candélabres, cartouches « Métropolitain » et édicules sont de la fin de 1900 à 1902, et les pavillons de la Bastille
+     et de l'Étoile étaient en chantier (article « Entrée de métro Guimard », d'après Descouturelle, Mignard et
+     Rodriguez, 2012) ; ils ne sont pas figurés.
+   - *Ouvert* : la liste exacte des huit stations ouvertes le 19 juillet (dix selon certaines pages ; voir Hervieu,
+     1903) ; la position de chaque accès en 1900 ; la hauteur réelle de la Parisienne (9 m d'après Picard, 6 m
+     ailleurs) ; le diamètre du Globe (plus de 40 m chez Picard, 46 m chez Hachette ; 45 m retenus).
 2. **Paris 1900, curseur du montage de l'Exposition** (de la démolition du palais de l'Industrie, en 1897, à l'ouverture
    du 14 avril 1900, et jusqu'au métro du 19 juillet). Préalable : le Grand et le Petit Palais, les gares d'Orsay, des
    Invalides et de Lyon viennent des données de la ville et ne peuvent pas disparaître avec la date. Il faut les
@@ -56,8 +64,12 @@ palais des Armées et la passerelle Debilly, l'Esplanade des Invalides, les colo
   continue. En rendu logiciel, le navigateur sans écran ne fournit presque plus d'images à un cadre : les tests font
   avancer les images eux-mêmes (`a.rig.update`, `a.emit('frame', …)`). Le contrôle des ports bas de 1900 écarte les
   berges que l'Exposition occupe.
-- *Sources de l'Exposition de 1900* : A. Picard, *Rapport général administratif et technique* (1902, archive.org,
-  « expositionuniver01expo ») ; *Revue technique de l'Exposition universelle de 1900* (Cnam, Cnum, cote 8XAE585.1).
+- *Sources de l'Exposition de 1900* : A. Picard, *Rapport général administratif et technique* (1902, archive.org :
+  t. I « expositionuniver01expo », t. II « rapportgeyneyra00expo », t. VI « expositionunive00goog », t. VII
+  « expositionuniver07expo ») ; guide Hachette *Paris Exposition 1900* (archive.org, « parisexposition00pari ») ;
+  *Revue technique de l'Exposition universelle de 1900* (Cnam, Cnum, cote 8XAE585.1), pas encore dépouillée.
+- *Où sont les finitions* : `src/p1900/porte.js` (porte monumentale, jardins), `src/p1900/pavillons.js` (rive droite,
+  rue de Paris), `src/p1900/attractions.js` (Globe céleste, Optique), `src/p1900/metro.js` (entrées du métro).
 
 ## Méthode commune
 
@@ -84,9 +96,11 @@ pylônes, la gare de Lyon et sa tour, les gares d'Orsay et des Invalides, le pon
 
 **Fait ensuite** : la rue des Nations (vingt-trois pavillons et deux passerelles), la rive droite (Ville de Paris,
 serres, Congrès), le Vieux Paris, le palais des Armées et la passerelle Debilly, les palais de l'Esplanade des
-Invalides, la section des colonies au Trocadéro, le trottoir roulant.
+Invalides, la section des colonies au Trocadéro, le trottoir roulant. Puis les finitions : la porte monumentale, les
+jardins du Cours-la-Reine, la rive droite refaite et la rue de Paris, le Globe céleste, le palais de l'Optique, les
+entrées du métro.
 
-**Reste à faire** : voir « La suite », en tête de ce document (finitions, puis curseur du montage).
+**Reste à faire** : voir « La suite », en tête de ce document (cotes de la rue des Nations, puis curseur du montage).
 
 **Pourquoi d'abord** : les îlots et les rues viennent déjà de la base « Paris 1900 », utilisée pour 1889. L'essentiel de
 la ville est en place ; on change l'année (`AN = 1900`) et on modèle ce qui est nouveau.
