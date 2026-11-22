@@ -11,7 +11,8 @@
 // deux cheminées de 80 m ; le détail des élévations est une évocation.
 // Hors du Champ-de-Mars : la Grande Roue (93 m de diamètre sur un socle de 3 m, quarante voitures), le Grand et le Petit
 // Palais (volumes réels, tirés des données ; on leur ajoute la verrière et les dômes), les pylônes du pont Alexandre-III.
-// Les pavillons des nations, ceux des quais, de l'Esplanade des Invalides et du Trocadéro ne sont pas encore modelés.
+// Le reste de l'Exposition — rue des Nations, rive droite, Vieux Paris, palais des Armées, Esplanade des Invalides,
+// colonies du Trocadéro, trottoir roulant — est dans src/p1900/pavillons.js.
 import { box, cyl, cone, rgb } from '../builder.js';
 import { EXPO, expoXZ } from '../p1889/data.js';
 import { batirTour } from '../p1889/tour.js';
@@ -21,44 +22,13 @@ import { batirEdifices } from '../p1889/edifices.js';
 import { repere } from '../p1889/corps.js';
 import { fill } from '../p1789/outils.js';
 import { halle, dome, ensemble, emprise, trocadero, Q, CREME, OCRE, VERRE, VERRE_CLAIR, BLEU, OR, PIERRE } from '../p1889/expo.js';
+import { poutre, berceau, calotte } from './outils.js';
+import { batirPavillons } from './pavillons.js';
 
 const STUC = rgb(236, 228, 208), VERT = rgb(92, 140, 120), ROSE = rgb(212, 164, 140), ACIER = rgb(88, 86, 84), CABINE = rgb(150, 72, 58), BRIQUE = rgb(170, 96, 72), EAU = rgb(178, 206, 222);
 const U = EXPO.u, AXE = { ux: U[0], uz: U[1] };
 const boite = (ring) => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return { ring, x0, z0, x1, z1 }; };
 const STATIQUE = [-2, -1];                       // dates de chantier passées : ces ouvrages sont achevés (pas de curseur en 1900)
-
-// Poutre de section carrée (demi-côté w) de p à q, points [x, y, z] ; chaque face est vue des deux côtés.
-function poutre(b, p, q, w, col, s = 1) {
-  const tx = q[0] - p[0], ty = q[1] - p[1], tz = q[2] - p[2], l = Math.hypot(tx, ty, tz) || 1, t = [tx / l, ty / l, tz / l];
-  const a = Math.abs(t[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-  let e1 = [t[1] * a[2] - t[2] * a[1], t[2] * a[0] - t[0] * a[2], t[0] * a[1] - t[1] * a[0]]; const n1 = Math.hypot(...e1); e1 = e1.map((v) => (v / n1) * w);
-  const e2 = [t[1] * e1[2] - t[2] * e1[1], t[2] * e1[0] - t[0] * e1[2], t[0] * e1[1] - t[1] * e1[0]];
-  const K = [[1, 1], [-1, 1], [-1, -1], [1, -1]], C = (o, i) => [o[0] + e1[0] * K[i][0] + e2[0] * K[i][1], o[1] + e1[1] * K[i][0] + e2[1] * K[i][1], o[2] + e1[2] * K[i][0] + e2[2] * K[i][1]];
-  for (let i = 0; i < 4; i++) {
-    const A = C(p, i), B = C(p, (i + 1) % 4), Cq = C(q, (i + 1) % 4), D = C(q, i);
-    b.quad(A[0], A[1], A[2], B[0], B[1], B[2], Cq[0], Cq[1], Cq[2], D[0], D[1], D[2], 0, 0, 1, 1, col, s, s);
-    b.quad(B[0], B[1], B[2], A[0], A[1], A[2], D[0], D[1], D[2], Cq[0], Cq[1], Cq[2], 0, 0, 1, 1, col, s, s);
-  }
-}
-// Berceau vitré le long de u, de v0 à v1, entre la sablière hm et le faîte hf ; P(u, v) : repère de l'édifice.
-function berceau(bv, P, y0, u0, u1, v0, v1, hm, hf, col = VERRE) {
-  const N = 10, prof = (s) => hm + (hf - hm) * Math.pow(Math.sin(Math.PI * s), 0.7);
-  for (let k = 0; k < N; k++) {
-    const s0 = k / N, s1 = (k + 1) / N, ya = y0 + prof(s0), yb = y0 + prof(s1), sh = 0.86 + 0.14 * Math.sin((Math.PI * (s0 + s1)) / 2);
-    const a = P(u0, v0 + (v1 - v0) * s0), b = P(u1, v0 + (v1 - v0) * s0), c = P(u1, v0 + (v1 - v0) * s1), d = P(u0, v0 + (v1 - v0) * s1);
-    bv.quad(a[0], ya, a[1], b[0], ya, b[1], c[0], yb, c[1], d[0], yb, d[1], 0, 0, 1, 1, col, sh, sh);
-    for (const [p, q] of [[a, d], [b, c]]) bv.quad(p[0], y0 + hm, p[1], q[0], y0 + hm, q[1], q[0], yb, q[1], p[0], ya, p[1], 0, 0, 1, 1, VERRE_CLAIR, 0.92, 1);      // pignons vitrés
-  }
-}
-// Calotte vitrée de rayon r posée à la cote ya, jusqu'à yb.
-function calotte(bv, x, z, r, ya, yb, col = VERRE, seg = 20) {
-  const N = 6;
-  for (let k = 0; k < N; k++) {
-    const a0 = ((k / N) * Math.PI) / 2, a1 = (((k + 1) / N) * Math.PI) / 2, r0 = r * Math.cos(a0), r1 = r * Math.cos(a1), y0 = ya + (yb - ya) * Math.sin(a0), y1 = ya + (yb - ya) * Math.sin(a1);
-    for (let i = 0; i < seg; i++) { const t0 = (i / seg) * 2 * Math.PI, t1 = ((i + 1) / seg) * 2 * Math.PI;
-      bv.quad(x + Math.cos(t1) * r0, y0, z + Math.sin(t1) * r0, x + Math.cos(t0) * r0, y0, z + Math.sin(t0) * r0, x + Math.cos(t0) * r1, y1, z + Math.sin(t0) * r1, x + Math.cos(t1) * r1, y1, z + Math.sin(t1) * r1, 0, 0, 1, 1, col, 0.9, 1.05); }
-  }
-}
 
 // ---- Champ-de-Mars : six palais en fer à cheval autour du jardin, le palais de l'Électricité au fond
 // Repère de l'Exposition (src/p1889/data.js) : u de la tour vers l'École militaire, v vers l'avenue de Suffren ; Q(u, v)
@@ -190,6 +160,7 @@ export async function batirExpo(app, B) {
   grandPalais(app);
   petitPalais(app, B);
   pylones(app, B);
+  batirPavillons(app, B);
   // deux gares neuves, que les données donnent entières : leur nom seulement
   for (const [cle, x, z, h] of [['GareOrsay', -1696, -791, 30], ['GareInvalides', -2581, -1011, 16]]) M[cle] = { x, z, top: T.height(x, z) + h + 10 };
 
@@ -203,5 +174,23 @@ export async function batirExpo(app, B) {
   L.push(['Grand Palais', 'expo', 'Bâti de 1897 à 1900, en partie sur le site du palais de l’Industrie, pour les Beaux-Arts de l’Exposition, ouvert en mai : une nef de 200 mètres sous une verrière de fer, une coupole à 45 mètres. Les corps de pierre viennent des données ; la verrière et la coupole sont une évocation.', M.GrandPalais, 1]);
   L.push(['Petit Palais', 'expo', 'Le palais de Charles Girault (1897-1900), face au Grand Palais, présente l’exposition rétrospective de l’art français ; il deviendra le musée des Beaux-Arts de la Ville de Paris. Son volume vient des données ; le dôme de l’entrée est une évocation.', M.PetitPalais]);
   L.push(['Pont Alexandre-III', 'expo', 'Une seule arche d’acier de 107 mètres, entre les Invalides et les deux palais : la première pierre a été posée le 7 octobre 1896 par le tsar Nicolas II, le pont est inauguré avec l’Exposition le 14 avril 1900. Aux quatre coins, des pylônes de 17 mètres portent des Renommées dorées. Les pylônes sont une évocation.', M.AlexandreIII, 1]);
-  L.push(['Palais du Trocadéro', 'expo', 'Bâti pour l’Exposition de 1878 par Davioud et Bourdais : une rotonde, deux tours de 80 mètres et deux ailes courbes. Ses jardins accueillent en 1900 les pavillons des colonies, qui ne sont pas encore figurés ici. Il sera remplacé en 1937 par le palais de Chaillot. Sa forme est une évocation.', M.Trocadero, 1]);
+  L.push(['Palais du Trocadéro', 'expo', 'Bâti pour l’Exposition de 1878 par Davioud et Bourdais : une rotonde, deux tours de 80 mètres et deux ailes courbes. Ses jardins accueillent en 1900 la section des colonies. Il sera remplacé en 1937 par le palais de Chaillot. Sa forme est une évocation.', M.Trocadero, 1]);
+  const EV = ' Son emplacement suit le plan de l’Exposition ; ses dimensions et sa silhouette sont une évocation.';
+  L.push(['Rue des Nations', 'expo', 'Sur le quai d’Orsay, du pont des Invalides au pont de l’Alma, les pavillons des puissances étrangères en double rangée : la première au bord de la Seine, en partie sur une plate-forme qui prolonge le quai au-dessus des berges, la seconde dans les allées du quai. Chaque nation y bâtit dans son style : palais vénitien de l’Italie, manoir anglais de Kingston House, hôtel de ville d’Audenarde pour la Belgique, hôtel rhénan pour l’Allemagne. Sous chaque pavillon, au niveau des berges, des cafés et des restaurants de toutes les nations. Deux passerelles relient la rue à la rive droite. L’ordre des pavillons est celui de la Revue technique de l’Exposition ; leurs dimensions et leurs silhouettes sont une évocation.', M.RueDesNations, 1]);
+  L.push(['Pavillon de l’Italie', 'expo', 'Le premier de la rue des Nations depuis les Invalides, et l’un des plus beaux : un grand monument dans le style du XVe siècle, ses dômes et ses rosaces.' + EV, M['Nation Italie']]);
+  L.push(['Pavillon des États-Unis', 'expo', 'Un palais d’allure classique sous un dôme, entre ceux de la Turquie et du Portugal.' + EV, M['Nation États-Unis']]);
+  L.push(['Pavillon de la Grande-Bretagne', 'expo', 'Un vieux manoir anglais, Kingston House, reconstitué au bord de la Seine ; derrière lui, le pavillon de la Perse.' + EV, M['Nation Grande-Bretagne']]);
+  L.push(['Pavillon de la Belgique', 'expo', 'La reconstitution de l’hôtel de ville d’Audenarde, chef-d’œuvre de l’art ogival flamand, son beffroi et ses clochetons.' + EV, M['Nation Belgique']]);
+  L.push(['Pavillon de l’Allemagne', 'expo', 'Un hôtel de riche bourgeois des bords du Rhin, dans le style gothique germanique, sous un haut clocher.' + EV, M['Nation Allemagne']]);
+  L.push(['Palais de la Ville de Paris', 'expo', 'Sur le Cours-la-Reine, en aval du pont des Invalides : une réminiscence un peu fantaisiste de l’Hôtel de Ville, sa toiture d’ardoise ornée de campaniles.' + EV, M.VilleDeParis]);
+  L.push(['Serres de l’Horticulture', 'expo', 'Les palais de l’Horticulture et de l’Arboriculture, et les serres de la Ville de Paris : une fine ossature de fer et de verre, pavoisée de mâts et d’oriflammes.' + EV, M.Serres]);
+  L.push(['Palais des Congrès', 'expo', 'Le palais des Congrès et de l’Économie sociale, de René Mewès, aux lignes sobres de style Louis XVI ; son soubassement repose sur la berge, près du pont de l’Alma.' + EV, M.Congres]);
+  L.push(['Vieux Paris', 'expo', 'Sur la berge de la rive droite, en aval du pont de l’Alma, la reconstitution des vieux édifices les plus célèbres de Paris au Moyen Âge, imaginée par Albert Robida : rues étroites, maisons à pans de bois, portes fortifiées, église. Les édifices figurés ici sont une évocation de l’ensemble.', M.VieuxParis, 1]);
+  L.push(['Palais des Armées de terre et de mer', 'expo', 'Sur le quai d’Orsay, entre le pont de l’Alma et le Champ-de-Mars, le palais des armées et de la marine, à la manière d’une forteresse.' + EV, M.Armees]);
+  L.push(['Passerelle Debilly', 'expo', 'Une passerelle métallique bâtie pour l’Exposition entre le palais des Armées et la rive droite : une grande arche porte le tablier par des aiguilles, comme un pont suspendu. Elle existe toujours, déplacée un peu en aval en 1906. Sa forme est une évocation.', M.Debilly]);
+  L.push(['Esplanade des Invalides', 'expo', 'De part et d’autre de l’allée centrale, qui découvre le dôme : le palais des Manufactures nationales, côté Seine, puis ceux de la Décoration et du Mobilier et des Industries diverses jusqu’à la rue de Grenelle. À l’angle du quai, la gare des Invalides.' + EV, M['Esplanade Manufactures nationales'], 1]);
+  L.push(['Section des colonies', 'expo', 'Dans les jardins du Trocadéro, de part et d’autre de la cascade, les pavillons des colonies françaises et des pays de protectorat, et ceux de pays lointains, chacun dans le style de son pays. Leur disposition et leurs formes sont une évocation.', M.Colonies, 1]);
+  L.push(['Palais de l’Algérie', 'expo', 'Le plus vaste de la section des colonies, au Trocadéro, sous une coupole et un minaret.' + EV, M.ColonieAlgerie]);
+  L.push(['Pavillon de l’Indochine', 'expo', 'Une pagode aux toits superposés, dans la section des colonies, au Trocadéro.' + EV, M.ColonieIndochine]);
+  L.push(['Trottoir roulant', 'expo', `La « rue de l’Avenir » : une boucle de 3 370 mètres sur viaduc, à sept mètres de haut, par la rue Fabert, le quai d’Orsay, l’avenue de La Bourdonnais et l’avenue de La Motte-Picquet. Un plancher fixe et deux plates-formes qui avancent, l’une à 4 km/h, l’autre au double ; neuf stations. Le tracé suit les rues ; les palées sont de convention.`, M.TrottoirRoulant, 1]);
 }

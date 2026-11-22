@@ -37,7 +37,7 @@ autre lance le passage. Le nom du site, en tête de chaque maquette, ramène à 
 **Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur l'écran d'accueil ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` (les six fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
-**Prochaines maquettes :** Paris 1900 est en ligne dans une première version ; viendront la suite de l'Exposition de 1900, puis 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
+**Prochaines maquettes :** Paris 1900 est en ligne, l'Exposition presque entière ; viendront ses derniers pavillons et un curseur de montage, puis 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
 **Projet de jeu :** le cadrage d'un « mode classe » (séance animée par un enseignant, sans compte) est dans [`CADRAGE-JEU.md`](CADRAGE-JEU.md) ; rien n'en est encore construit.
 
 ## Ce que montre la maquette
@@ -263,9 +263,14 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   central, le palais de l'Électricité (70 m au Génie de l'Électricité) et le Château d'eau, deux cheminées de 80 m, la
   Galerie des machines de 1889 gardée derrière eux ; au coin des avenues de Suffren et de La Motte-Picquet, la Grande
   Roue (93 m) ; la verrière et la coupole du Grand Palais, le dôme du Petit Palais, les quatre pylônes du pont
-  Alexandre-III. Cotes : rapport général de Picard (1902) et *Revue technique de l'Exposition* ; les élévations sont
-  une évocation. Les pavillons des nations (rue des Nations), ceux des quais, de l'Esplanade des Invalides et du
-  Trocadéro, le Vieux Paris, le trottoir roulant et les entrées du métro viendront ensuite.
+  Alexandre-III. Hors du Champ-de-Mars : la rue des Nations (vingt-trois pavillons en double rangée sur le quai
+  d'Orsay, dans l'ordre de la *Revue technique*, et ses deux passerelles), le palais de la Ville de Paris, les serres et
+  le palais des Congrès sur la rive droite, le Vieux Paris au pied du quai Debilly, le palais des Armées et la
+  passerelle Debilly, les palais de l'Esplanade des Invalides, une douzaine de pavillons de la section des colonies au
+  Trocadéro, le trottoir roulant sur son viaduc (une boucle de 3,2 km à sept mètres). Cotes : rapport général de
+  Picard (1902) et *Revue technique de l'Exposition* ; les élévations et les silhouettes sont une évocation. Restent à
+  faire : les pavillons de la rive droite en amont du pont Alexandre-III, la rue de Paris, le Globe céleste, les
+  entrées du métro, et un curseur du montage de l'Exposition.
 - **Gares et voies** : la gare de Lyon de Toudoire (bâtiments tirés des données, tour de l'horloge de 67 m, nefs
   vitrées), les gares d'Orsay et des Invalides ; le raccordement de Boulainvilliers au Champ-de-Mars franchit la Seine
   sur le pont Rouelle ; la gare du Champ-de-Mars de 1878, démontée en 1897, a disparu. Les lignes souterraines (Orsay,
@@ -454,6 +459,8 @@ src/p1889/figures.js         visages et costumes de 1889
 src/body1900.html            page Paris 1900 (mêmes styles, sans curseur)
 src/p1900/main.js            page Paris 1900 : le moteur de Paris 1889 sur data/paris1900.json
 src/p1900/expo.js            Exposition de 1900 (remplace src/p1889/expo.js à l'assemblage) : Champ-de-Mars, palais de l'Électricité, Grande Roue, Grand et Petit Palais, pylônes du pont Alexandre-III
+src/p1900/pavillons.js       le reste de l'Exposition : rue des Nations et passerelles, rive droite, Vieux Paris, palais des Armées et passerelle Debilly, Esplanade des Invalides, colonies du Trocadéro, trottoir roulant
+src/p1900/outils.js          poutres d'acier, verrières en berceau, calottes vitrées
 src/p1900/places.js          repères de Paris 1900 et leurs notices
 src/p1900/parcours.js        visite guidée de Paris 1900
 src/p1889/arbres.js          alignements d'arbres des boulevards, des avenues et des quais, d'après la largeur des voies

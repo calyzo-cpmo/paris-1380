@@ -30,9 +30,14 @@ partage. Montrés : la tour repeinte (1899), le Champ-de-Mars de 1900 (six palai
 d'eau, Galerie des machines gardée), la Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III et ses
 pylônes, la gare de Lyon et sa tour, les gares d'Orsay et des Invalides, le pont Rouelle, le Sacré-Cœur et son dôme.
 
-**Reste à faire** : la rue des Nations (quai d'Orsay), les pavillons des quais de la rive droite, de l'Esplanade des
-Invalides et du Trocadéro, le Vieux Paris, le trottoir roulant, les entrées Guimard du métro ; le curseur de date du
-montage de l'Exposition (1896-1900).
+**Fait ensuite** : la rue des Nations (vingt-trois pavillons et deux passerelles), la rive droite (Ville de Paris,
+serres, Congrès), le Vieux Paris, le palais des Armées et la passerelle Debilly, les palais de l'Esplanade des
+Invalides, la section des colonies au Trocadéro, le trottoir roulant.
+
+**Reste à faire** : les pavillons de la rive droite entre le pont de la Concorde et le pont Alexandre-III, la rue de
+Paris, le Globe céleste, les entrées Guimard du métro ; le curseur de date du montage de l'Exposition (1896-1900). Ce
+dernier demande de modeler à part le Grand et le Petit Palais, que les données donnent aujourd'hui comme des bâtiments
+de la ville (ils ne peuvent pas disparaître avec la date).
 
 **Pourquoi d'abord** : les îlots et les rues viennent déjà de la base « Paris 1900 », utilisée pour 1889. L'essentiel de
 la ville est en place ; on change l'année (`AN = 1900`) et on modèle ce qui est nouveau.
