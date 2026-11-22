@@ -2,6 +2,9 @@
 // et orchestre le passage d'une époque à l'autre : même point de vue, même heure, la ville s'enfonce, l'autre s'élève.
 // Ouverte seule, la maquette fonctionne comme avant : rien ici n'agit tant que la page d'accueil ne s'est pas annoncée.
 // Les messages ne portent qu'un état de vue (position, heure, époque) ; ils ne sont acceptés que de la page parente.
+// Vitrine : sur l'écran d'accueil du site, la maquette sert de fond — interface masquée, ville qui tourne lentement. La
+// page d'accueil l'y met dès l'ouverture (« vitrine » dans l'adresse du cadre) ou par un message, et l'en sort quand on
+// choisit cette époque.
 
 export const shell = { on: false, base: null };            // on : la page d'accueil s'est annoncée ; base : son adresse
 let handlers = null, era = null;
@@ -31,22 +34,38 @@ function handle(d) {
   else if (d.t === 'apply') { handlers.apply(d.hash || ''); ack(); }
   else if (d.t === 'pause') handlers.pause();
   else if (d.t === 'resume') handlers.resume();
+  else if (d.t === 'vitrine') { if (handlers.vitrine) handlers.vitrine(!!d.on); ack(); }
 }
+
+// La maquette ouvre-t-elle en vitrine ? Lu dans l'adresse du cadre, avant que la ville soit construite : son interface
+// reste masquée dès le premier instant (classe « vitrine » de la racine, voir src/style.css).
+export const enVitrine = () => document.documentElement.classList.contains('vitrine');
+function vitrineDemandee() { return framed && /(^#|&)vitrine(&|$)/.test(location.hash); }
 
 // À appeler dès le chargement de la page, avant de construire la ville : annonce la maquette à la page d'accueil.
 export function bootEmbed(id) {
   era = id;
-  if (!framed) return;
+  if (!framed) { lienAccueil(); return; }
+  if (vitrineDemandee()) document.documentElement.classList.add('vitrine');
+  lienAccueil();
   window.addEventListener('message', (e) => { if (e.source === window.parent && e.data && e.data.src === 'paris-shell') handle(e.data); });
   tell({ t: 'boot' });
 }
 
 // À appeler une fois l'interface prête. h : { state(leave) → adresse de la vue, prepare(hash), apply(hash),
-// morph(to, ms) → Promise, pause(), resume() }.
+// morph(to, ms) → Promise, pause(), resume(), vitrine(on) }.
 export function bindEmbed(h) { handlers = h; for (const d of waiting.splice(0)) handle(d); }
 
 // Demande à la page d'accueil de passer à une autre époque. Rend false si la maquette est ouverte seule.
 export function askEra(id, hash = '') { if (!shell.on) return false; tell({ t: 'era', to: id, hash }); return true; }
+
+// Le nom du site, en tête de chaque maquette, ramène à l'écran d'accueil : hébergée, la maquette le demande à la page
+// d'accueil (elle passe alors en vitrine) ; ouverte seule, le lien mène à la page d'accueil.
+function lienAccueil() {
+  const go = () => { const a = document.querySelector('#brand-site a'); if (!a) return;
+    a.addEventListener('click', (e) => { if (!shell.on) return; e.preventDefault(); tell({ t: 'accueil' }); }); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+}
 
 // Signale un changement de vue : la page d'accueil tient son adresse à jour.
 export function tellHash(hash) { if (shell.on) tell({ t: 'hash', hash }); }

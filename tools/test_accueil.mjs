@@ -1,5 +1,6 @@
-// Test de la page d'accueil « Paris à travers le temps » (dist/index.html) : elle héberge les maquettes et fait passer
-// de l'une à l'autre sans changer de page — même vue, même heure, la ville s'enfonce, l'autre s'élève.
+// Test de la page d'accueil « Paris à travers le temps » (dist/index.html) : sans adresse, l'écran d'accueil — le choix
+// des cinq époques au-dessus d'une maquette en vitrine ; elle héberge les maquettes et fait passer de l'une à l'autre
+// sans changer de page — même vue, même heure, la ville s'enfonce, l'autre s'élève ; le nom du site ramène à l'accueil.
 // Ici les maquettes tournent pour de bon (boucle d'animation), dans leurs cadres : le test est lent en rendu logiciel.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -29,18 +30,36 @@ const arrive = async (page, ere) => {
   if (f) await f.waitForFunction(() => window.__app && window.__app.cityScale === 1 && !window.__app.morphing && !document.body.classList.contains('morph'), null, { timeout: 30000, polling: 100 }).catch(() => {});
 };
 const etat = (f) => f.evaluate(() => { const a = window.__app, g = a.rig.goal; return { x: Math.round(g.x), z: Math.round(g.z), dist: Math.round(g.dist), az: +g.az.toFixed(2), el: +g.el.toFixed(2), h: a.sky.hour, k: a.cityScale, vis: a.bati.visible, pause: !!a.paused, mode: a.rig.mode, heberge: document.documentElement.classList.contains('heberge'), morph: document.body.classList.contains('morph'), accueil: document.body.classList.contains('welcome'), epoque: a.epochs ? a.epochs.current.id : null }; });
-const shell = (page) => page.evaluate(() => ({ ere: window.__shell.ere, occupe: window.__shell.occupe, hash: location.hash, titre: document.title, cadres: [...document.querySelectorAll('iframe.ere')].map((f) => f.getAttribute('src').split('#')[0] + (f.classList.contains('vue') ? ' (vue)' : '')), attente: !document.getElementById('attente').hidden, texte: document.getElementById('attente-texte').textContent, voile: !document.getElementById('voile').hidden }));
+const shell = (page) => page.evaluate(() => ({ ere: window.__shell.ere, occupe: window.__shell.occupe, ecran: window.__shell.accueil && !document.getElementById('accueil').hidden, hash: location.hash, titre: document.title, cadres: [...document.querySelectorAll('iframe.ere')].map((f) => f.getAttribute('src').split('#')[0] + (f.classList.contains('vue') ? ' (vue)' : '')), attente: !document.getElementById('attente').hidden, texte: document.getElementById('attente-texte').textContent, voile: !document.getElementById('voile').hidden }));
 const meme = (v, w) => Math.abs(v.x - w.x) <= 2 && Math.abs(v.z - w.z) <= 2 && Math.abs(v.dist - w.dist) <= 2 && Math.abs(v.az - w.az) <= 0.02 && Math.abs(v.el - w.el) <= 0.02;
 
-// ---------- ordinateur : arrivée sur 1380, passage à 1789, retour, date de la frise, Lutèce
+// ---------- ordinateur : écran d'accueil (1380 en vitrine), choix de 1380, passage à 1789, retour, date de la frise,
+// Lutèce, retour à l'accueil par le nom du site, choix d'une autre époque
 const page = await browser.newPage({ viewport: { width: 1000, height: 720 }, deviceScaleFactor: 1 });      // au moins 700 points : en deçà, les maquettes se croient sur téléphone
 watch(page); page.setDefaultTimeout(180000);
-await page.goto(URL);
+await page.goto(URL + '#accueil=1380');                 // l'époque du fond est tirée au hasard ; ici, fixée par l'adresse
+const ecran0 = await page.evaluate(() => ({ vu: window.__shell.accueil && !document.getElementById('accueil').hidden, cartes: [...document.querySelectorAll('#acc-eres .acc-ere')].map((b) => b.dataset.ere).join(' '), titre: document.title, ici: [...document.querySelectorAll('.acc-ici')].filter((b) => !b.hidden).length }));
+check('écran d’accueil : affiché tout de suite, sans attendre la 3D ; les cinq époques dans l’ordre', ecran0.vu && ecran0.cartes === 'lutece 1380 1789 1889 1900' && ecran0.titre === 'Paris à travers le temps' && ecran0.ici === 1, JSON.stringify(ecran0));
 const f1380 = await pret(page, '1380');
+await page.waitForTimeout(1500);
 let s = await shell(page), e = await etat(f1380);
-check('accueil : la page héberge la maquette de 1380, qui démarre comme avant (écran d’entrée)', s.ere === '1380' && s.cadres.length === 1 && /vue/.test(s.cadres[0]) && /^Paris à travers le temps — Paris 1380/.test(s.titre) && e.heberge && e.accueil && !s.attente && !s.voile, JSON.stringify({ ...s, heberge: e.heberge, accueil: e.accueil }));
-check('adresse : m= choisit l’époque, les anciens liens restent valables', await page.evaluate(() => { const l = window.__shell.lire, a = l('#m=1789&c=1,2,3,4,5&h=12'), b = l('#c=1,2,3,4,5&e=1652'), c = l('#m=1066&h=9'); return a.ere === '1789' && a.reste === 'c=1,2,3,4,5&h=12' && b.ere === '1380' && b.reste === 'c=1,2,3,4,5&e=1652' && c.ere === '1380' && c.reste === 'h=9'; }));
-await f1380.click('#welcome .door[data-start="fly"]');
+// la rotation se lit en faisant avancer les images à la main : en rendu logiciel, le navigateur sans écran n'en
+// fournit presque plus au cadre
+// (trois secondes pour finir le vol vers la vue d'ensemble, puis une seconde mesurée)
+const tourne = (f) => f.evaluate(() => { const a = window.__app, pas = () => { a.rig.update(0.05); a.emit('frame', 0.05); };
+  for (let i = 0; i < 60; i++) pas(); const az0 = a.rig.goal.az; for (let i = 0; i < 20; i++) pas(); return Math.abs(a.rig.goal.az - az0) > 0.005; });
+const vit = await f1380.evaluate(() => ({ vitrine: document.documentElement.classList.contains('vitrine'), ui: getComputedStyle(document.getElementById('top')).visibility, entree: !document.getElementById('welcome').hidden }));
+vit.tourne = await tourne(f1380);
+check('vitrine : la maquette de 1380 en fond, sans interface ni écran d’entrée, la ville tourne lentement ; l’adresse ne bouge pas', s.ere === '1380' && s.cadres.length === 1 && /vue/.test(s.cadres[0]) && s.ecran && vit.vitrine && vit.ui === 'hidden' && !vit.entree && vit.tourne && e.heberge && s.hash === '#accueil=1380' && /^En fond : Paris 1380$/.test(await page.textContent('#acc-fond')), JSON.stringify({ s, vit }));
+check('adresse : m= choisit l’époque, les anciens liens restent valables ; sans adresse, l’écran d’accueil', await page.evaluate(() => { const l = window.__shell.lire, a = l('#m=1789&c=1,2,3,4,5&h=12'), b = l('#c=1,2,3,4,5&e=1652'), c = l('#m=1066&h=9'), d = l(''), f = l('#accueil=1900'), g = l('#m=1380'); return a.ere === '1789' && a.reste === 'c=1,2,3,4,5&h=12' && !a.accueil && b.ere === '1380' && b.reste === 'c=1,2,3,4,5&e=1652' && !b.accueil && c.ere === '1380' && c.reste === 'h=9' && d.accueil && !d.fond && f.accueil && f.fond === '1900' && !g.accueil && g.ere === '1380'; }));
+// choisir l'époque du fond : elle est rendue à la main, sans écran d'entrée
+await page.click('.acc-ere[data-ere="1380"]');
+await page.waitForFunction(() => document.getElementById('accueil').hidden, null, { timeout: 10000 });
+s = await shell(page);
+const main = await f1380.evaluate(() => ({ vitrine: document.documentElement.classList.contains('vitrine'), ui: getComputedStyle(document.getElementById('top')).visibility, entree: !document.getElementById('welcome').hidden }));
+main.tourne = await tourne(f1380);
+// l'adresse : « m=1380 », ou déjà la vue que la maquette y a écrite — un lien vers 1380 dans les deux cas, jamais l'accueil
+check('choix de 1380 depuis l’accueil : l’écran se retire, la maquette reprend son interface et s’arrête de tourner ; titre et adresse suivent', !s.ecran && s.ere === '1380' && (s.hash === '#m=1380' || /^#c=/.test(s.hash)) && !(await page.evaluate(() => window.__shell.lire(location.hash).accueil)) && /^Paris à travers le temps — Paris 1380/.test(s.titre) && !main.vitrine && main.ui === 'visible' && !main.entree && !main.tourne, JSON.stringify({ s, main }));
 const VUE = { c: [-300, -400, 900, 0.6, 0.7], h: 17.5 };
 await f1380.evaluate((v) => { window.__app.ui.applyState(v); }, VUE);
 const depart = await etat(f1380);
@@ -102,11 +121,31 @@ await fLut.click('#frise-jalons a[data-m="1789"]');
 await arrive(page, '1789');
 s = await shell(page); e = await etat(f1789); const eLut = await etat(fLut);
 check('de Lutèce à 1789 par la frise : même vue, Lutèce en pause, ville enfoncée', meme(e, avant) && e.h === 11 && e.k === 1 && e.vis && eLut.pause && eLut.k === 0 && /^#m=1789&c=-560,560,800/.test(s.hash) && /1789\.html \(vue\)/.test(s.cadres.join()), JSON.stringify({ e, lutece: { pause: eLut.pause, k: eLut.k }, hash: s.hash }));
+
+// retour à l'accueil par le nom du site : la maquette en cours passe en vitrine et devient le fond
+await f1789.click('#brand-site a');
+await page.waitForFunction(() => window.__shell.accueil, null, { timeout: 10000 });
+await page.waitForTimeout(1200);
+s = await shell(page);
+const v89 = await f1789.evaluate(() => ({ vitrine: document.documentElement.classList.contains('vitrine'), ui: getComputedStyle(document.getElementById('top')).visibility }));
+v89.tourne = await tourne(f1789);
+check('retour à l’accueil par le nom du site : 1789 en vitrine derrière le choix (sans interface, la ville tourne), adresse nue, titre du site', s.ecran && s.ere === '1789' && s.hash === '' && s.titre === 'Paris à travers le temps' && v89.vitrine && v89.ui === 'hidden' && v89.tourne && /^En fond : Paris 1789$/.test(await page.textContent('#acc-fond')) && !(await page.isHidden('.acc-ere[data-ere="1789"] .acc-ici')), JSON.stringify({ s, v89 }));
+// choisir une autre époque depuis l'accueil : le passage habituel, de la ville du fond à celle choisie
+await page.click('.acc-ere[data-ere="lutece"]');
+await arrive(page, 'lutece');
+s = await shell(page); e = await etat(fLut);
+const vLut = await fLut.evaluate(() => ({ vitrine: document.documentElement.classList.contains('vitrine'), ui: getComputedStyle(document.getElementById('top')).visibility }));
+check('choix de Lutèce depuis l’accueil : passage depuis la ville du fond, l’écran s’est retiré, la maquette a son interface', !s.ecran && s.ere === 'lutece' && /^#m=lutece&c=/.test(s.hash) && /Lutèce/.test(s.titre) && e.k === 1 && e.vis && !e.pause && !vLut.vitrine && vLut.ui === 'visible' && /lutece\.html \(vue\)/.test(s.cadres.join()), JSON.stringify({ s, vLut }));
 await page.close();
 
-// ---------- téléphone : lien direct vers 1789, puis passage à 1380 ; une seule ville reste en mémoire
+// ---------- téléphone : écran d'accueil sans adresse (fond tiré parmi les maquettes légères), puis lien direct vers
+// 1789 et passage à 1380 ; une seule ville reste en mémoire
 const ctx = await browser.newContext({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' });
 const mob = await ctx.newPage(); watch(mob); mob.setDefaultTimeout(180000);
+await mob.goto(URL);
+const em = await mob.evaluate(() => { const p = document.getElementById('acc-panneau').getBoundingClientRect(), t = document.getElementById('acc-titre').getBoundingClientRect(); return { vu: window.__shell.accueil, fond: window.__shell.ere, adresse: location.hash, cadres: document.querySelectorAll('iframe.ere').length, titreVu: t.top >= 0 && t.bottom <= innerHeight, panneau: Math.round(p.top), large: document.documentElement.scrollWidth <= innerWidth + 1 }; });
+check('téléphone, sans adresse : l’écran d’accueil, une maquette légère en fond (Lutèce, 1380 ou 1789), le titre à l’écran, pas de défilement horizontal', em.vu && ['lutece', '1380', '1789'].includes(em.fond) && em.adresse === '' && em.cadres === 1 && em.titreVu && em.panneau > 80 && em.large, JSON.stringify(em));
+await mob.goto('about:blank');                          // un vrai chargement, pas un simple changement d'ancre
 await mob.goto(URL + '#m=1789&c=-858,-842,700,0.4,0.6&h=18.75');
 const m89 = await pret(mob, '1789');
 s = await shell(mob); e = await etat(m89);

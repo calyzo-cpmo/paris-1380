@@ -8,7 +8,7 @@ import { CERT } from './certainty.js';
 import { MiniMap } from './minimap.js';
 import { makeLocator } from './where.js';
 import { store, parseHash, makeHash } from './state.js';
-import { bindEmbed, askEra, tellHash, shareUrl } from './embed.js';
+import { bindEmbed, askEra, tellHash, shareUrl, enVitrine } from './embed.js';
 import { suivreBarre } from './layout.js';
 import { Epochs, JALONS, EPOQUES, stats as epochStats } from './epochs.js';
 import { clamp } from './geom.js';
@@ -733,15 +733,26 @@ export function initUI(app) {
   updateCarnet();
   renderList();
   updateLabels();
-  // arrivée : un lien partagé rouvre sa vue ; sinon l'accueil propose trois façons d'entrer
+  // arrivée : un lien partagé rouvre sa vue ; sinon l'accueil propose trois façons d'entrer. En vitrine (fond de l'écran
+  // d'accueil du site), ni écran d'entrée ni interface : la ville tourne lentement autour de sa vue d'ensemble.
+  let vitrine = false;
   const deep = app.shot ? false : applyState(parseHash(location.hash));
-  if (app.shot || deep) body.classList.add('ready'); else showWelcome();
+  if (!app.shot && enVitrine()) { body.classList.add('ready'); vitrine = true; welcomeSpin = !calm; }
+  else if (app.shot || deep) body.classList.add('ready'); else showWelcome();
   suivreBarre($('dock'));
   // page d'accueil « Paris à travers le temps » : elle demande la vue, prépare l'arrivée, enfonce ou dresse la ville
-  const quitter = () => { if (app.inside) leaveInterior(); stopTour(); stopWalk(); stopHourPlay(); stopEpochPlay(); closePops(); for (const m of document.querySelectorAll('.modal')) m.hidden = true; if (welcomeSpin) endWelcome('fly'); };
+  const quitter = () => { if (app.inside) leaveInterior(); stopTour(); stopWalk(); stopHourPlay(); stopEpochPlay(); closePops(); for (const m of document.querySelectorAll('.modal')) m.hidden = true; if (welcomeSpin && !vitrine) endWelcome('fly'); };
+  // vitrine : la page d'accueil y met la maquette (retour à l'accueil) ou l'en sort (on a choisi cette époque)
+  function poserVitrine(on) {
+    if (on === vitrine) return;
+    vitrine = on; document.documentElement.classList.toggle('vitrine', on);
+    if (on) { quitter(); closeCard(); $('welcome').hidden = true; body.classList.remove('welcome'); body.classList.add('ready'); if (epochs.current && !epochs.current.base) setEpoch('1380'); goHome(); welcomeSpin = !calm; }
+    else { welcomeSpin = false; rig.fly = null; hint('orbit'); }
+  }
   bindEmbed({
     state: (leave) => { if (leave) quitter(); return viewHash(); },
-    prepare: (hash) => { const s = parseHash(hash); quitter(); closeCard(); if (!s.e && !epochs.current.base) setEpoch('1380'); applyState(s); app.setCityScale(0); rig.update(0); app.renderNow(); },
+    prepare: (hash) => { const s = parseHash(hash); poserVitrine(false); quitter(); closeCard(); if (!s.e && !epochs.current.base) setEpoch('1380'); applyState(s); app.setCityScale(0); rig.update(0); app.renderNow(); },
+    vitrine: poserVitrine,
     apply: (hash) => applyState(parseHash(hash)),
     morph: (to, ms) => app.morph(to, ms), pause: () => app.pause(), resume: () => app.resume(),
   });

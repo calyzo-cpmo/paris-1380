@@ -28,11 +28,16 @@ seize en 1900).
 Une **page d'accueil** héberge les cinq maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
 « Lutèce », « 1380 », « 1789 », « 1889 » ou « 1900 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
 et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent et l'autre ville s'élève.
+Ouverte sans adresse, elle montre d'abord l'**écran d'accueil** : les cinq époques à choisir, en cartes illustrées,
+au-dessus d'une maquette « en vitrine » — interface masquée, ville qui tourne lentement —, tirée au hasard (sur
+téléphone, parmi les plus légères : Lutèce, 1380, 1789). Choisir l'époque du fond la rend à la main ; en choisir une
+autre lance le passage. Le nom du site, en tête de chaque maquette, ramène à cet écran. Les liens partagés (`#m=…`,
+`#c=…`) ouvrent toujours directement leur maquette ; `#accueil=1900` ouvre l'écran d'accueil sur ce fond.
 
-**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
+**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur l'écran d'accueil ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` (les six fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
-**Prochaines maquettes :** Paris 1900 est en ligne dans une première version ; viendront la suite de l'Exposition de 1900, puis 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
+**Prochaines maquettes :** Paris 1900 est en ligne, l'Exposition presque entière ; viendront ses derniers pavillons et un curseur de montage, puis 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
 **Projet de jeu :** le cadrage d'un « mode classe » (séance animée par un enseignant, sans compte) est dans [`CADRAGE-JEU.md`](CADRAGE-JEU.md) ; rien n'en est encore construit.
 
 ## Ce que montre la maquette
@@ -65,8 +70,9 @@ et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent 
 
 ## Parcourir la maquette
 
-- **Accueil** : une fois la ville construite, trois portes d'entrée — suivre une visite guidée, explorer la maquette,
-  descendre dans les rues. Un lien partagé rouvre directement sa vue.
+- **Accueil** : ouverte seule (ou par `#m=1380`), une fois la ville construite, trois portes d'entrée — suivre une
+  visite guidée, explorer la maquette, descendre dans les rues. Choisie depuis l'écran d'accueil du site, elle s'ouvre
+  directement en survol. Un lien partagé rouvre directement sa vue.
 - **Lieux** : chaque lieu porte une pastille à la couleur de sa catégorie ; les grands lieux affichent leur nom, les autres
   apparaissent en s'approchant ou au survol, et une petite arche signale les intérieurs à visiter. La liste se filtre
   (intérieurs, lieux pas encore vus) et tient un carnet de visite : lieux vus, intérieurs visités, parcours suivis,
@@ -257,9 +263,14 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   central, le palais de l'Électricité (70 m au Génie de l'Électricité) et le Château d'eau, deux cheminées de 80 m, la
   Galerie des machines de 1889 gardée derrière eux ; au coin des avenues de Suffren et de La Motte-Picquet, la Grande
   Roue (93 m) ; la verrière et la coupole du Grand Palais, le dôme du Petit Palais, les quatre pylônes du pont
-  Alexandre-III. Cotes : rapport général de Picard (1902) et *Revue technique de l'Exposition* ; les élévations sont
-  une évocation. Les pavillons des nations (rue des Nations), ceux des quais, de l'Esplanade des Invalides et du
-  Trocadéro, le Vieux Paris, le trottoir roulant et les entrées du métro viendront ensuite.
+  Alexandre-III. Hors du Champ-de-Mars : la rue des Nations (vingt-trois pavillons en double rangée sur le quai
+  d'Orsay, dans l'ordre de la *Revue technique*, et ses deux passerelles), le palais de la Ville de Paris, les serres et
+  le palais des Congrès sur la rive droite, le Vieux Paris au pied du quai Debilly, le palais des Armées et la
+  passerelle Debilly, les palais de l'Esplanade des Invalides, une douzaine de pavillons de la section des colonies au
+  Trocadéro, le trottoir roulant sur son viaduc (une boucle de 3,2 km à sept mètres). Cotes : rapport général de
+  Picard (1902) et *Revue technique de l'Exposition* ; les élévations et les silhouettes sont une évocation. Restent à
+  faire : les pavillons de la rive droite en amont du pont Alexandre-III, la rue de Paris, le Globe céleste, les
+  entrées du métro, et un curseur du montage de l'Exposition.
 - **Gares et voies** : la gare de Lyon de Toudoire (bâtiments tirés des données, tour de l'horloge de 67 m, nefs
   vitrées), les gares d'Orsay et des Invalides ; le raccordement de Boulainvilliers au Champ-de-Mars franchit la Seine
   sur le pont Rouelle ; la gare du Champ-de-Mars de 1878, démontée en 1897, a disparu. Les lignes souterraines (Orsay,
@@ -359,7 +370,7 @@ tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
 tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, établissements évoqués et moulins, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
 tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, visite guidée, marche à pied, heure, frise, sources, téléphone
-tools/test_accueil.mjs       test de la page d'accueil : hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
+tools/test_accueil.mjs       test de la page d'accueil : écran d'accueil (vitrine, choix, retour par le nom du site), hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
 tools/test_toits.mjs         contrôle géométrique des toits de 1789, sans navigateur : l'aire de chaque toit égale celle de son emprise, cours déduites
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
 tools/og.mjs                 images de partage (og:image) de chaque maquette, 1200 × 630, dans dist/og/
@@ -394,8 +405,9 @@ src/vlq.js                   décodage des géométries compactes de data/epoque
 src/where.js                 rives, îles et rues nommées du plan (« où suis-je »)
 src/minimap.js               mini-plan
 src/state.js                 carnet de visite, réglages mémorisés, lien partageable
-src/shell/                   page d'accueil : héberge les maquettes dans des cadres et orchestre le passage de l'une à l'autre
-src/embed.js                 liaison d'une maquette avec la page d'accueil (messages : état, préparation, enfoncement, élévation, pause)
+src/shell/                   page d'accueil : écran d'accueil (cinq époques sur une maquette en vitrine), héberge les maquettes dans des cadres et orchestre le passage de l'une à l'autre
+tools/vignettes.py           vignettes de l'écran d'accueil (dist/og/vignettes/), tirées des images de partage
+src/embed.js                 liaison d'une maquette avec la page d'accueil (messages : état, préparation, enfoncement, élévation, pause, vitrine ; retour à l'accueil)
 src/layout.js                mise en page commune (hauteur réelle de la barre du bas)
 src/ui.js, controls.js       interface et caméra
 src/body1789.html            page Paris 1789 (mêmes styles que la première)
@@ -447,6 +459,8 @@ src/p1889/figures.js         visages et costumes de 1889
 src/body1900.html            page Paris 1900 (mêmes styles, sans curseur)
 src/p1900/main.js            page Paris 1900 : le moteur de Paris 1889 sur data/paris1900.json
 src/p1900/expo.js            Exposition de 1900 (remplace src/p1889/expo.js à l'assemblage) : Champ-de-Mars, palais de l'Électricité, Grande Roue, Grand et Petit Palais, pylônes du pont Alexandre-III
+src/p1900/pavillons.js       le reste de l'Exposition : rue des Nations et passerelles, rive droite, Vieux Paris, palais des Armées et passerelle Debilly, Esplanade des Invalides, colonies du Trocadéro, trottoir roulant
+src/p1900/outils.js          poutres d'acier, verrières en berceau, calottes vitrées
 src/p1900/places.js          repères de Paris 1900 et leurs notices
 src/p1900/parcours.js        visite guidée de Paris 1900
 src/p1889/arbres.js          alignements d'arbres des boulevards, des avenues et des quais, d'après la largeur des voies
@@ -462,8 +476,8 @@ npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
 npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (40 Mo)
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
-npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html et dist/1889.html
-npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
+npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html, dist/1889.html et dist/1900.html
+npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889, Paris 1900 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
 node tools/og.mjs # facultatif : refait les images de partage de dist/og/ (SITE_URL=… npm run build pour un autre domaine)
 ```
 

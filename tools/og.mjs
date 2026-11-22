@@ -1,5 +1,6 @@
 // Images de partage (og:image) : une vue de chaque maquette, 1200 × 630, avec son titre, dans dist/og/.
-// node tools/og.mjs — à relancer quand l'aspect d'une maquette change ; les images sont versionnées.
+// node tools/og.mjs — à relancer quand l'aspect d'une maquette change, suivi de python3 tools/vignettes.py (vignettes de
+// l'écran d'accueil, tirées de ces images) ; les images sont versionnées.
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { mkdirSync } from 'node:fs';

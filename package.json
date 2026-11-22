@@ -21,6 +21,7 @@
     "test:1900": "node tools/test1900.mjs",
     "inshot": "node tools/inshot.mjs",
     "thumbs": "python3 tools/make_thumbs.py",
+    "vignettes": "python3 tools/vignettes.py",
     "test:toits": "node tools/test_toits.mjs",
     "test:accueil": "node tools/test_accueil.mjs"
   },

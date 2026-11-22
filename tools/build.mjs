@@ -63,9 +63,11 @@ console.log('build ok', (fragment.length / 1024).toFixed(0) + ' Ko');
 // Surcouche : une maquette peut reprendre le moteur d'une autre. Tout module du dossier `de` qui a son homonyme dans le
 // dossier `vers` est remplacé par lui à l'assemblage, et les fichiers de données de `donnees` par leurs remplaçants.
 // Ainsi Paris 1900 reprend tout src/p1889/ ; src/p1900/ ne contient que ce qui change (l'Exposition, les lieux, la
-// visite). Un module de la surcouche peut encore importer celui qu'il remplace (son homonyme, par un chemin explicite).
+// visite). Un module de la surcouche qui importe un module de `de` par un chemin explicite obtient l'original : c'est
+// ainsi que src/p1900/expo.js reprend le Trocadéro et les outils de src/p1889/expo.js, qu'il remplace.
 function surcouche({ de, vers, donnees = {} }) {
   const D = resolve(root, de), W = resolve(root, vers), remplace = new Map(Object.entries(donnees).map(([a, b]) => [resolve(root, a), resolve(root, b)]));
+  const dansSurcouche = (f) => { const r = relative(W, f); return !r.startsWith('..') && !isAbsolute(r); };
   return {
     name: 'surcouche',
     setup(b) {
@@ -75,7 +77,7 @@ function surcouche({ de, vers, donnees = {} }) {
         const rel = relative(D, cible);
         if (rel.startsWith('..') || isAbsolute(rel)) return undefined;
         const autre = join(W, rel);
-        if (!existsSync(autre) || resolve(args.importer) === autre) return undefined;
+        if (!existsSync(autre) || dansSurcouche(args.importer)) return undefined;
         return { path: autre };
       });
     },

@@ -102,6 +102,15 @@ check('palais de l’Électricité : 70 m au Génie, deux cheminées de 80 m ; l
 check('Grande Roue : 96 m au sommet, sur son emprise', ex.roue > 100 && ex.roue < 108 && ex.roueSol, JSON.stringify([ex.roue, ex.roueSol]));
 check('Grand Palais (verrière, mât à 60 m) et Petit Palais à la place du palais de l’Industrie, démoli', ex.grandPalais > 58 && ex.grandPalais < 70 && ex.gpPierre && ex.petitPalais && !ex.industrie, JSON.stringify([ex.grandPalais, ex.gpPierre, ex.petitPalais, ex.industrie]));
 check('pont Alexandre-III : une seule arche, quatre pylônes aux têtes du pont', ex.alexandre === 1 && ex.pylones === 4, JSON.stringify([ex.alexandre, ex.pylones]));
+const ex2 = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1), cles = Object.keys(M);
+  const nations = cles.filter((k) => k.startsWith('Nation ')), sec = nations.filter((k) => T.wetAt(M[k].x, M[k].z) < 0.5).length;
+  return { nations: nations.length, sec, rue: !!M.RueDesNations, passerelles: ['PasserelleInvalides', 'PasserelleAlma', 'Debilly'].filter((k) => M[k] && T.wetAt(M[k].x, M[k].z) > 0.5).length, debilly: h(M.Debilly),
+    rive: ['VilleDeParis', 'Serres', 'Congres'].filter((k) => M[k]).length, vieux: h(M.VieuxParis), armees: h(M.Armees), esplanade: cles.filter((k) => k.startsWith('Esplanade ')).length, colonies: !!(M.Colonies && M.ColonieAlgerie && M.ColonieIndochine),
+    trottoir: (M.TrottoirRoulant || {}).longueur || 0, passage: a.walkable(-3150, -1084) }; });
+check('rue des Nations : vingt-trois pavillons en double rangée entre le pont des Invalides et le pont de l’Alma, à sec ; la rue entre les deux rangées reste praticable', ex2.nations === 23 && ex2.sec === 23 && ex2.rue && ex2.passage, JSON.stringify(ex2));
+check('passerelles : deux sur la rue des Nations, et la passerelle Debilly et son arche, au-dessus de la Seine', ex2.passerelles === 3 && ex2.debilly > 20, JSON.stringify([ex2.passerelles, ex2.debilly]));
+check('rive droite (Ville de Paris, serres, Congrès), Vieux Paris, palais des Armées, palais de l’Esplanade, colonies du Trocadéro', ex2.rive === 3 && ex2.vieux > 20 && ex2.armees > 25 && ex2.esplanade === 3 && ex2.colonies, JSON.stringify(ex2));
+check('trottoir roulant : une boucle de 3 à 3,5 km sur viaduc', ex2.trottoir > 3000 && ex2.trottoir < 3500, String(ex2.trottoir));
 
 // ---------- silhouettes des monuments
 const mo = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1), fl = a.landmarks.find((l) => l.nom === 'fleche');
@@ -113,12 +122,15 @@ check('Sacré-Cœur : le grand dôme achevé en 1899, à 83 m ; Halles : dix pav
 // ---------- ports bas
 const po = await page.evaluate(() => { const a = window.__app, T = a.terrain, R = a.v89.rives, S = a.stats.ports, N = T.niveauBas;
   let n = 0, bas = 0, haut = 0, sec = 0, mur = 0;
-  for (let i = 0; i < R.bandes.length; i += 23) { if (R.bandes[i].fin0 || R.bandes[i].fin1) continue;      // un bout de port porte son mur en travers
+  // en 1900, les berges du pont des Invalides au Champ-de-Mars portent les pavillons de l'Exposition (rue des Nations,
+  // Congrès, Vieux Paris, palais des Armées) : on n'y vérifie pas les ports
+  const expo = (p) => p[0] < -2880 && p[0] > -3970 && p[1] > -1300 && p[1] < -830;
+  for (let i = 0; i < R.bandes.length; i += 23) { if (R.bandes[i].fin0 || R.bandes[i].fin1 || expo(R.bandes[i].P)) continue;      // un bout de port porte son mur en travers
     const b = R.bandes[i], P = (k) => [(b.P[0] + b.Q[0]) / 2 + ((b.mP[0] + b.mQ[0]) / 2) * k, (b.P[1] + b.Q[1]) / 2 + ((b.mP[1] + b.mQ[1]) / 2) * k], w = (b.w0 + b.w1) / 2, m = P(w / 2), d = P(w + 5), r = P(w + 0.3);
     n++; if (Math.abs(T.height(m[0], m[1]) - N) < 0.01 && a.walkable(m[0], m[1])) bas++; if (T.height(d[0], d[1]) > N + 1.5) haut++; if (T.wetAt(m[0], m[1]) < 0.5) sec++; if (a.footAt(r[0], r[1])) mur++; }
   const nommes = [[-1219, -753], [212, 228], [123, -259], [473, 360], [-2440, -1125], [-1150, -588], [777, 292], [2513, 2431]].filter((p) => T.estBas(p[0], p[1])).length;
   return { S, n, bas, haut, sec, mur, nommes, ponts: a.v89.ponts.filter((p) => T.estBas(p.a[0], p.a[1]) || T.estBas(p.b[0], p.b[1])).length, niveau: N }; });
-check('ports bas : une quinzaine de kilomètres le long de la Seine, deux mètres au-dessus de l’eau, au pied du mur du quai haut (on n’y passe pas à travers le mur)', po.S.km > 10 && po.S.km < 25 && po.n > 100 && po.bas === po.n && po.sec === po.n && po.haut > 0.9 * po.n && po.mur > 0.9 * po.n, JSON.stringify(po));
+check('ports bas : une quinzaine de kilomètres le long de la Seine, deux mètres au-dessus de l’eau, au pied du mur du quai haut (on n’y passe pas à travers le mur) ; hors des berges que l’Exposition occupe', po.S.km > 10 && po.S.km < 25 && po.n > 100 && po.bas === po.n && po.sec === po.n && po.haut > 0.9 * po.n && po.mur > 0.9 * po.n, JSON.stringify(po));
 check('ports bas : ceux que nomme la base de 1900 (Saint-Nicolas, la Tournelle, l’Hôtel de Ville, Saint-Bernard, les Invalides, Malaquais, les Célestins, Bercy) ; les ponts vont d’un quai haut à l’autre', po.nommes >= 7 && po.ponts === 0, JSON.stringify([po.nommes, po.ponts]));
 const co = await page.evaluate(() => { const a = window.__app, P = a.people, cv = P.atlas.canvas, k = cv.width / 2048, x = cv.getContext('2d', { willReadFrequently: true }), px = (col, row, dy) => [...x.getImageData(Math.round((col * 256 + 60) * k), Math.round((512 + row * 640 + dy) * k), 1, 1).data].slice(0, 3);
   let i = 0; const r = () => ((i += 0.37) % 1), F = a.monde.figures(true);
@@ -150,8 +162,8 @@ check('calque « origine du bâti » : réelle (datée de 1900 ou d’avant), pr
 
 // ---------- repères, fiche, sources
 const lx = await page.evaluate(() => { const a = window.__app, P = a.ui.places; return { n: P.length, noms: P.map((p) => p.name), cats: [...new Set(P.map((p) => p.cat))].length, hors: P.filter((p) => p.x < a.monde.cadre.x0 || p.x > a.monde.cadre.x1 || p.z < a.monde.cadre.z0 || p.z > a.monde.cadre.z1).length }; });
-const attendus = ['Tour de 300 mètres', 'Palais de l’Électricité', 'Galerie des machines', 'Grande Roue', 'Grand Palais', 'Petit Palais', 'Pont Alexandre-III', 'Palais du Trocadéro', 'Champ-de-Mars', 'Palais des Mines et de la Métallurgie', 'Gare de Lyon', 'Tour de l’horloge de la gare de Lyon', 'Gare d’Orsay', 'Gare des Invalides', 'Pont Rouelle', 'Gare Saint-Lazare', 'Gare du Nord', 'Gare de l’Est', 'Gare d’Orléans', 'Gare Montparnasse', 'Gare de la Bastille', 'Gare de Sceaux', 'Petite Ceinture', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur', 'Halles centrales', 'Hôtel-Dieu', 'Hôtel de Ville', 'Place de la Bastille'];
-check('repères : la tour, l’Exposition de 1900, les gares neuves, les monuments ; plus de palais de l’Industrie ni de gare du Champ-de-Mars', lx.n >= 60 && lx.hors === 0 && lx.cats >= 4 && attendus.every((n) => lx.noms.includes(n)) && !lx.noms.some((n) => /Palais de l’Industrie|Gare du Champ-de-Mars|Dôme central|en chantier/.test(n)), `${lx.n} lieux ; manquent : ${attendus.filter((n) => !lx.noms.includes(n)).join(', ')}`);
+const attendus = ['Tour de 300 mètres', 'Palais de l’Électricité', 'Galerie des machines', 'Grande Roue', 'Grand Palais', 'Petit Palais', 'Pont Alexandre-III', 'Palais du Trocadéro', 'Champ-de-Mars', 'Rue des Nations', 'Vieux Paris', 'Esplanade des Invalides', 'Section des colonies', 'Trottoir roulant', 'Passerelle Debilly', 'Palais des Armées de terre et de mer', 'Palais des Mines et de la Métallurgie', 'Gare de Lyon', 'Tour de l’horloge de la gare de Lyon', 'Gare d’Orsay', 'Gare des Invalides', 'Pont Rouelle', 'Gare Saint-Lazare', 'Gare du Nord', 'Gare de l’Est', 'Gare d’Orléans', 'Gare Montparnasse', 'Gare de la Bastille', 'Gare de Sceaux', 'Petite Ceinture', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur', 'Halles centrales', 'Hôtel-Dieu', 'Hôtel de Ville', 'Place de la Bastille'];
+check('repères : la tour, l’Exposition de 1900, les gares neuves, les monuments ; plus de palais de l’Industrie ni de gare du Champ-de-Mars', lx.n >= 75 && lx.hors === 0 && lx.cats >= 4 && attendus.every((n) => lx.noms.includes(n)) && !lx.noms.some((n) => /Palais de l’Industrie|Gare du Champ-de-Mars|Dôme central|en chantier/.test(n)), `${lx.n} lieux ; manquent : ${attendus.filter((n) => !lx.noms.includes(n)).join(', ')}`);
 await page.click('#btn-places');
 await page.fill('#place-search', 'roue');
 const liste = await page.evaluate(() => [...document.querySelectorAll('#place-list button, #place-list li')].map((b) => b.textContent).filter((t) => /Grande Roue/i.test(t)).length);
@@ -174,7 +186,7 @@ const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.vi
   for (let i = 0; i < 1500 && V.etat().k === e1.k; i++) tic(1); const e2 = V.etat();
   $('tour-stop').click(); const fin = { actif: V.etat().actif, panneau: !$('tour').hidden, survol: $('mode-fly').getAttribute('aria-pressed') };
   return { t0, e1, pres, fiche, e2, fin, manquants: V.manquants }; });
-check('parcours commenté « Paris en 1900 » : 16 étapes, chaque lieu existe, la vue s’y rend, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1900' && vi.t0.compte === '1 / 16' && vi.t0.points === 16 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
+check('parcours commenté « Paris en 1900 » : 18 étapes, chaque lieu existe, la vue s’y rend, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1900' && vi.t0.compte === '1 / 18' && vi.t0.points === 18 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
 
 // ---------- heure, marche, frise
 const nuit = await page.evaluate(() => { const a = window.__app; a.setHour(22); const n = a.materials.facade.emissiveIntensity; a.setHour(10.5); return [n, a.materials.facade.emissiveIntensity]; });
