@@ -1,6 +1,6 @@
 // Test fonctionnel de la page « Paris 1900 » (le test lit l'image : l'avertissement du pilote sur cette lecture est ignoré) : charge la page, vérifie la ville recomposée en 1900
 // (bâti, Seine, ponts dont Alexandre-III, enceinte), les chemins de fer et les gares (gare de Lyon neuve, pont Rouelle), la tour repeinte, l'Exposition (Champ-de-Mars,
-// palais de l'Électricité, Grande Roue, Grand et Petit Palais), les monuments, les repères, la visite, la marche à pied, l'heure, la frise, les sources, le téléphone et
+// palais de l'Électricité, Grande Roue, Grand et Petit Palais), les entrées du métro, les monuments, les repères, la visite, la marche à pied, l'heure, la frise, les sources, le téléphone et
 // l'absence d'erreurs. Le moteur est celui de la page « Paris 1889 » (tools/test1889.mjs en vérifie le reste).
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -111,6 +111,11 @@ check('rue des Nations : vingt-trois pavillons en double rangée entre le pont d
 check('passerelles : deux sur la rue des Nations, et la passerelle Debilly et son arche, au-dessus de la Seine', ex2.passerelles === 3 && ex2.debilly > 20, JSON.stringify([ex2.passerelles, ex2.debilly]));
 check('rive droite (Ville de Paris, serres, Congrès), Vieux Paris, palais des Armées, palais de l’Esplanade, colonies du Trocadéro', ex2.rive === 3 && ex2.vieux > 20 && ex2.armees > 25 && ex2.esplanade === 3 && ex2.colonies, JSON.stringify(ex2));
 check('trottoir roulant : une boucle de 3 à 3,5 km sur viaduc', ex2.trottoir > 3000 && ex2.trottoir < 3500, String(ex2.trottoir));
+const mt = await page.evaluate(() => { const a = window.__app, M = a.monuments.Metro, T = a.terrain; if (!M) return { n: 0 }; const E = M.entrees, al = a.v89.alignements.tous();
+  return { n: E.length, sec: E.filter((e) => T.wetAt(e.x, e.z) < 0.05).length, rue: E.filter((e) => a.streetAt(e.x, e.z, 40)).length, ordre: E.every((e, i) => !i || e.x < E[i - 1].x),
+    bouts: [E[0].nom, E[E.length - 1].nom], edicules: E.filter((e) => e.edicule).map((e) => e.nom).join(', '), h: E.map((e) => +(e.top - T.height(e.x, e.z)).toFixed(1)),
+    arbres: E.filter((e) => al.some((p) => Math.hypot(p[0] - e.x, p[1] - e.z) < 3)).map((e) => e.nom), lieu: a.ui.places.some((p) => /m[ée]tropolitain/i.test(p.name)) }; });
+check('métropolitain : dix-huit entrées de Guimard, de la porte de Vincennes à la porte Maillot dans l’ordre de la ligne, chacune sur sa rue, à sec, sans arbre contre elle ; des édicules à la Bastille et à l’Étoile', mt.n === 18 && mt.sec === 18 && mt.rue === 18 && mt.ordre && mt.bouts[0] === 'Porte de Vincennes' && mt.bouts[1] === 'Porte Maillot' && mt.edicules === 'Bastille, Étoile' && mt.h.every((h) => h > 3.5 && h < 7) && mt.arbres.length === 0 && mt.lieu, JSON.stringify(mt));
 
 // ---------- silhouettes des monuments
 const mo = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1), fl = a.landmarks.find((l) => l.nom === 'fleche');

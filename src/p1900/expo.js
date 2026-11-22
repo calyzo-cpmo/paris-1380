@@ -24,6 +24,7 @@ import { fill } from '../p1789/outils.js';
 import { halle, dome, ensemble, emprise, trocadero, Q, CREME, OCRE, VERRE, VERRE_CLAIR, BLEU, OR, PIERRE } from '../p1889/expo.js';
 import { poutre, berceau, calotte } from './outils.js';
 import { batirPavillons } from './pavillons.js';
+import { batirMetro } from './metro.js';
 
 const STUC = rgb(236, 228, 208), VERT = rgb(92, 140, 120), ROSE = rgb(212, 164, 140), ACIER = rgb(88, 86, 84), CABINE = rgb(150, 72, 58), BRIQUE = rgb(170, 96, 72), EAU = rgb(178, 206, 222);
 const U = EXPO.u, AXE = { ux: U[0], uz: U[1] };
@@ -161,6 +162,7 @@ export async function batirExpo(app, B) {
   petitPalais(app, B);
   pylones(app, B);
   batirPavillons(app, B);
+  batirMetro(app, B);
   // deux gares neuves, que les données donnent entières : leur nom seulement
   for (const [cle, x, z, h] of [['GareOrsay', -1696, -791, 30], ['GareInvalides', -2581, -1011, 16]]) M[cle] = { x, z, top: T.height(x, z) + h + 10 };
 
@@ -192,5 +194,6 @@ export async function batirExpo(app, B) {
   L.push(['Section des colonies', 'expo', 'Dans les jardins du Trocadéro, de part et d’autre de la cascade, les pavillons des colonies françaises et des pays de protectorat, et ceux de pays lointains, chacun dans le style de son pays. Leur disposition et leurs formes sont une évocation.', M.Colonies, 1]);
   L.push(['Palais de l’Algérie', 'expo', 'Le plus vaste de la section des colonies, au Trocadéro, sous une coupole et un minaret.' + EV, M.ColonieAlgerie]);
   L.push(['Pavillon de l’Indochine', 'expo', 'Une pagode aux toits superposés, dans la section des colonies, au Trocadéro.' + EV, M.ColonieIndochine]);
+  if (M.Metro) L.push(['Métropolitain, ligne 1', 'enceinte', 'Le 19 juillet 1900, la Compagnie du chemin de fer métropolitain ouvre sa première ligne, de la porte de Vincennes à la porte Maillot, sous le boulevard Diderot, la rue de Rivoli et les Champs-Élysées : huit stations ce jour-là, les dix autres avant le 1er septembre. Les entrées sont d’Hector Guimard : une balustrade de fonte autour de l’escalier, deux candélabres et le cartouche « Métropolitain » ; à la Bastille et à l’Étoile, un édicule couvert. Une entrée est figurée par station, au carrefour qui lui donne son nom ; leur forme et leur emplacement exact sont une évocation.', M.Metro]);
   L.push(['Trottoir roulant', 'expo', `La « rue de l’Avenir » : une boucle de 3 370 mètres sur viaduc, à sept mètres de haut, par la rue Fabert, le quai d’Orsay, l’avenue de La Bourdonnais et l’avenue de La Motte-Picquet. Un plancher fixe et deux plates-formes qui avancent, l’une à 4 km/h, l’autre au double ; neuf stations. Le tracé suit les rues ; les palées sont de convention.`, M.TrottoirRoulant, 1]);
 }
