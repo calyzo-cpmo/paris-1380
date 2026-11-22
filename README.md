@@ -28,8 +28,13 @@ seize en 1900).
 Une **page d'accueil** héberge les cinq maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
 « Lutèce », « 1380 », « 1789 », « 1889 » ou « 1900 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
 et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent et l'autre ville s'élève.
+Ouverte sans adresse, elle montre d'abord l'**écran d'accueil** : les cinq époques à choisir, en cartes illustrées,
+au-dessus d'une maquette « en vitrine » — interface masquée, ville qui tourne lentement —, tirée au hasard (sur
+téléphone, parmi les plus légères : Lutèce, 1380, 1789). Choisir l'époque du fond la rend à la main ; en choisir une
+autre lance le passage. Le nom du site, en tête de chaque maquette, ramène à cet écran. Les liens partagés (`#m=…`,
+`#c=…`) ouvrent toujours directement leur maquette ; `#accueil=1900` ouvre l'écran d'accueil sur ce fond.
 
-**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur Paris 1380 ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
+**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur l'écran d'accueil ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` (les six fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
 **Prochaines maquettes :** Paris 1900 est en ligne dans une première version ; viendront la suite de l'Exposition de 1900, puis 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
@@ -65,8 +70,9 @@ et à la même heure, la ville s'enfonce dans le sol, les deux plans se fondent 
 
 ## Parcourir la maquette
 
-- **Accueil** : une fois la ville construite, trois portes d'entrée — suivre une visite guidée, explorer la maquette,
-  descendre dans les rues. Un lien partagé rouvre directement sa vue.
+- **Accueil** : ouverte seule (ou par `#m=1380`), une fois la ville construite, trois portes d'entrée — suivre une
+  visite guidée, explorer la maquette, descendre dans les rues. Choisie depuis l'écran d'accueil du site, elle s'ouvre
+  directement en survol. Un lien partagé rouvre directement sa vue.
 - **Lieux** : chaque lieu porte une pastille à la couleur de sa catégorie ; les grands lieux affichent leur nom, les autres
   apparaissent en s'approchant ou au survol, et une petite arche signale les intérieurs à visiter. La liste se filtre
   (intérieurs, lieux pas encore vus) et tient un carnet de visite : lieux vus, intérieurs visités, parcours suivis,
@@ -359,7 +365,7 @@ tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
 tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, établissements évoqués et moulins, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
 tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, visite guidée, marche à pied, heure, frise, sources, téléphone
-tools/test_accueil.mjs       test de la page d'accueil : hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
+tools/test_accueil.mjs       test de la page d'accueil : écran d'accueil (vitrine, choix, retour par le nom du site), hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
 tools/test_toits.mjs         contrôle géométrique des toits de 1789, sans navigateur : l'aire de chaque toit égale celle de son emprise, cours déduites
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
 tools/og.mjs                 images de partage (og:image) de chaque maquette, 1200 × 630, dans dist/og/
@@ -394,8 +400,9 @@ src/vlq.js                   décodage des géométries compactes de data/epoque
 src/where.js                 rives, îles et rues nommées du plan (« où suis-je »)
 src/minimap.js               mini-plan
 src/state.js                 carnet de visite, réglages mémorisés, lien partageable
-src/shell/                   page d'accueil : héberge les maquettes dans des cadres et orchestre le passage de l'une à l'autre
-src/embed.js                 liaison d'une maquette avec la page d'accueil (messages : état, préparation, enfoncement, élévation, pause)
+src/shell/                   page d'accueil : écran d'accueil (cinq époques sur une maquette en vitrine), héberge les maquettes dans des cadres et orchestre le passage de l'une à l'autre
+tools/vignettes.py           vignettes de l'écran d'accueil (dist/og/vignettes/), tirées des images de partage
+src/embed.js                 liaison d'une maquette avec la page d'accueil (messages : état, préparation, enfoncement, élévation, pause, vitrine ; retour à l'accueil)
 src/layout.js                mise en page commune (hauteur réelle de la barre du bas)
 src/ui.js, controls.js       interface et caméra
 src/body1789.html            page Paris 1789 (mêmes styles que la première)
@@ -462,8 +469,8 @@ npm run extract   # facultatif : régénère data/paris1380.json depuis le SVG
 npm run fetch:alpage     # facultatif : télécharge les couches ALPAGE dans data/source/alpage/ (40 Mo)
 npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat identique à chaque exécution)
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
-npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html et dist/1889.html
-npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
+npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html, dist/1889.html et dist/1900.html
+npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889, Paris 1900 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
 node tools/og.mjs # facultatif : refait les images de partage de dist/og/ (SITE_URL=… npm run build pour un autre domaine)
 ```
 

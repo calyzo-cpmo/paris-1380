@@ -68,6 +68,7 @@ ou deux aux adresses <https://calyzo-cpmo.github.io/paris-1380/> (Paris 1380) et
 
 1. `curl -sI https://<domaine>/healthz` répond `200`.
 2. `curl -sI -H 'Accept-Encoding: gzip' https://<domaine>/` montre `Content-Encoding: gzip`.
-3. Ouvrir la page : la barre de chargement va au bout, l'accueil propose trois portes ; « Explorer la maquette » montre
-   la ville, un clic sur Notre-Dame ouvre sa fiche et « Entrer à l'intérieur » lance la visite.
+3. Ouvrir la page : l'écran d'accueil propose les cinq époques, une maquette tourne en fond ; choisir « Paris de
+   Charles V » montre la ville de 1380, un clic sur Notre-Dame ouvre sa fiche et « Entrer à l'intérieur » lance la
+   visite. Le nom du site, en haut à gauche, ramène à l'écran d'accueil.
 4. Ouvrir `https://<domaine>/#in=sainte-chapelle` : la page s'ouvre directement dans la chapelle haute.

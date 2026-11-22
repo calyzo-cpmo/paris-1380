@@ -4,7 +4,7 @@
 // sources [[titre, crédit]…], absent (phrase ajoutée à la fiche d'un édifice attendu mais non modelé) }.
 import * as THREE from 'three';
 import { parseHash, makeHash } from '../state.js';
-import { bindEmbed, askEra, tellHash, shareUrl } from '../embed.js';
+import { bindEmbed, askEra, tellHash, shareUrl, enVitrine } from '../embed.js';
 import { suivreBarre } from '../layout.js';
 import { clamp } from '../geom.js';
 
@@ -329,9 +329,12 @@ export function initUI89(app, cfg) {
     });
   } else if ($('mode-tour')) $('mode-tour').hidden = true;
 
-  const fromLink = !app.shot && location.hash.length > 1 ? openLink(location.hash) : false;
+  // en vitrine (fond de l'écran d'accueil du site), ni interface ni conseil : la ville tourne lentement
+  let vitrine = !app.shot && enVitrine();
+  const fromLink = !app.shot && !vitrine && location.hash.length > 1 ? openLink(location.hash) : false;
   body.classList.add('ready');
-  if (!fromLink && !app.shot) hint('Glisser pour se déplacer, molette pour s’approcher · double-clic pour descendre à pied', 10);
+  if (!fromLink && !app.shot && !vitrine) hint('Glisser pour se déplacer, molette pour s’approcher · double-clic pour descendre à pied', 10);
+  app.on('frame', (dt) => { if (vitrine && !calm && !rig.fly && rig.mode !== 'walk') rig.goal.az += dt * 0.028; });
   // ---------- calque facultatif (page Paris 1889 : d'où vient chaque bâtiment) : un bouton, une légende
   const calque = cfg.calque, bCalque = $('btn-calque');
   let poserCalque = () => {};
@@ -346,9 +349,17 @@ export function initUI89(app, cfg) {
   suivreBarre($('dock'));
   // page d'accueil « Paris à travers le temps » : elle demande la vue, prépare l'arrivée, enfonce ou dresse la ville
   const quitter = () => { stopWalk(); stopHourPlay(); closeMore(); togglePlaces(false); toggleFrise(false); for (const m of document.querySelectorAll('.modal')) m.hidden = true; };
+  // vitrine : la page d'accueil y met la maquette (retour à l'accueil) ou l'en sort (on a choisi cette époque)
+  function poserVitrine(on) {
+    if (on === vitrine) return;
+    vitrine = on; document.documentElement.classList.toggle('vitrine', on);
+    if (on) { quitter(); if (visite.p) arreterVisite(); closeCard(); goHome(); hashTimer = 0; }      // l'adresse de l'accueil reste nue
+    else { rig.fly = null; hint('Glisser pour se déplacer, molette pour s’approcher · double-clic pour descendre à pied', 10); }
+  }
   bindEmbed({
     state: (leave) => { if (leave) quitter(); return viewHash(); },
-    prepare: (hash) => { quitter(); closeCard(); applyState(parseHash(hash)); app.setCityScale(0); rig.update(0); app.renderNow(); },
+    prepare: (hash) => { poserVitrine(false); quitter(); closeCard(); applyState(parseHash(hash)); app.setCityScale(0); rig.update(0); app.renderNow(); },
+    vitrine: poserVitrine,
     apply: (hash) => applyState(parseHash(hash)),
     morph: (to, ms) => app.morph(to, ms), pause: () => app.pause(), resume: () => app.resume(),
   });
