@@ -257,7 +257,7 @@ function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = 
 
 // ---- palais des Armées de terre et de mer, sur le quai d'Orsay en aval de l'Alma : un long corps crénelé, des tours ;
 // u vers l'aval depuis le quai au droit de l'Alma, v vers la Seine. La passerelle Debilly le relie à la rive droite.
-function palaisArmees(app, B) {
+function palaisArmees(app, B, dater = (cle, f) => f(B)) {
   const T = app.terrain, V = app.v89, M = app.monuments, F = repere([-3596, -1024], [-0.933, 0.359]), u0 = 12, u1 = 320, v0 = 8, v1 = 42;
   const yq = (u) => T.height(...F.P(u, 4)), y = yq(160);
   for (let a = u0; a < u1; a += 44) { const b = Math.min(a + 44, u1), yy = yq((a + b) / 2); corps(app, B, F, a, b, v0, v1, yy - 1, yy + 15, { col: C(206, 190, 160), comble: 0, travee: 6 }); }
@@ -269,7 +269,7 @@ function palaisArmees(app, B) {
   { const a = F.P(232, v1 + 2), dir = F.n; let t = 2, eau = false;
     for (; t < 360; t += 2) { const p = [a[0] + dir[0] * t, a[1] + dir[1] * t], w = T.wetAt(p[0], p[1]) > 0.5; if (w) eau = true; else if (eau) break; }
     const b = [a[0] + dir[0] * (t + 10), a[1] + dir[1] * (t + 10)];
-    M.Debilly = passerelle(app, B, a, b, { large: 3.6, arc: 15, col: C(64, 88, 78) }); }
+    dater('Debilly', (C2) => { M.Debilly = passerelle(app, C2, a, b, { large: 3.6, arc: 15, col: C(64, 88, 78) }); }); }      // montée après le palais (src/p1900/montage.js)
 }
 
 // ---- Esplanade des Invalides : deux rangées de palais de part et d'autre de l'allée centrale, coupées par les rues de
@@ -359,15 +359,16 @@ function trottoirRoulant(app, B) {
   const c = BOUCLE[12]; app.monuments.TrottoirRoulant = { x: c[0], z: c[1], top: T.height(c[0], c[1]) + 16, longueur: Math.round(L) };
 }
 
-export function batirPavillons(app, B) {
-  rueDesNations(app, B);
-  passerellesNations(app, B);
-  riveDroite(app, B);
-  vieuxParis(app, B);
-  palaisArmees(app, B);
-  esplanade(app, B);
-  colonies(app, B);
-  trottoirRoulant(app, B);
+// dater(cle, f) : bâtit f dans l'ouvrage daté `cle` du montage de l'Exposition (src/p1900/montage.js) ; sans lui, dans B.
+export function batirPavillons(app, B, dater = (cle, f) => f(B)) {
+  dater('RueDesNations', (C) => rueDesNations(app, C));
+  dater('PasserellesNations', (C) => passerellesNations(app, C));
+  dater('RiveDroite', (C) => riveDroite(app, C));
+  dater('VieuxParis', (C) => vieuxParis(app, C));
+  dater('Armees', (C) => palaisArmees(app, C, dater));
+  dater('Esplanade', (C) => esplanade(app, C));
+  dater('Colonies', (C) => colonies(app, C));
+  dater('TrottoirRoulant', (C) => trottoirRoulant(app, C));
 }
 // les deux passerelles de la rue des Nations : après le pont des Invalides, et près du pont de l'Alma (« en pont de
 // bateaux », sur des piles habillées de rochers)

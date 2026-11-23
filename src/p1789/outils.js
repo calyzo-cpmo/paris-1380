@@ -26,7 +26,8 @@ export function indexFoot(app) {
     if (f.x0 == null) { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of f.ring) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1]; } f.x0 = x0; f.z0 = z0; f.x1 = x1; f.z1 = z1; }
     for (let i = Math.floor(f.x0 / CELL); i <= Math.floor(f.x1 / CELL); i++) for (let k = Math.floor(f.z0 / CELL); k <= Math.floor(f.z1 / CELL); k++) { const key = (i + 2048) * 4096 + k + 2048; let l = cells.get(key); if (!l) cells.set(key, (l = [])); l.push(f); }
   }
-  app.footAt = (x, z) => { const l = cells.get((Math.floor(x / CELL) + 2048) * 4096 + Math.floor(z / CELL) + 2048); if (l) for (const f of l) if (x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pointInPoly(x, z, f.ring)) return f; return null; };
+  // f.absent : un ouvrage que le curseur de la page « Paris 1900 » n'a pas encore bâti, ou a déjà démoli
+  app.footAt = (x, z) => { const l = cells.get((Math.floor(x / CELL) + 2048) * 4096 + Math.floor(z / CELL) + 2048); if (l) for (const f of l) if (!f.absent && x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pointInPoly(x, z, f.ring)) return f; return null; };
 }
 
 // Arbres des jardins : une seule géométrie (tronc et houppier), instanciée. app.gardens : [{ ring, dens, ok }] —

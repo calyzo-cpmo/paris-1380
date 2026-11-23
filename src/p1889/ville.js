@@ -22,7 +22,7 @@ const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0
 // franchit le fleuve d'une seule arche.
 const RECENTS = ANNEE >= 1900 ? /Rouelle|Bir.Hakeim/i : /Alexandre|Mirabeau|Debilly|Rouelle|Bir.Hakeim/i;
 function ponts(app, B) {
-  const T = app.terrain, out = [], mouille = (x, z) => T.wetAt(x, z) > 0.5;
+  const T = app.terrain, V = app.v89, out = [], mouille = (x, z) => T.wetAt(x, z) > 0.5;
   // 1. Toute voie qui passe au-dessus du fleuve désigne un franchissement (la base de 1900 ne signale pas tous les
   //    ponts) ; ceux d'après la date sont écartés (Mirabeau, 1896 ; Alexandre-III et passerelle Debilly, 1900 ; le pont
   //    Rouelle ne porte que le chemin de fer, posé avec les voies). La base décrit souvent un pont en deux moitiés, ou en deux chaussées :
@@ -58,27 +58,32 @@ function ponts(app, B) {
     const nom = (g.m.find((c) => /^(Pont|Passerelle|Viaduc)/i.test(c.nom)) || g.m[0]).nom;
     const ya = Math.max(T.land(a[0], a[1]), 5.2), yb = Math.max(T.land(b[0], b[1]), 5.2);
     const yAt = (t) => ya + (yb - ya) * t + 0.9 * Math.sin(Math.PI * t), cx = (a[0] + b[0]) / 2, cz = (a[1] + b[1]) / 2;
-    const bs = B.at('stone', cx, cz), bp = B.at('plain', cx, cz), nA = /Alexandre/.test(nom) ? 1 : Math.max(2, Math.round(len / 30)), SEG = 6;
-    for (let k = 0; k < nA; k++) {
-      for (let j = 0; j < SEG; j++) {
-        const t0 = (k + j / SEG) / nA, t1 = (k + (j + 1) / SEG) / nA, y0 = yAt(t0), y1 = yAt(t1), x0 = a[0] + ux * len * t0, z0 = a[1] + uz * len * t0, x1 = a[0] + ux * len * t1, z1 = a[1] + uz * len * t1;
-        // intrados : arc surbaissé d'une pile à l'autre
-        const D = Math.min(4.6, Math.min(ya, yb) - 1.6), arc = (f) => 1.1 + D * (1 - Math.sqrt(Math.max(0, 1 - (2 * f - 1) ** 2))), i0 = y0 - arc(j / SEG), i1 = y1 - arc((j + 1) / SEG);
-        bp.quad(x0 + nx * w, y0, z0 + nz * w, x1 + nx * w, y1, z1 + nz * w, x1 - nx * w, y1, z1 - nz * w, x0 - nx * w, y0, z0 - nz * w, 0, 0, 1, 1, CHAUSSEE, 1, 1);
-        for (const sd of [1, -1]) {
-          const ox = nx * w * sd, oz = nz * w * sd, P = 0.95;
-          if (sd > 0) bs.quad(x1 + ox, i1, z1 + oz, x0 + ox, i0, z0 + oz, x0 + ox, y0 + P, z0 + oz, x1 + ox, y1 + P, z1 + oz, 0, 0, 1, 1, PIERRE_PONT, 0.82, 1);
-          else bs.quad(x0 + ox, i0, z0 + oz, x1 + ox, i1, z1 + oz, x1 + ox, y1 + P, z1 + oz, x0 + ox, y0 + P, z0 + oz, 0, 0, 1, 1, PIERRE_PONT, 0.82, 1);
-          const ix = nx * (w - 0.4) * sd, iz = nz * (w - 0.4) * sd;                 // parapet, côté chaussée
-          if (sd > 0) bs.quad(x0 + ix, y0, z0 + iz, x1 + ix, y1, z1 + iz, x1 + ix, y1 + P, z1 + iz, x0 + ix, y0 + P, z0 + iz, 0, 0, 1, 0.3, PIERRE_PONT, 0.9, 1);
-          else bs.quad(x1 + ix, y1, z1 + iz, x0 + ix, y0, z0 + iz, x0 + ix, y0 + P, z0 + iz, x1 + ix, y1 + P, z1 + iz, 0, 0, 1, 0.3, PIERRE_PONT, 0.9, 1);
-          bs.quad(x0 + ix, y0 + P, z0 + iz, x1 + ix, y1 + P, z1 + iz, x1 + ox, y1 + P, z1 + oz, x0 + ox, y0 + P, z0 + oz, 0, 0, 1, 0.2, PIERRE_PONT, 1, 1);
+    // page « Paris 1900 » : le pont Alexandre-III, en chantier jusqu'en 1900, est bâti dans un ouvrage daté (src/p1900/montage.js)
+    const q = V.montage && /Alexandre/.test(nom) ? V.montage.quand('AlexandreIII') : null;
+    const poser = (B) => {
+      const bs = B.at('stone', cx, cz), bp = B.at('plain', cx, cz), nA = /Alexandre/.test(nom) ? 1 : Math.max(2, Math.round(len / 30)), SEG = 6;
+      for (let k = 0; k < nA; k++) {
+        for (let j = 0; j < SEG; j++) {
+          const t0 = (k + j / SEG) / nA, t1 = (k + (j + 1) / SEG) / nA, y0 = yAt(t0), y1 = yAt(t1), x0 = a[0] + ux * len * t0, z0 = a[1] + uz * len * t0, x1 = a[0] + ux * len * t1, z1 = a[1] + uz * len * t1;
+          // intrados : arc surbaissé d'une pile à l'autre
+          const D = Math.min(4.6, Math.min(ya, yb) - 1.6), arc = (f) => 1.1 + D * (1 - Math.sqrt(Math.max(0, 1 - (2 * f - 1) ** 2))), i0 = y0 - arc(j / SEG), i1 = y1 - arc((j + 1) / SEG);
+          bp.quad(x0 + nx * w, y0, z0 + nz * w, x1 + nx * w, y1, z1 + nz * w, x1 - nx * w, y1, z1 - nz * w, x0 - nx * w, y0, z0 - nz * w, 0, 0, 1, 1, CHAUSSEE, 1, 1);
+          for (const sd of [1, -1]) {
+            const ox = nx * w * sd, oz = nz * w * sd, P = 0.95;
+            if (sd > 0) bs.quad(x1 + ox, i1, z1 + oz, x0 + ox, i0, z0 + oz, x0 + ox, y0 + P, z0 + oz, x1 + ox, y1 + P, z1 + oz, 0, 0, 1, 1, PIERRE_PONT, 0.82, 1);
+            else bs.quad(x0 + ox, i0, z0 + oz, x1 + ox, i1, z1 + oz, x1 + ox, y1 + P, z1 + oz, x0 + ox, y0 + P, z0 + oz, 0, 0, 1, 1, PIERRE_PONT, 0.82, 1);
+            const ix = nx * (w - 0.4) * sd, iz = nz * (w - 0.4) * sd;                 // parapet, côté chaussée
+            if (sd > 0) bs.quad(x0 + ix, y0, z0 + iz, x1 + ix, y1, z1 + iz, x1 + ix, y1 + P, z1 + iz, x0 + ix, y0 + P, z0 + iz, 0, 0, 1, 0.3, PIERRE_PONT, 0.9, 1);
+            else bs.quad(x1 + ix, y1, z1 + iz, x0 + ix, y0, z0 + iz, x0 + ix, y0 + P, z0 + iz, x1 + ix, y1 + P, z1 + iz, 0, 0, 1, 0.3, PIERRE_PONT, 0.9, 1);
+            bs.quad(x0 + ix, y0 + P, z0 + iz, x1 + ix, y1 + P, z1 + iz, x1 + ox, y1 + P, z1 + oz, x0 + ox, y0 + P, z0 + oz, 0, 0, 1, 0.2, PIERRE_PONT, 1, 1);
+          }
+          bs.quad(x0 - nx * w, i0, z0 - nz * w, x1 - nx * w, i1, z1 - nz * w, x1 + nx * w, i1, z1 + nz * w, x0 + nx * w, i0, z0 + nz * w, 0, 0, 1, 1, PIERRE_PONT, 0.55, 0.55);      // voûte, vue de l'eau
         }
-        bs.quad(x0 - nx * w, i0, z0 - nz * w, x1 - nx * w, i1, z1 - nz * w, x1 + nx * w, i1, z1 + nz * w, x0 + nx * w, i0, z0 + nz * w, 0, 0, 1, 1, PIERRE_PONT, 0.55, 0.55);      // voûte, vue de l'eau
+        if (k > 0) { const t = k / nA; box(bs, { cx: a[0] + ux * len * t, cz: a[1] + uz * len * t, ux, uz, hl: 1.9, hw: w + 1.3 }, -4, yAt(t) - 1.2, { col: PIERRE_PONT, s0: 0.7 }); }
       }
-      if (k > 0) { const t = k / nA; box(bs, { cx: a[0] + ux * len * t, cz: a[1] + uz * len * t, ux, uz, hl: 1.9, hw: w + 1.3 }, -4, yAt(t) - 1.2, { col: PIERRE_PONT, s0: 0.7 }); }
-    }
-    for (let s = 0; s <= len; s += 1) { const t = s / len, y = yAt(t); for (let o = -w; o <= w; o += 1) app.deckSet(a[0] + ux * s + nx * o, a[1] + uz * s + nz * o, y); }
+      for (let s = 0; s <= len; s += 1) { const t = s / len, y = yAt(t); for (let o = -w; o <= w; o += 1) app.deckSet(a[0] + ux * s + nx * o, a[1] + uz * s + nz * o, y); }
+    };
+    if (q) V.montage.ouvrage(q, poser); else poser(B);
     out.push({ x: cx, z: cz, a, b, w, nom, troncons: n, top: yAt(0.5) + 6 });
   }
   return out;
@@ -153,7 +158,7 @@ export async function construire(app, step) {
   const L = bati(); let n = 0, faits = 0;
   for (const e of L) {
     const r = e.rings[0]; let cx = 0, cz = 0; for (const p of r) { cx += p[0]; cz += p[1]; } cx /= r.length; cz /= r.length;
-    if (!reserve(cx, cz)) { maison(app, B, e, n, pres(cx, cz)); ST.poser(e); faits++; }
+    if (!reserve(cx, cz) && !(V.ecartes && V.ecartes.has(n))) { maison(app, B, e, n, pres(cx, cz)); ST.poser(e); faits++; }      // écartés : bâtis à part, avec leur date (page « Paris 1900 »)
     if (++n % 4000 === 0) { await step('Les maisons de Paris, quartier par quartier…', 0.26 + (0.42 * n) / L.length); await pause(); }
   }
   app.stats.bati = faits; ST.finir();
@@ -218,7 +223,8 @@ export async function construire(app, step) {
     if (V.esplanades) fill(x, TT, V.esplanades, '#fff');
     for (const rings of V.seine) fill(x, TT, [rings], '#000');
     lines(x, TT, V.ponts.map((p) => [p.a, p.b]), '#fff', 9 / cell);
-    x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; for (const f of app.foot) { if (!pres(f.ring[0][0], f.ring[0][1])) continue; x.beginPath(); ring(x, TT, f.ring); x.fill(); x.stroke(); }
+    // une emprise absente (pas encore bâtie, ou déjà démolie, à la date du curseur de 1900) laisse passer les passants
+    x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; for (const f of app.foot) { if (f.absent || !pres(f.ring[0][0], f.ring[0][1])) continue; x.beginPath(); ring(x, TT, f.ring); x.fill(); x.stroke(); }
     const im = x.getImageData(0, 0, w, h).data, data = new Uint8Array(w * h); for (let i = 0; i < data.length; i++) data[i] = im[i * 4] > 200 ? 1 : 0;
     app.nav = { data, w, h, x0: R.x, z0: R.z, cell }; }
 }

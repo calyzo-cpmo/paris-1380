@@ -1,6 +1,6 @@
 // Test fonctionnel de la page « Paris 1900 » (le test lit l'image : l'avertissement du pilote sur cette lecture est ignoré) : charge la page, vérifie la ville recomposée en 1900
 // (bâti, Seine, ponts dont Alexandre-III, enceinte), les chemins de fer et les gares (gare de Lyon neuve, pont Rouelle), la tour repeinte, l'Exposition (Champ-de-Mars,
-// palais de l'Électricité, Grande Roue, Grand et Petit Palais, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), les entrées du métro, les monuments, les repères, la visite, la marche à pied, l'heure, la frise, les sources, le téléphone et
+// palais de l'Électricité, Grande Roue, Grand et Petit Palais, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), les entrées du métro, le montage de l'Exposition de 1897 à l'été 1900 et son curseur, les monuments, les repères, la visite, la marche à pied, l'heure, la frise, les sources, le téléphone et
 // l'absence d'erreurs. Le moteur est celui de la page « Paris 1889 » (tools/test1889.mjs en vérifie le reste).
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -28,7 +28,7 @@ const frames = (n, p = page) => p.evaluate(async (n) => {
 const visible = (sel) => page.evaluate((sel) => { const e = document.querySelector(sel); return !!e && !e.hidden && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden'; }, sel);
 
 check('la page démarre', await page.evaluate(() => window.__ready === true && !window.__failed), String(await page.evaluate(() => window.__failed || '')));
-check('les données sont celles de 1900, sans curseur de chantier', await page.evaluate(() => window.__app.v89 && !document.getElementById('chantier') && document.querySelector('#brand h1').textContent.trim() === 'Paris 1900'));
+check('les données sont celles de 1900 ; le curseur du montage s’ouvre sur le 19 juillet 1900', await page.evaluate(() => window.__app.v89 && !!document.getElementById('chantier') && window.__app.v89.chantier.jour === 4947 && document.querySelector('#brand h1').textContent.trim() === 'Paris 1900'));
 await frames(3);
 const ov = await page.evaluate(() => { const L = [...document.querySelectorAll('.label')].filter((e) => e.style.display !== 'none' && !e.classList.contains('dot')).map((e) => e.getBoundingClientRect()); let n = 0; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a.left < b.right - 3 && b.left < a.right - 3 && a.top < b.bottom - 3 && b.top < a.bottom - 3) n++; } return { noms: L.length, chevauchements: n }; });
 check('étiquettes, à l’ouverture : aucun nom n’en chevauche un autre (les moins importants se réduisent à leur pastille)', ov.chevauchements === 0 && ov.noms >= 6, JSON.stringify(ov));
@@ -41,7 +41,8 @@ const v = await page.evaluate(() => { const a = window.__app, T = a.terrain, V =
   quais: a.stats.quais, bord: +Math.min(...V.ponts.map((p) => T.land(p.a[0], p.a[1]))).toFixed(1), rue: (() => { const v = a.voirie, C = a.monde.cadre, at = (x, z) => v.data[Math.floor(((z - C.z0) / (C.z1 - C.z0)) * v.h) * v.w + Math.floor(((x - C.x0) / (C.x1 - C.x0)) * v.w)]; let place = 0; for (let i = -2; i <= 2; i++) for (let k = -2; k <= 2; k++) place = Math.max(place, at(-1310 + i * 20, -1990 + k * 20)); return { w: v.w, D: v.D, place, ilot: at(-1341, -2095), seine: at(-4218, -767), expo: at(-3800, -370) }; })(),
   tour: +T.height(-4039.4, -604.3).toFixed(1), montmartre: +T.height(-521, -3700).toFixed(1), belleville: +T.height(3300, -2300).toFixed(1), passants: a.people.total, nav: a.nav.w * a.nav.h, cadre: a.monde.cadre }; });
 check('bâti : près de quatre-vingt-dix mille bâtiments dressés', v.bati > 80000 && v.bati < 95000 && v.foot >= v.bati - 100, `${v.bati} bâtiments`);
-check('bâti : volumes légers (moins de 3,4 millions de triangles, moins de 750 maillages)', v.tris > 1.5e6 && v.tris < 3.4e6 && v.maillages < 750, `${v.tris} triangles, ${v.maillages} maillages`);
+// les ouvrages datés du montage (src/p1900/montage.js) ont leurs propres maillages : une centaine de plus, dont ceux que la date cache ne sont pas dessinés
+check('bâti : volumes légers (moins de 3,4 millions de triangles, moins de 800 maillages)', v.tris > 1.5e6 && v.tris < 3.4e6 && v.maillages < 800, `${v.tris} triangles, ${v.maillages} maillages`);
 check('Seine : continue devant la tour et au centre, en eau sous chaque pont ; à sec sur les rives', v.seine.slice(0, 4).every((w) => w > 0.9) && v.seine[4] > 0.5 && v.sec.every((w) => w < 0.05), JSON.stringify([v.seine, v.sec]));
 check('relief : le Champ-de-Mars près du fleuve, Montmartre et Belleville sur leurs collines', v.tour > 3 && v.tour < 12 && v.montmartre > 80 && v.belleville > 60, JSON.stringify([v.tour, v.montmartre, v.belleville]));
 check('ponts : une trentaine sur la Seine, chacun bâti une seule fois, dont le pont d’Iéna, le Pont-Neuf sur ses deux bras, ceux du petit bras, le pont Mirabeau (1896) et le pont Alexandre-III (1900) ; pas l’allée des Cygnes', v.ponts.length >= 28 && v.ponts.length <= 40 && v.ponts.some((n) => /I.na/.test(n)) && v.ponts.filter((n) => /Neuf/.test(n)).length === 2 && ['Saint-Michel', 'petit', 'double', 'Archev', 'Alexandre', 'Mirabeau'].every((m) => v.ponts.filter((n) => new RegExp(m, 'i').test(n)).length === 1) && !v.ponts.some((n) => /Cygnes/.test(n)), `${v.ponts.length} ponts`);
@@ -65,7 +66,7 @@ const fe = await page.evaluate(() => { const a = window.__app, V = a.v89, F = V.
     sousSol: E.filter((p) => p[1] < T.land(p[0], p[2]) + 0.2).length, daumesnil: E.filter((p) => p[3] > 6 && p[0] > 1500 && p[0] < 2600 && p[2] > 300).length, auteuil: E.filter((p) => p[3] > 6 && p[0] < -5800).length,
     lignes: { ceinture: F.pres(-218, -4932, 25), auteuil: F.pres(-5648, -1348, 25), vincennes: F.pres(3050, 1254, 25), montparnasse: F.pres(-2085, 1196, 25), sceaux: F.pres(-1064, 2722, 60), nord: F.pres(480, -3600, 60), lyon: F.pres(2200, 1350, 80), rouelle: F.pres(-4810, 62, 20), rouelle2: F.pres(-4930, 38, 20) },
     ecartees: { metro6: F.pres(-3905, 361, 40), metro2: F.pres(1437, -2963, 40), belleville: F.pres(2650, -2500, 60), gareChampDeMars1878: F.pres(-4380, -430, 25), invalides: F.pres(-2760, -1040, 60) },
-    gares: G.map((k) => h(M[k])), murs: G.map((k) => !!(M[k] && a.footAt(M[k].x, M[k].z))), reels: G.filter((k) => M[k] && (a.footAt(M[k].x, M[k].z) || {}).reel).length, champDeMars: !!M.GareChampDeMars,
+    gares: G.map((k) => h(M[k])), murs: G.map((k) => !!(M[k] && a.footAt(M[k].x, M[k].z))), reels: G.filter((k) => M[k] && (a.footAt(M[k].x, M[k].z) || {}).reel).length, champDeMars: !!M.GareChampDeMars && a.v89.chantier.jour < M.GareChampDeMars.quand[1],
     lyon: { h: h(M.GareLyon), horloge: h(M.HorlogeLyon), pied: !!a.footAt(M.HorlogeLyon.x, M.HorlogeLyon.z), voies: F.pres(M.GareLyon.butoirs[0] + M.GareLyon.axe[0] * 60, M.GareLyon.butoirs[1] + M.GareLyon.axe[1] * 60, 30) },
     neuves: ['GareOrsay', 'GareInvalides'].map((k) => (M[k] ? a.statuts.lire(M[k].x, M[k].z) : -1)),
     arbres: A.tous().filter((p) => F.pres(p[0], p[1], 2.2)).length }; });
@@ -94,7 +95,7 @@ const ex = await page.evaluate(() => { const a = window.__app, M = a.monuments, 
   const palais = Object.keys(M).filter((k) => /^Palais (de l’Éducation|du Génie|des Industries|des Mines|des Fils|de la Mécanique)/.test(k));
   const prop = (x, z) => !!a.footAt(x, z);
   return { palais: palais.length, hp: palais.map((k) => h(M[k])), electricite: h(M.Electricite), cheminees: a.landmarks.filter((l) => Math.abs(l.top - y0 - 80) < 0.6 && Math.hypot(l.x - M.Electricite.x, l.z - M.Electricite.z) < 160).length,
-    machines: h(M.Machines), roue: h(M.GrandeRoue), roueSol: prop(M.GrandeRoue.x, M.GrandeRoue.z), grandPalais: h(M.GrandPalais), gpPierre: prop(-2760, -1452), petitPalais: prop(-2572, -1440), industrie: !!M.Industrie,
+    machines: h(M.Machines), roue: h(M.GrandeRoue), roueSol: prop(M.GrandeRoue.x, M.GrandeRoue.z), grandPalais: h(M.GrandPalais), gpPierre: prop(-2760, -1452), petitPalais: prop(-2572, -1440), industrie: !!M.Industrie && a.v89.chantier.jour < M.Industrie.quand[1],
     pylones: L.filter((l) => Math.abs(l.h - 23) < 0.6 && Math.hypot(l.x - M.AlexandreIII.x, l.z - M.AlexandreIII.z) < 120).length, alexandre: a.v89.ponts.filter((p) => /Alexandre/.test(p.nom)).length,
     jardin: a.walkable((M.Tour.x + M.Electricite.x) / 2, (M.Tour.z + M.Electricite.z) / 2) }; });
 check('Champ-de-Mars : six palais en fer à cheval autour du jardin, sous leurs dômes', ex.palais === 6 && ex.hp.every((x) => x > 45 && x < 56) && ex.jardin, JSON.stringify([ex.palais, ex.hp, ex.jardin]));
@@ -125,6 +126,30 @@ check('porte monumentale de Binet : la Parisienne à 45 m, deux minarets de 42 m
 check('rive droite : les serres (21 m), le palais de la Danse et son phare, les jardins du Cours-la-Reine ; la rue de Paris et ses quinze autres établissements, à sec', fi.serres > 25 && fi.serres < 32 && fi.danse > 20 && fi.phare > 30 && fi.jardins && fi.rue === 15 && fi.rueSec === 15, JSON.stringify(fi));
 check('Globe céleste (une sphère de 45 m sur son soubassement, au bord du quai) et palais de l’Optique (coupole et projecteur à 42 m, salle des projections)', fi.globe > 65 && fi.globe < 75 && fi.diametre === 45 && fi.globeSec && fi.optique > 42 && fi.optique < 50 && fi.salle, JSON.stringify(fi));
 
+// ---------- le montage de l'Exposition, du 1er janvier 1897 au 19 juillet 1900 (src/p1900/montage.js)
+const J = (y, m, d) => Math.round((Date.UTC(y, m - 1, d) - Date.UTC(1887, 0, 1)) / 864e5), DEBUT = J(1897, 1, 1), FIN = J(1900, 7, 19);
+const mg = await page.evaluate(([J0, J1, J2, FIN]) => {
+  const a = window.__app, V = a.v89, M = a.monuments, pont = V.ponts.find((p) => /Alexandre/.test(p.nom)), lieu = (n) => { const p = a.ui.places.find((q) => q.name === n); return p ? !p.hors : null; };
+  const etat = () => ({ vus: V.mobiles.filter((m) => m.visible).length, absents: a.foot.filter((f) => f.absent).length, industrie: lieu('Palais de l’Industrie'), grandPalais: lieu('Grand Palais'), beauxArts: lieu('Palais des Beaux-Arts de 1889'), nations: lieu('Rue des Nations'), metro: lieu('Métropolitain, ligne 1'), champDeMars: lieu('Gare du Champ-de-Mars'),
+    gpSol: !!a.footAt(-2760, -1452), industrieSol: !!a.footAt(M.Industrie.x, M.Industrie.z), pont: a.walkable(pont.x, pont.z), deck: a.deck.size, brun: V.chantier.tour[0].material.color.r < 0.9 });
+  const out = { fin0: etat() };
+  a.setChantier(J0); out.debut = etat(); a.setChantier(J1); out.mi = etat(); a.setChantier(J2); out.ouverture = etat(); a.setChantier(FIN); out.fin = etat();
+  a.setChantier(0); out.borne0 = V.chantier.jour; a.setChantier(1e5); out.borne1 = V.chantier.jour;
+  return out; }, [DEBUT, J(1898, 9, 1), J(1900, 4, 14), FIN]);
+check('montage, au 1er janvier 1897 : le palais de l’Industrie et les palais de 1889 debout, la gare du Champ-de-Mars aussi ; ni Grand Palais, ni rue des Nations, ni métro ; le pont Alexandre-III sans tablier ; la tour brun-rouge', mg.debut.industrie && mg.debut.industrieSol && mg.debut.beauxArts && mg.debut.champDeMars && !mg.debut.grandPalais && !mg.debut.gpSol && !mg.debut.nations && !mg.debut.metro && !mg.debut.pont && mg.debut.brun && mg.debut.vus < mg.fin.vus / 2, JSON.stringify(mg.debut));
+check('montage, au 1er septembre 1898 : le palais de l’Industrie et ceux de 1889 démolis, le Grand Palais en chantier', !mg.mi.industrie && !mg.mi.industrieSol && !mg.mi.beauxArts && mg.mi.grandPalais && mg.mi.gpSol && !mg.mi.pont, JSON.stringify(mg.mi));
+check('montage, au 14 avril 1900 : l’Exposition ouvre, la rue des Nations et le pont Alexandre-III sont là ; le métro pas encore', mg.ouverture.nations && mg.ouverture.pont && !mg.ouverture.metro && mg.ouverture.deck > mg.debut.deck, JSON.stringify(mg.ouverture));
+check('montage, retour au 19 juillet 1900 : la ville de l’été 1900, telle qu’à l’ouverture de la page ; la date reste dans ses bornes', JSON.stringify(mg.fin) === JSON.stringify(mg.fin0) && mg.fin.metro && !mg.fin.industrie && !mg.fin.brun && mg.borne0 === DEBUT && mg.borne1 === FIN, JSON.stringify([mg.fin, mg.borne0, mg.borne1]));
+const cu = await page.evaluate(async ([j1, fin]) => { const a = window.__app, sl = document.getElementById('ch-date'), jour = document.getElementById('ch-jour'), note = document.getElementById('ch-note'), play = document.getElementById('ch-play'), out = { min: +sl.min, max: +sl.max, depart: +sl.value, texte0: jour.textContent + ' | ' + note.textContent };
+  sl.value = String(j1); sl.dispatchEvent(new Event('input', { bubbles: true })); out.texte1 = jour.textContent + ' | ' + note.textContent; out.jour1 = a.v89.chantier.jour;
+  sl.value = String(fin); sl.dispatchEvent(new Event('input', { bubbles: true }));
+  play.click(); out.joue = play.getAttribute('aria-pressed'); for (let i = 0; i < 40; i++) a.emit('frame', 0.05); out.apres = +sl.value; out.texte2 = jour.textContent;
+  for (let i = 0; i < 1000; i++) a.emit('frame', 0.05); out.fin = +sl.value; out.arret = play.getAttribute('aria-pressed'); out.jourFin = a.v89.chantier.jour;
+  return out; }, [J(1900, 4, 14), FIN]);
+check('curseur : du 1er janvier 1897 au 19 juillet 1900, ouvert sur l’ouverture de la ligne 1 du métro', (await visible('#chantier')) && cu.min === DEBUT && cu.max === FIN && cu.depart === FIN && /^19 juillet 1900 \| Ouverture de la ligne 1/.test(cu.texte0), JSON.stringify([cu.min, cu.max, cu.texte0]));
+check('curseur : au 14 avril 1900, la date et l’étape sont dites', /^14 avril 1900 \| Ouverture de l’Exposition/.test(cu.texte1) && cu.jour1 === J(1900, 4, 14), cu.texte1);
+check('curseur : la lecture repart de 1897, avance, puis s’arrête au 19 juillet 1900', cu.joue === 'true' && cu.apres > DEBUT + 20 && cu.apres < DEBUT + 120 && /1897/.test(cu.texte2) && cu.fin === FIN && cu.arret === 'false' && cu.jourFin === FIN, JSON.stringify([cu.apres, cu.texte2, cu.fin, cu.arret]));
+
 // ---------- silhouettes des monuments
 const mo = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1), fl = a.landmarks.find((l) => l.nom === 'fleche');
   return { invalides: h(M.Invalides), pantheon: h(M.Pantheon), nd: h(M.NotreDame), fleche: fl ? +(fl.top - T.height(fl.x, fl.z)).toFixed(1) : -1, sulpice: h(M.Sulpice), trinite: h(M.Trinite), opera: h(M.Opera), institut: h(M.Institut), augustin: h(M.Augustin),
@@ -153,9 +178,9 @@ check('costumes : le fantassin en capote, la sœur de charité en cornette', co.
 
 // ---------- la vie : trains, bateaux, souches de cheminée
 const vie = await page.evaluate(() => { const a = window.__app, V = a.v89, T = a.terrain, F = V.fer;
-  const t0 = V.trains.etat(), b0 = V.bateaux.etat(), ecart = t0.map(() => 0); for (let i = 0; i < 40; i++) { a.emit('frame', 0.25); V.trains.etat().forEach((p, k) => { ecart[k] = Math.max(ecart[k], Math.hypot(p[0] - t0[k][0], p[2] - t0[k][2])); }); } const t1 = V.trains.etat(), b1 = V.bateaux.etat();      // un train qui touche le bout de sa ligne repart en arrière : on mesure son plus grand écart
+  const t0 = V.trains.etat(), b0 = V.bateaux.etat(), ecart = t0.map(() => 0), ecartB = b0.map(() => 0); for (let i = 0; i < 40; i++) { a.emit('frame', 0.25); V.trains.etat().forEach((p, k) => { ecart[k] = Math.max(ecart[k], Math.hypot(p[0] - t0[k][0], p[2] - t0[k][2])); }); V.bateaux.etat().forEach((p, k) => { ecartB[k] = Math.max(ecartB[k], Math.hypot(p[0] - b0[k][0], p[1] - b0[k][1])); }); } const t1 = V.trains.etat(), b1 = V.bateaux.etat();      // un train ou un vapeur qui touche le bout de sa ligne repart en arrière : on mesure son plus grand écart
   const bouge = ecart.filter((d) => d > 20).length, surVoie = t1.filter((p) => F.pres(p[0], p[2], 6)).length, sousSol = t1.filter((p) => p[1] < T.land(p[0], p[2]) - 0.2).length;
-  const vapeursBougent = b1.filter((p, i) => Math.hypot(p[0] - b0[i][0], p[1] - b0[i][1]) > 10).length, dansLeau = b1.filter((p) => T.wetAt(p[0], p[1]) > 0.9).length;
+  const vapeursBougent = ecartB.filter((d) => d > 10).length, dansLeau = b1.filter((p) => T.wetAt(p[0], p[1]) > 0.9).length;
   a.setView([-200, 120, 300], [-60, 20, -60]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0); const pres = a.souches.montrer(a.camera.position);
   a.setView([0, 4000, 4000], [0, 0, 0]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0); const loin = a.souches.montrer(a.camera.position);
   return { trains: V.trains.n, parcours: V.trains.parcours.slice(0, 4), bouge, surVoie, sousSol, peniches: V.bateaux.peniches, vapeurs: V.bateaux.vapeurs, vapeursBougent, dansLeau, souches: a.stats.souches, pres, loin }; });
@@ -174,9 +199,9 @@ const ca = await page.evaluate(() => { const a = window.__app, b = document.getE
 check('calque « origine du bâti » : réelle (datée de 1900 ou d’avant), probable, disparue, évoquée ; le Grand Palais et la gare d’Orsay réels, l’Hôtel-Dieu modelé à part', ca.on === 1 && ca.leg && ca.items.length === 4 && /1900 ou d’avant/.test(ca.items[0]) && ca.off === 0 && ca.presse === 'false' && ca.cache && ca.lire[0] === 1 && ca.lire[1] === 1 && ca.lire[2] === 0 && ca.compte[1] > 40000 && ca.compte[2] > 8000 && ca.compte[3] > 3000 && ca.compte[4] > 18000 && ca.apres[0] > ca.avant[0] + 2000 && ca.apres[1] > ca.avant[1] + 500, JSON.stringify(ca));
 
 // ---------- repères, fiche, sources
-const lx = await page.evaluate(() => { const a = window.__app, P = a.ui.places; return { n: P.length, noms: P.map((p) => p.name), cats: [...new Set(P.map((p) => p.cat))].length, hors: P.filter((p) => p.x < a.monde.cadre.x0 || p.x > a.monde.cadre.x1 || p.z < a.monde.cadre.z0 || p.z > a.monde.cadre.z1).length }; });
+const lx = await page.evaluate(() => { const a = window.__app, P = a.ui.places; return { n: P.length, noms: P.map((p) => p.name), cats: [...new Set(P.map((p) => p.cat))].length, caches: P.filter((p) => p.hors).map((p) => p.name), hors: P.filter((p) => p.x < a.monde.cadre.x0 || p.x > a.monde.cadre.x1 || p.z < a.monde.cadre.z0 || p.z > a.monde.cadre.z1).length }; });
 const attendus = ['Tour de 300 mètres', 'Palais de l’Électricité', 'Galerie des machines', 'Grande Roue', 'Grand Palais', 'Petit Palais', 'Pont Alexandre-III', 'Palais du Trocadéro', 'Champ-de-Mars', 'Rue des Nations', 'Vieux Paris', 'Esplanade des Invalides', 'Section des colonies', 'Trottoir roulant', 'Passerelle Debilly', 'Porte monumentale', 'Rue de Paris', 'Globe céleste', 'Palais de l’Optique', 'Métropolitain, ligne 1', 'Palais des Armées de terre et de mer', 'Palais des Mines et de la Métallurgie', 'Gare de Lyon', 'Tour de l’horloge de la gare de Lyon', 'Gare d’Orsay', 'Gare des Invalides', 'Pont Rouelle', 'Gare Saint-Lazare', 'Gare du Nord', 'Gare de l’Est', 'Gare d’Orléans', 'Gare Montparnasse', 'Gare de la Bastille', 'Gare de Sceaux', 'Petite Ceinture', 'Enceinte de Thiers', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Panthéon', 'Sacré-Cœur', 'Halles centrales', 'Hôtel-Dieu', 'Hôtel de Ville', 'Place de la Bastille'];
-check('repères : la tour, l’Exposition de 1900, les gares neuves, les monuments ; plus de palais de l’Industrie ni de gare du Champ-de-Mars', lx.n >= 75 && lx.hors === 0 && lx.cats >= 4 && attendus.every((n) => lx.noms.includes(n)) && !lx.noms.some((n) => /Palais de l’Industrie|Gare du Champ-de-Mars|Dôme central|en chantier/.test(n)), `${lx.n} lieux ; manquent : ${attendus.filter((n) => !lx.noms.includes(n)).join(', ')}`);
+check('repères : la tour, l’Exposition de 1900, les gares neuves, les monuments ; le palais de l’Industrie, les palais de 1889 et la gare du Champ-de-Mars, démolis, cachés à la date', lx.n >= 75 && lx.hors === 0 && lx.cats >= 4 && attendus.every((n) => lx.noms.includes(n)) && lx.caches.length >= 4 && lx.caches.every((n) => /Palais de l’Industrie|Gare du Champ-de-Mars|de 1889|Embarcadère/.test(n)) && !lx.noms.some((n) => /en chantier/.test(n)), `${lx.n} lieux ; manquent : ${attendus.filter((n) => !lx.noms.includes(n)).join(', ')}`);
 await page.click('#btn-places');
 await page.fill('#place-search', 'roue');
 const liste = await page.evaluate(() => [...document.querySelectorAll('#place-list button, #place-list li')].map((b) => b.textContent).filter((t) => /Grande Roue/i.test(t)).length);
@@ -216,8 +241,8 @@ check('frise des dates : 1900 en cours ; Lutèce, 1380, 1789 et 1889 mènent aux
 { const ctx = await browser.newContext({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
   const p2 = await ctx.newPage(); watch(p2); p2.setDefaultTimeout(120000);
   await p2.goto(URL + '#shot'); await p2.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 300000 });
-  const m = await p2.evaluate(() => { const a = window.__app; return { rate: window.__failed || '', mobile: a.mobile, tris: a.stats.tris, bati: a.stats.bati }; });
-  check('téléphone : la page démarre en version allégée (toits plats)', !m.rate && m.mobile && m.bati > 80000 && m.tris < v.tris * 0.8, JSON.stringify(m));
+  const m = await p2.evaluate(() => { const a = window.__app, c = document.getElementById('chantier').getBoundingClientRect(); return { rate: window.__failed || '', mobile: a.mobile, tris: a.stats.tris, bati: a.stats.bati, curseur: c.width > 200 && c.right <= innerWidth + 1 && c.left >= -1, jour: a.v89.chantier.jour }; });
+  check('téléphone : la page démarre en version allégée (toits plats), le curseur du montage tient dans l’écran', !m.rate && m.mobile && m.bati > 80000 && m.tris < v.tris * 0.8 && m.curseur && m.jour === FIN, JSON.stringify(m));
   await ctx.close(); }
 
 // ---------- adresse courte et lien vers une autre maquette

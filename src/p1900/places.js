@@ -8,7 +8,7 @@ export function makePlaces(app) {
   // nom, catégorie, notice, position { x, z, top } ou [x, z], rang (1 : toujours nommé)
   const lieu = (name, cat, note, pos, rang = 2) => {
     if (!pos) return; const x = pos.x ?? pos[0], z = pos.z ?? pos[1];
-    out.push({ id: slug(name), name, cat, catName: CATS[cat][0], color: CATS[cat][1], note, absent: false, x, z, y: pos.top != null ? pos.top : T.height(x, z) + 30, rang });
+    out.push({ id: slug(name), name, cat, catName: CATS[cat][0], color: CATS[cat][1], note, absent: false, x, z, y: pos.top != null ? pos.top : T.height(x, z) + 30, rang, quand: pos.quand });      // quand : jours où il est debout (curseur du montage)
   };
   for (const l of app.v89.lieux || []) lieu(...l);
   const V = 'L’édifice est rendu par son volume réel — emprise et hauteur —, sans le détail de son élévation.';

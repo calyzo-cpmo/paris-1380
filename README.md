@@ -20,7 +20,9 @@ Eiffel et les palais du Champ-de-Mars, de janvier 1887 au 6 mai 1889 ; un calque
 
 Une cinquième page, **Paris 1900**, reprend le moteur de Paris 1889 sur la ville recomposée à la date de l'été 1900 :
 près de quatre-vingt-dix mille bâtiments, la tour repeinte en jaune, le Champ-de-Mars de l'Exposition universelle, la
-Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la nouvelle gare de Lyon et sa tour de l'horloge.
+Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la nouvelle gare de Lyon et sa tour de l'horloge. Un
+curseur montre le montage de l'Exposition, du 1er janvier 1897 — le palais de l'Industrie et les palais de 1889 encore
+debout — à l'ouverture de la ligne 1 du métro, le 19 juillet 1900.
 
 Les quatre dernières ont chacune leur visite guidée (quinze étapes en 1789, douze pour Lutèce, quatorze en 1889,
 seize en 1900).
@@ -37,7 +39,7 @@ autre lance le passage. Le nom du site, en tête de chaque maquette, ramène à 
 **Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur l'écran d'accueil ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` (les six fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
-**Prochaines maquettes :** Paris 1900 est en ligne, l'Exposition entière et les entrées du métro ; viendra un curseur du montage de l'Exposition, puis 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
+**Prochaines maquettes :** Paris 1900 est en ligne, l'Exposition entière, les entrées du métro et le curseur du montage ; viendront 1937 et 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md).
 **Projet de jeu :** le cadrage d'un « mode classe » (séance animée par un enseignant, sans compte) est dans [`CADRAGE-JEU.md`](CADRAGE-JEU.md) ; rien n'en est encore construit.
 
 ## Ce que montre la maquette
@@ -275,8 +277,20 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   au Trocadéro ; au pied de la tour, le palais de l'Optique (coupole à 42 m, galerie de la Grande Lunette) et, de
   l'autre côté de l'avenue de Suffren, le Globe céleste (45 m) et sa passerelle ; le trottoir roulant sur son viaduc
   (une boucle de 3,2 km à sept mètres). Cotes : rapport général de Picard (1902), guide Hachette de 1900 et *Revue
-  technique de l'Exposition* ; les élévations et les silhouettes sont une évocation. Reste à faire : un curseur du
-  montage de l'Exposition.
+  technique de l'Exposition* ; les élévations et les silhouettes sont une évocation.
+- **Le montage, de 1897 à l'été 1900** : un curseur, en bas de l'écran, montre la ville du 1er janvier 1897 au
+  19 juillet 1900 ; le bouton de lecture déroule le tout en quarante-cinq secondes. Le palais de l'Industrie (corps
+  principal démoli du 5 février au 15 octobre 1897, porche et pavillon nord-ouest gardés jusqu'à la fin de 1899), les
+  palais de 1889 du Champ-de-Mars (Dôme central, Arts libéraux, Beaux-Arts, galerie de trente mètres, de mai 1897 à
+  mai 1898), la gare du Champ-de-Mars et l'embarcadère de Lyon s'abaissent ; le Grand Palais (avril 1897 - mars 1900),
+  le Petit Palais (15 octobre 1897 - 1898), le pont Alexandre-III (13 avril 1897 - décembre 1899, puis ses pylônes), les
+  gares neuves, les palais du Champ-de-Mars et de l'Esplanade (à partir de juin 1898), la porte de Binet (15 juin -
+  1er décembre 1899), la rue des Nations et le reste de l'Exposition s'élèvent ; la tour garde jusqu'au printemps 1899
+  une teinte brun-rouge ; les entrées du métro viennent en dernier. Chaque ouvrage est coupé par une cote de montage qui
+  monte ou descend en ligne droite entre ses deux dates ; ses emprises (on n'y marche pas à travers), le tablier des
+  ponts et les étiquettes suivent la date. Dates : rapport de Picard (t. I, II, III et VI) ; gares neuves et Grande
+  Roue, sources secondaires ; rue des Nations, colonies, Globe, Optique, Vieux Paris, embarcadère de Lyon : dates de
+  convention. Le reste de la ville est celui de l'été 1900.
 - **Gares et voies** : la gare de Lyon de Toudoire (bâtiments tirés des données, tour de l'horloge de 67 m, nefs
   vitrées), les gares d'Orsay et des Invalides ; le raccordement de Boulainvilliers au Champ-de-Mars franchit la Seine
   sur le pont Rouelle ; la gare du Champ-de-Mars de 1878, démontée en 1897, a disparu. Les lignes souterraines (Orsay,
@@ -290,7 +304,9 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   période 1851-1914 sans année, reçoivent l'année de leur histoire. Îlots et rues sont ceux de la base « Paris 1900 »,
   l'année même.
 - **Comment elle est faite** : la page reprend tout `src/p1889/` ; `src/p1900/` ne contient que ce qui change —
-  l'Exposition (`expo.js`), les lieux, la visite, la page. À l'assemblage, `tools/build.mjs` substitue aux modules de
+  l'Exposition (`expo.js`), son montage (`montage.js` : dates, ouvrages datés), les lieux, la visite, la page. Les
+  bâtiments des données datés d'après leur histoire (Grand et Petit Palais, gares neuves) sont marqués par
+  l'extraction (`data.bati.hist`) : la ville les écarte, le montage les bâtit à part. À l'assemblage, `tools/build.mjs` substitue aux modules de
   `src/p1889/` leurs homonymes de `src/p1900/`, et `data/paris1900.json` à `data/paris1889.json` ; les petits écarts
   (tour repeinte, Sacré-Cœur, gares, ponts) sont réglés dans les modules communs par l'année des données.
 
@@ -369,10 +385,10 @@ tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, g
 data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, disparu, évoqué), îlots et rues de 1900, eau, jardins, relief, voies ferrées (actuelles, restituées, évoquées) (ODbL 1.0)
 tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
 tools/extract_1889.py        recompose la ville de 1889 (ou de 1900 : python3 tools/extract_1889.py 1900) à partir de ces sources et de l'atlas de Vasserot
-data/paris1900.json          Paris 1900 recomposé, même méthode et même format que Paris 1889 (ODbL 1.0)
+data/paris1900.json          Paris 1900 recomposé, même méthode et même format que Paris 1889, avec la liste des bâtiments datés d'après leur histoire (bati.hist) (ODbL 1.0)
 tools/fer_1889.py            voies ferrées de 1889 et de 1900 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
 tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
-tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), entrées du métro, monuments, calque, visite, frise, téléphone
+tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), entrées du métro, montage de 1897 à 1900 et son curseur, monuments, calque, visite, frise, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html, 1900.html) ; la page de 1900 reprend src/p1889/ par surcouche
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
@@ -464,13 +480,14 @@ src/p1889/tour.js            la tour de 300 mètres et son chantier : treillis, 
 src/p1889/expo.js            palais de l'Exposition et du Trocadéro, sol du Champ-de-Mars
 src/p1889/monuments.js       silhouettes des monuments : dômes, tours, flèches, colonnes, Arc de triomphe, Sacré-Cœur en chantier, Halles, palais de l'Industrie
 src/p1889/figures.js         visages et costumes de 1889
-src/body1900.html            page Paris 1900 (mêmes styles, sans curseur)
+src/body1900.html            page Paris 1900 (mêmes styles ; curseur du montage de l'Exposition)
 src/p1900/main.js            page Paris 1900 : le moteur de Paris 1889 sur data/paris1900.json
 src/p1900/expo.js            Exposition de 1900 (remplace src/p1889/expo.js à l'assemblage) : Champ-de-Mars, palais de l'Électricité, Grande Roue, Grand et Petit Palais, pylônes du pont Alexandre-III
 src/p1900/pavillons.js       le reste de l'Exposition : rue des Nations et passerelles, rive droite et rue de Paris, Vieux Paris, palais des Armées et passerelle Debilly, Esplanade des Invalides, colonies du Trocadéro, trottoir roulant
 src/p1900/porte.js           porte monumentale de Binet, place de la Concorde ; jardins et serres du Cours-la-Reine
 src/p1900/attractions.js     Globe céleste et palais de l'Optique, au pied de la tour
 src/p1900/metro.js           entrées de Guimard de la ligne 1 du métro, posées d'après les rues de la base « Paris 1900 »
+src/p1900/montage.js         montage de l'Exposition, de 1897 à l'été 1900 : dates, ouvrages bâtis à part et coupés à la cote de montage, curseur
 src/p1900/outils.js          poutres d'acier, verrières en berceau, calottes vitrées
 src/p1900/places.js          repères de Paris 1900 et leurs notices
 src/p1900/parcours.js        visite guidée de Paris 1900

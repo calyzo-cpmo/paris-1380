@@ -152,7 +152,7 @@ export function batirTour(app) {
 
   // ---- la date du chantier
   const J_FOND = JOUR(1887, 1, 28), J_FER = JOUR(1887, 7, 1), J_JONCTION = JOUR(1887, 12, 7), J_E2 = JOUR(1888, 8, 14), J_SOMMET = JOUR(1889, 3, 31);
-  V.chantier = { jour: FIN, hauteur: 300, suivre: [] };
+  V.chantier = { jour: FIN, hauteur: 300, suivre: [], tour };          // tour : ses maillages (la page « Paris 1900 » la repeint avec la date)
   app.setChantier = (j) => {
     j = Math.max(0, Math.min(FIN, j)); const H = hauteur(j); V.chantier.jour = j; V.chantier.hauteur = Math.max(0, Math.min(300, H));
     uH.value = H < 0 ? -1e4 : y0 + H;

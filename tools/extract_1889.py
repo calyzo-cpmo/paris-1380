@@ -517,6 +517,12 @@ def main():
     data['bati'] = {'q': 2, 'g': X.enc_polys([b['rings'] for b in tout], 2), 'n': len(tout), 's': ''.join(b['st'] for b in tout),
                     'h': X.vlq([round(b['h'] * 2) for b in tout]), 't': ''.join(str(b['toit'] if b['toit'] in (1, 2, 3, 4) else 4) for b in tout), 'k': ''.join(b['k'] for b in tout),
                     'credit': 'Emprise, datation et hauteur des bâtiments : Atelier parisien d’urbanisme (APUR), données ouvertes ; bâtiments disparus : Atlas par îlots de Vasserot (1810-1836) — Arch. nat. F31 73-96 – Arch. Paris © ALPAGE : A.-L. Bethe'}
+    # les grands édifices datés d'après leur histoire : leurs bâtiments, par nom (rang dans la liste du bâti). La page
+    # « Paris 1900 » les bâtit à part, pour qu'ils s'élèvent avec la date du montage de l'Exposition. Rien en 1889.
+    hist = {}
+    for i, b in enumerate(tout):
+        if b.get('histoire'): hist.setdefault(b['histoire'], []).append(i)
+    if hist: data['bati']['hist'] = hist
     cpt = {k: sum(1 for b in tout if b['st'] == k) for k in 'RPVEG'}
     data['meta']['bati'] = cpt
     print('bâti de', AN, ':', len(tout), cpt, ';', sum(len(r) for b in tout for r in b['rings']), 'sommets ;', len(data['bati']['g']) // 1024, 'Ko ; emprise', round(sum(b['aire'] for b in tout) / 1e4), 'ha')

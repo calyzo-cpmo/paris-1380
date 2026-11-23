@@ -24,7 +24,7 @@ export const PARCOURS = [
       ['Tour de l’horloge de la gare de Lyon', 0, 0, 560, 0.4, 0.32, 17, 'La nouvelle gare de Lyon et sa tour de l’horloge, haute de 67 mètres, bâties pour l’Exposition à la place de l’embarcadère de 1855 ; la gare sera inaugurée en avril 1901.'],
       ['Notre-Dame', 0, 0, 640, -1.3, 0.36, 18, 'La cathédrale restaurée par Viollet-le-Duc et sa flèche. Au nord du parvis, l’Hôtel-Dieu rebâti ; en amont, la Seine et ses ports bas.'],
       ['Sacré-Cœur', 0, 0, 900, 0.1, 0.32, 19, 'Sur la butte Montmartre, la basilique et son grand dôme, achevé en 1899 ; le campanile reste à bâtir.'],
-      [null, -2600, -1000, 3600, -2.4, 0.34, 20.5, 'Le soir tombe sur l’Exposition. Vous pouvez maintenant survoler librement la ville ou descendre dans ses rues.'],
+      [null, -2600, -1000, 3600, -2.4, 0.34, 20.5, 'Le soir tombe sur l’Exposition. Vous pouvez maintenant survoler librement la ville, descendre dans ses rues ou remonter le temps avec le curseur du montage, jusqu’aux démolitions de 1897.'],
     ],
   },
 ];
