@@ -121,21 +121,112 @@ function passerelle(app, B, a, b, o = {}) {
   return { x: c[0], z: c[1], top: Math.max(ya, yb) + (o.arc || 0) + 8 };
 }
 
-// ---- rive droite, du pont des Invalides au pont de l'Alma, entre le quai de la Conférence (v = 0) et le Cours-la-Reine
-// (v ≈ 45) ; v vers le nord, u vers l'aval
+// ---- rive droite, du pont des Invalides au pont de l'Alma (Picard, t. I, p. 274-275, et t. II, ch. VII et VIII) :
+// repère le long du quai de la Conférence (v = 0, le quai haut ; v vers le nord, u vers l'aval depuis le pont des
+// Invalides). Au premier rang, d'amont en aval : le palais de la Ville de Paris, un restaurant, les deux serres de
+// l'Horticulture (83 m sur 33, 21 m de haut, un jardin de 70 m entre elles, sur une plate-forme qui s'avance au-dessus
+// de la berge basse), le palais de la Danse, un phare, le palais de l'Économie sociale et des Congrès (100 m sur 33,
+// immédiatement en amont du pont de l'Alma). Au second rang, le long d'une allée dite « rue de Paris » et de la
+// palissade du Cours-la-Reine, seize établissements d'attractions, dans l'ordre du rapport. Les surfaces viennent du
+// rapport (t. VII) ; les hauteurs et les silhouettes sont une évocation à partir des styles qu'il décrit.
+const RD = () => repere([-2890, -1262], [-0.9995, 0.03]);
+const RUE_DE_PARIS = [
+  // [nom, u0, largeur, style] ; la façade donne sur l'allée (v = 18), le fond sur le Cours-la-Reine (v = 30)
+  ['Restaurant', 24, 20, { h: 8, col: C(232, 222, 200), comble: 4, toit: TUILE }],
+  ['Maison du rire', 50, 28, { h: 11, col: C(232, 204, 172), comble: 0, pignon: 4, dome: [4, 4, C(196, 120, 84)] }],
+  ['Phono-cinéma-théâtre', 88, 16, { h: 9, col: C(242, 238, 228), comble: 0 }],
+  ['Théâtroscope', 116, 15, { h: 10, col: C(236, 226, 206), comble: 0, dome: [5, 5, OR] }],
+  ['Tableaux vivants', 146, 24, { h: 9, col: C(204, 124, 92), comble: 0, pignon: 3 }],
+  ['Jardin de la chanson', 186, 22, { kiosque: true }],
+  ['La Roulotte', 224, 28, { h: 7, col: BOIS, comble: 4, toit: C(150, 62, 52) }],
+  ['Kiosque à musique', 274, 24, { kiosque: true }],
+  ['Grand Guignol', 330, 24, { h: 9, col: C(200, 96, 64), comble: 0, dome: [5, 6, C(96, 136, 96)] }],
+  ['Bonshommes Guillaume', 364, 30, { h: 10, col: C(242, 224, 204), comble: 3, pignon: 3 }],
+  ['Théâtre des Auteurs gais', 402, 26, { h: 6, col: C(226, 212, 186), comble: 3, toit: C(214, 196, 150) }],
+  ['Théâtre de Loïe Fuller', 484, 20, { fuller: true }],
+  ['Manoir à l’envers', 512, 14, { envers: true }],
+  ['Postes et télégraphes', 536, 10, { h: 7, col: C(226, 216, 196), comble: 3 }],
+  ['Restaurant de l’Alma', 556, 22, { h: 8, col: C(232, 222, 200), comble: 4, toit: TUILE }],
+];
 function riveDroite(app, B) {
-  const T = app.terrain, V = app.v89, M = app.monuments, F = repere([-2890, -1262], [-0.9995, 0.03]), yq = (u) => T.height(...F.P(u, 18));
+  const T = app.terrain, V = app.v89, M = app.monuments, F = RD(), yq = (u) => T.height(...F.P(u, 4));
   const poser = (u0, u1, v0, v1) => V.reserves.push(boite(F.rect(u0 - 1, u1 + 1, v0 - 1, v1 + 1)));
-  // palais de la Ville de Paris : « réminiscence un peu fantaisiste de l'Hôtel de Ville », toit d'ardoise et campaniles
-  { const u0 = 34, u1 = 150, y = yq(92), top = pavillonStyle(app, B, F, u0, u1, 6, 36, y - 1, y + 17, { col: C(232, 222, 200), comble: 6, mat: 'facade', angles: 5, fleche: 40, vf: 6 });
-    poser(u0, u1, 6, 36); const c = F.P(92, 21); M.VilleDeParis = { x: c[0], z: c[1], top: top + 6 }; }
-  // serres de l'Horticulture : deux halles de fer et de verre
-  ensemble(app, yq(260), -2, -1, 24, (bm, bv) => { for (const [u0, u1] of [[176, 250], [270, 344]]) { const y = yq((u0 + u1) / 2); berceau(bv, F.P, y, u0, u1, 8, 34, 6, 18, VERRE_CLAIR); for (const v of [8, 34]) { const a = F.P(u0, v), b = F.P(u1, v); box(bm, { cx: (a[0] + b[0]) / 2, cz: (a[1] + b[1]) / 2, ux: F.d[0], uz: F.d[1], hl: (u1 - u0) / 2, hw: 0.4 }, y - 1, y + 6, { col: STAFF }); } } });
-  for (const [u0, u1] of [[176, 250], [270, 344]]) { poser(u0, u1, 8, 34); app.foot.push({ ring: F.rect(u0, u1, 8, 34), top: yq(u0) + 18 }); }
-  { const c = F.P(260, 21); M.Serres = { x: c[0], z: c[1], top: yq(260) + 26 }; }
-  // palais des Congrès et de l'Économie sociale (Mewès), de style Louis XVI ; son soubassement repose sur la berge
-  { const u0 = 470, u1 = 592, y = yq(530), yb = Math.min(y, T.height(...F.P(530, -16))) - 1, top = pavillonStyle(app, B, F, u0, u1, -16, 34, yb, y + 18, { col: C(234, 226, 208), comble: 0, mat: 'facade', pignon: 5, vf: -16, angles: 3 });
-    poser(u0, u1, -16, 34); const c = F.P(531, 9); M.Congres = { x: c[0], z: c[1], top: top + 6 }; }
+  // le bord de l'eau : le premier point mouillé sous le quai, moins deux mètres ; la berge basse est à BAS
+  const bord = (u) => { for (let v = 0; v > -40; v -= 1) if (T.wetAt(...F.P(u, v)) > 0.5) return v + 2; return -24; };
+  const avant = (u0, u1, max) => Math.max(max, bord(u0 + 1), bord((u0 + u1) / 2), bord(u1 - 1));
+  const BAS = (T.niveauBas ?? 2.1) - 0.5;
+  // palais de la Ville de Paris : « réminiscence un peu fantaisiste de l'Hôtel de Ville », toiture à girouettes et
+  // pignons élancés ; bâti en partie sur une estacade appuyée sur le bas-port, sa façade principale sur la Seine
+  { const u0 = 34, u1 = 110, v0 = avant(u0, u1, -14), y = yq(72), top = pavillonStyle(app, B, F, u0, u1, v0, 12, BAS, y + 16, { col: C(232, 222, 200), comble: 6, mat: 'facade', angles: 5, fleche: 40, pignon: 5, vf: v0 });
+    poser(u0, u1, v0, 12); const c = F.P(72, (v0 + 12) / 2); M.VilleDeParis = { x: c[0], z: c[1], top: top + 6 }; }
+  { const y = yq(165); pavillonStyle(app, B, F, 150, 180, -6, 10, y - 1, y + 8, { col: C(236, 228, 210), comble: 4, toit: TUILE, vf: -6 }); poser(150, 180, -6, 10); }
+  // les deux serres de l'Horticulture : un corps de 60,6 m, une galerie de 5,45 m, un pavillon d'extrémité sous un dôme
+  // (17,3 m sur 24) ; une nef centrale de 17,5 m en travers ; 21 m au sommet. La plate-forme qui les porte s'avance
+  // au-dessus de la berge, sur des piliers.
+  const SERRES = [[204, 1], [357, -1]];                                         // [début, côté du dôme : 1 en amont, −1 en aval]
+  ensemble(app, yq(320), -2, -1, 24, (bm, bv) => {
+    for (const [u0, sd] of SERRES) {
+      const y = yq(u0 + 40), v0 = -21, v1 = 12, vm = (v0 + v1) / 2, dome = sd > 0 ? [u0, u0 + 17.3] : [u0 + 66, u0 + 83.3], gal = sd > 0 ? [u0 + 17.3, u0 + 22.75] : [u0 + 60.57, u0 + 66], corps = sd > 0 ? [u0 + 22.75, u0 + 83.3] : [u0, u0 + 60.57], cm = (corps[0] + corps[1]) / 2;
+      berceau(bv, F.P, y, corps[0], cm - 8.75, v0, v1, 7, 15, VERRE_CLAIR); berceau(bv, F.P, y, cm + 8.75, corps[1], v0, v1, 7, 15, VERRE_CLAIR);
+      berceau(bv, (u, v) => F.P(v, u), y, v0, v1, cm - 8.75, cm + 8.75, 9, 21, VERRE_CLAIR);                                                      // la nef centrale, en travers
+      berceau(bv, F.P, y, gal[0], gal[1], vm - 5, vm + 5, 4, 8, VERRE_CLAIR);
+      const c = F.P((dome[0] + dome[1]) / 2, vm); cyl(bv, c[0], c[1], 10, y - 0.5, y + 10, { col: VERRE_CLAIR, seg: 20 }); calotte(bv, c[0], c[1], 10, y + 10, y + 21, VERRE_CLAIR);
+      for (const v of [v0, v1]) { const a = F.P(corps[0], v), b = F.P(corps[1], v); box(bm, { cx: (a[0] + b[0]) / 2, cz: (a[1] + b[1]) / 2, ux: F.d[0], uz: F.d[1], hl: (corps[1] - corps[0]) / 2, hw: 0.4 }, y - 1, y + 3, { col: STAFF }); }      // soubassement
+    }
+    // la plate-forme sur la berge, de l'amont de la première serre à l'aval de la seconde, et ses piliers
+    for (let u = 196; u < 448; u += 12) { const y = yq(u), a = F.P(u, -22), b = F.P(Math.min(u + 12, 448), -22), c = F.P(u, -1), d = F.P(Math.min(u + 12, 448), -1);
+      bm.quad(a[0], y - 0.2, a[1], b[0], y - 0.2, b[1], d[0], y - 0.2, d[1], c[0], y - 0.2, c[1], 0, 0, 1, 1, STAFF, 0.9, 0.9);
+      const p = F.P(u, -20); box(bm, { cx: p[0], cz: p[1], ux: F.d[0], uz: F.d[1], hl: 0.5, hw: 0.5 }, BAS, y - 0.2, { col: STAFF }); }
+  });
+  for (const [u0] of SERRES) { poser(u0, u0 + 83.3, -22, 12); app.foot.push({ ring: F.rect(u0, u0 + 83.3, -21, 12), top: yq(u0) + 21 }); }
+  { const c = F.P(320, -4); M.Serres = { x: c[0], z: c[1], top: yq(320) + 30 }; }
+  // palais de la Danse : façade vers la Seine, soubassement à bossages, trois arcatures, un pavillon d'angle ; il donne
+  // aussi sur la rue de Paris
+  { const u0 = 446, u1 = 476, v0 = avant(u0, u1, -12), y = yq(461), top = pavillonStyle(app, B, F, u0, u1, v0, 30, Math.min(y, BAS + 0.5) - 1, y + 14, { col: C(238, 226, 206), comble: 0, tours: [[0.85, 3.5, 22, 5]], vf: v0 });
+    poser(u0, u1, v0, 30); const c = F.P(461, 10); M.PalaisDanse = { x: c[0], z: c[1], top: top + 6 }; }
+  // le phare
+  { const p = F.P(492, -6), y = yq(492), bs = B.at('stone', p[0], p[1]), bp = B.at('plain', p[0], p[1]);
+    cyl(bs, p[0], p[1], 3.2, y - 1, y + 24, { col: C(240, 236, 226), seg: 12, r1: 2.2 }); cyl(bp, p[0], p[1], 2.6, y + 24, y + 25, { col: C(60, 70, 66), seg: 12 });
+    cyl(bp, p[0], p[1], 1.8, y + 25, y + 28, { col: C(236, 214, 140), seg: 12 }); cone(bp, p[0], p[1], 2.2, y + 28, y + 30.5, { col: C(60, 70, 66), seg: 12 });
+    app.foot.push({ ring: F.rect(488.8, 495.2, -9.2, -2.8), top: y + 30.5 }); app.landmarks.push({ x: p[0], z: p[1], top: y + 30.5 }); poser(488, 496, -10, -2); M.Phare = { x: p[0], z: p[1], top: y + 36 }; }
+  // palais des Congrès et de l'Économie sociale (Mewès), de style Louis XVI, deux niveaux ; 100 m sur 33, le
+  // soubassement sur la berge
+  { const u0 = 510, u1 = 610, v1 = 12, v0 = Math.max(v1 - 33, avant(u0, u1, -21)), y = yq(560), yb = Math.min(y, T.height(...F.P(560, v0 + 1))) - 1, top = pavillonStyle(app, B, F, u0, u1, v0, v1, yb, y + 18, { col: C(234, 226, 208), comble: 0, mat: 'facade', pignon: 5, vf: v0, angles: 3 });
+    poser(u0, u1, v0, v1); const c = F.P(560, (v0 + v1) / 2); M.Congres = { x: c[0], z: c[1], top: top + 6 }; }
+  rueDeParis(app, B, F);
+}
+
+// ---- la rue de Paris : seize établissements d'attractions au second rang, chacun dans son style ; un mur bas et la
+// palissade du Cours-la-Reine derrière eux.
+function rueDeParis(app, B, F) {
+  const T = app.terrain, V = app.v89, M = app.monuments, v0 = 18, v1 = 30, yq = (u) => T.height(...F.P(u, 24));
+  for (const [nom, u0, L, s] of RUE_DE_PARIS) {
+    const u1 = u0 + L, um = (u0 + u1) / 2, y = yq(um), c = F.P(um, 24), bp = B.at('plain', c[0], c[1]);
+    let top = y;
+    if (s.kiosque) {                                                    // un jardin clos, un kiosque au milieu
+      for (const v of [v0 + 0.5, v1 - 0.5]) { const a = F.P(u0, v), b = F.P(u1, v); box(bp, { cx: (a[0] + b[0]) / 2, cz: (a[1] + b[1]) / 2, ux: F.d[0], uz: F.d[1], hl: L / 2, hw: 0.3 }, y - 0.5, y + 1.6, { col: STAFF }); }
+      cyl(bp, c[0], c[1], 4.5, y - 0.5, y + 1, { col: STAFF, seg: 12 }); for (let k = 0; k < 8; k++) { const a = (k / 8) * 2 * Math.PI; cyl(bp, c[0] + Math.cos(a) * 4, c[1] + Math.sin(a) * 4, 0.12, y + 1, y + 4.5, { col: C(70, 96, 80), seg: 4 }); }
+      cone(bp, c[0], c[1], 5.2, y + 4.5, y + 7.5, { col: C(70, 96, 80), seg: 12 }); top = y + 7.5;
+      app.foot.push({ ring: F.rect(um - 4.6, um + 4.6, 24 - 4.6, 24 + 4.6), top });
+    } else if (s.fuller) {                                              // « une vaste ondulation se soulevant dans l'axe » : la façade de Sauvage
+      top = corps(app, B, F, u0, u1, v0 + 2, v1, y - 1, y + 8, { col: C(240, 238, 232), comble: 0 });
+      const N = 12, H = (t) => 8 + 8 * Math.pow(Math.sin(Math.PI * t), 2);
+      for (let k = 0; k < N; k++) { const ta = k / N, tb = (k + 1) / N, a = F.P(u0 + L * ta, v0 + 1.6), b = F.P(u0 + L * tb, v0 + 1.6);
+        pan(bp, [[a[0], y - 0.5, a[1]], [b[0], y - 0.5, b[1]], [b[0], y + H(tb), b[1]], [a[0], y + H(ta), a[1]]], C(246, 244, 238), 0.95, true); }
+      top = y + 16;
+    } else if (s.envers) {                                              // le Manoir à l'envers, « posé sur sa toiture »
+      const Q = (u, v, h) => { const p = F.P(u, v); return [p[0], y + h, p[1]]; }, K = [[u0, v0 + 1], [u1, v0 + 1], [u1, v1 - 1], [u0, v1 - 1]], pt = Q(um, 24, 0);
+      for (let i = 0; i < 4; i++) { const p = K[i], q = K[(i + 1) % 4]; pan(bp, [pt, Q(p[0], p[1], 5), Q(q[0], q[1], 5)], ARDOISE, 0.9, true); }
+      top = corps(app, B, F, u0, u1, v0 + 1, v1 - 1, y + 5, y + 12, { col: C(214, 196, 166), comble: 0, pied: false });
+      for (const u of [u0 + 1.5, u1 - 1.5]) { const p = F.P(u, v0 + 2.5); cyl(B.at('stone', p[0], p[1]), p[0], p[1], 1.6, y + 9, y + 15, { col: C(206, 188, 158), seg: 10 }); }
+      app.foot.push({ ring: F.rect(u0, u1, v0 + 1, v1 - 1), top: y + 15 }); top = y + 15;
+    } else top = pavillonStyle(app, B, F, u0, u1, v0, v1, y - 1, y + s.h, { ...s, vf: v0 });
+    V.reserves.push(boite(F.rect(u0 - 1, u1 + 1, v0 - 1, v1 + 1)));
+    M['Rue de Paris ' + nom] = { x: c[0], z: c[1], top: top + 4 };
+  }
+  // la palissade du Cours-la-Reine, au fond
+  for (let u = 20; u < 590; u += 20) { const a = F.P(u, v1 + 1.5), b = F.P(Math.min(u + 20, 590), v1 + 1.5), y = yq(u + 10); box(B.at('plain', a[0], a[1]), { cx: (a[0] + b[0]) / 2, cz: (a[1] + b[1]) / 2, ux: F.d[0], uz: F.d[1], hl: Math.hypot(b[0] - a[0], b[1] - a[1]) / 2, hw: 0.15 }, y - 0.5, y + 2.6, { col: C(126, 140, 112) }); }
+  { const c = F.P(300, 15); M.RueDeParis = { x: c[0], z: c[1], top: yq(300) + 26 }; }
 }
 
 // ---- le Vieux Paris d'Albert Robida, sur la berge au pied du quai Debilly : rempart sur l'eau, maisons à pans de bois,
@@ -166,7 +257,7 @@ function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = 
 
 // ---- palais des Armées de terre et de mer, sur le quai d'Orsay en aval de l'Alma : un long corps crénelé, des tours ;
 // u vers l'aval depuis le quai au droit de l'Alma, v vers la Seine. La passerelle Debilly le relie à la rive droite.
-function palaisArmees(app, B) {
+function palaisArmees(app, B, dater = (cle, f) => f(B)) {
   const T = app.terrain, V = app.v89, M = app.monuments, F = repere([-3596, -1024], [-0.933, 0.359]), u0 = 12, u1 = 320, v0 = 8, v1 = 42;
   const yq = (u) => T.height(...F.P(u, 4)), y = yq(160);
   for (let a = u0; a < u1; a += 44) { const b = Math.min(a + 44, u1), yy = yq((a + b) / 2); corps(app, B, F, a, b, v0, v1, yy - 1, yy + 15, { col: C(206, 190, 160), comble: 0, travee: 6 }); }
@@ -178,7 +269,7 @@ function palaisArmees(app, B) {
   { const a = F.P(232, v1 + 2), dir = F.n; let t = 2, eau = false;
     for (; t < 360; t += 2) { const p = [a[0] + dir[0] * t, a[1] + dir[1] * t], w = T.wetAt(p[0], p[1]) > 0.5; if (w) eau = true; else if (eau) break; }
     const b = [a[0] + dir[0] * (t + 10), a[1] + dir[1] * (t + 10)];
-    M.Debilly = passerelle(app, B, a, b, { large: 3.6, arc: 15, col: C(64, 88, 78) }); }
+    dater('Debilly', (C2) => { M.Debilly = passerelle(app, C2, a, b, { large: 3.6, arc: 15, col: C(64, 88, 78) }); }); }      // montée après le palais (src/p1900/montage.js)
 }
 
 // ---- Esplanade des Invalides : deux rangées de palais de part et d'autre de l'allée centrale, coupées par les rues de
@@ -268,15 +359,16 @@ function trottoirRoulant(app, B) {
   const c = BOUCLE[12]; app.monuments.TrottoirRoulant = { x: c[0], z: c[1], top: T.height(c[0], c[1]) + 16, longueur: Math.round(L) };
 }
 
-export function batirPavillons(app, B) {
-  rueDesNations(app, B);
-  passerellesNations(app, B);
-  riveDroite(app, B);
-  vieuxParis(app, B);
-  palaisArmees(app, B);
-  esplanade(app, B);
-  colonies(app, B);
-  trottoirRoulant(app, B);
+// dater(cle, f) : bâtit f dans l'ouvrage daté `cle` du montage de l'Exposition (src/p1900/montage.js) ; sans lui, dans B.
+export function batirPavillons(app, B, dater = (cle, f) => f(B)) {
+  dater('RueDesNations', (C) => rueDesNations(app, C));
+  dater('PasserellesNations', (C) => passerellesNations(app, C));
+  dater('RiveDroite', (C) => riveDroite(app, C));
+  dater('VieuxParis', (C) => vieuxParis(app, C));
+  dater('Armees', (C) => palaisArmees(app, C, dater));
+  dater('Esplanade', (C) => esplanade(app, C));
+  dater('Colonies', (C) => colonies(app, C));
+  dater('TrottoirRoulant', (C) => trottoirRoulant(app, C));
 }
 // les deux passerelles de la rue des Nations : après le pont des Invalides, et près du pont de l'Alma (« en pont de
 // bateaux », sur des piles habillées de rochers)

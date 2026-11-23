@@ -22,6 +22,8 @@ export const rues = memo('ru', () => { const P = new Set(D.rues.ponts); return d
 // 'i' industrie, 'r' équipement.
 export const bati = memo('ba', () => { const h = decodeInts(D.bati.h); return decodePolys(D.bati.g, D.bati.q).map((rings, i) => ({ rings, s: D.bati.s[i], h: h[i] / 2, t: +D.bati.t[i], k: D.bati.k[i] })); });
 export const COMPTE = D.meta.bati;
+// Grands édifices datés d'après leur histoire (Grand et Petit Palais, gares neuves de 1900) : { nom: [rangs dans bati()] }.
+export const HIST = D.bati.hist || {};
 // Eau : t = 'S' Seine, 'c' canal ou bassin, 'l' lac.
 export const eau = memo('eau', () => decodePolys(D.eau.g, D.eau.q).map((rings, i) => ({ rings, t: D.eau.t[i] })));
 export const parcs = memo('pa', () => decodePolys(D.parcs.g, D.parcs.q).map((rings, i) => ({ rings, nom: D.parcs.noms[i] })));

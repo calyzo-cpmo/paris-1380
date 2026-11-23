@@ -40,9 +40,11 @@ function dome(bm, bv, y0, u, v, r, yt, hd, col = BLEU) {
   cyl(bm, c[0], c[1], r * 0.14, y0 + yt + hd - 0.5, y0 + yt + hd + r * 0.3, { col: OR, seg: 8 }); cone(bm, c[0], c[1], r * 0.17, y0 + yt + hd + r * 0.3, y0 + yt + hd + r * 0.62, { col: OR, seg: 8 });
 }
 
-// Un ensemble de palais qui s'élève entre deux dates (jours comptés depuis le 1er janvier 1887).
+// Un ensemble de palais qui s'élève entre deux dates (jours comptés depuis le 1er janvier 1887). Dans un ouvrage de la
+// page « Paris 1900 » (src/p1900/montage.js), il est bâti avec lui et suit ses dates.
 function ensemble(app, y0, d0, d1, hmax, dessiner) {
   const V = app.v89, uH = { value: 1e4 }, B = new Builder(1e7);
+  if (V.ouvrage) { dessiner(V.ouvrage.at('mur', 0, 0), V.ouvrage.at('verre', 0, 0)); return; }
   const mats = { mur: couper(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }), uH), verre: couper(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: 0.3, side: THREE.DoubleSide }), uH) };
   const ombre = couper(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uH);
   dessiner(B.at('mur', 0, 0), B.at('verre', 0, 0));
@@ -75,6 +77,35 @@ function trocadero(app, B) {
   app.monuments.Trocadero = { x: c[0], z: c[1], top: y0 + 92 };
 }
 
+// Palais des Beaux-Arts (côté La Bourdonnais, s = -1) et des Arts libéraux (côté Suffren, s = 1) : chacun son dôme
+// d'émail bleu. Ils s'élèvent du jour d0 au jour d1. La page « Paris 1900 » les reprend un à un (cotes) pour les
+// démolir : leur emprise ne réserve alors rien (reserve = false), la ville de 1900 garde sa place.
+function palaisJumeaux(app, y0, d0, d1, reserve = true, cotes = [-1, 1]) {
+  const V = app.v89, M = app.monuments;
+  ensemble(app, y0, d0, d1, 58, (bm, bv) => {
+    for (const s of cotes) { const va = s * 102, vb = s * 186; halle(bm, bv, y0, 118, 348, Math.min(va, vb), Math.max(va, vb), 17, 27, 'u'); dome(bm, bv, y0, 233, s * 144, 17, 36, 19); }
+  });
+  for (const s of cotes) { emprise(app, V, 118, 348, s > 0 ? 102 : -186, s > 0 ? 186 : -102, y0 + 27, reserve); const c = Q(233, s * 144); M[s < 0 ? 'BeauxArts' : 'ArtsLiberaux'] = { x: c[0], z: c[1], top: y0 + 74 }; }
+}
+// Palais des Industries diverses : deux ailes et un fond (galeries), la galerie de trente mètres (galerie30) et le Dôme
+// central dans l'axe (dome). La page « Paris 1900 » ne reprend que le Dôme et la galerie de trente mètres, démolis à
+// des dates différentes en 1897-1898 ; les galeries ne sont pas sur la liste des démolitions de 1897 (Picard, t. I).
+function industriesDiverses(app, y0, d0, d1, reserve = true, parties = ['galeries', 'galerie30', 'dome']) {
+  const V = app.v89, M = app.monuments, a = (k) => parties.includes(k);
+  ensemble(app, y0, d0, d1, 64, (bm, bv) => {
+    if (a('galeries')) { for (const s of [-1, 1]) { const va = s * 88, vb = s * 205; halle(bm, bv, y0, 392, 662, Math.min(va, vb), Math.max(va, vb), 14, 22, 'u', CREME, VERRE_CLAIR); }
+      halle(bm, bv, y0, 580, 662, -88, 88, 14, 22, 'v', CREME, VERRE_CLAIR); }
+    if (a('galerie30')) halle(bm, bv, y0, 545, 700, -15, 15, 16, 24, 'u');
+    if (a('dome')) { dome(bm, bv, y0, 528, 0, 19, 40, 20, rgb(96, 128, 150));
+      for (const s of [-1, 1]) { const p = Q(512, s * 24); box(bm, { cx: p[0], cz: p[1], ux: EXPO.u[0], uz: EXPO.u[1], hl: 6, hw: 6 }, y0 - 1, y0 + 34, { col: CREME, s0: 0.8 }); cone(bm, p[0], p[1], 7.5, y0 + 34, y0 + 44, { col: BLEU, seg: 4, a0: Math.atan2(EXPO.u[1], EXPO.u[0]) + Math.PI / 4 }); } }
+  });
+  if (a('galeries')) { for (const s of [-1, 1]) emprise(app, V, 392, 662, s > 0 ? 88 : -205, s > 0 ? 205 : -88, y0 + 22, reserve); emprise(app, V, 580, 662, -88, 88, y0 + 22, reserve); }
+  if (a('dome') && a('galerie30')) emprise(app, V, 509, 700, -19, 19, y0 + 60, reserve);
+  else if (a('dome')) emprise(app, V, 506, 548, -31, 31, y0 + 60, reserve);
+  else if (a('galerie30')) emprise(app, V, 545, 700, -15, 15, y0 + 24, reserve);
+  if (a('dome')) { const c = Q(528, 0); M.Dome = { x: c[0], z: c[1], top: y0 + 78 }; }
+}
+
 // Sol de l'Exposition : sable des allées, pelouses du jardin central et du pied de la tour, bassins. Peint avec le
 // reste du sol, avant toute construction.
 const rect = (u0, u1, v0, v1) => [[Q(u0, v0), Q(u1, v0), Q(u1, v1), Q(u0, v1)]];
@@ -100,22 +131,8 @@ export async function batirExpo(app, B) {
     halle(bm, bv, y0, 678, 700, -210, 210, 12, 15, 'v', CREME, VERRE_CLAIR); halle(bm, bv, y0, 815, 837, -210, 210, 12, 15, 'v', CREME, VERRE_CLAIR);
   });
   emprise(app, V, 678, 837, -210, 210, y0 + 43.5); { const c = Q(757, 0); M.Machines = { x: c[0], z: c[1], top: y0 + 62 }; }
-  // Palais des Beaux-Arts (côté La Bourdonnais) et des Arts libéraux (côté Suffren) : chacun son dôme d'émail bleu
-  ensemble(app, y0, JOUR(1887, 4, 10), JOUR(1889, 3, 20), 58, (bm, bv) => {
-    for (const s of [-1, 1]) { const va = s * 102, vb = s * 186; halle(bm, bv, y0, 118, 348, Math.min(va, vb), Math.max(va, vb), 17, 27, 'u'); dome(bm, bv, y0, 233, s * 144, 17, 36, 19); }
-  });
-  for (const s of [-1, 1]) { emprise(app, V, 118, 348, s > 0 ? 102 : -186, s > 0 ? 186 : -102, y0 + 27); const c = Q(233, s * 144); M[s < 0 ? 'BeauxArts' : 'ArtsLiberaux'] = { x: c[0], z: c[1], top: y0 + 74 }; }
-  // Palais des Industries diverses : deux ailes, un fond, la galerie de trente mètres et le Dôme central dans l'axe
-  ensemble(app, y0, JOUR(1887, 9, 1), JOUR(1889, 4, 20), 64, (bm, bv) => {
-    for (const s of [-1, 1]) { const va = s * 88, vb = s * 205; halle(bm, bv, y0, 392, 662, Math.min(va, vb), Math.max(va, vb), 14, 22, 'u', CREME, VERRE_CLAIR); }
-    halle(bm, bv, y0, 580, 662, -88, 88, 14, 22, 'v', CREME, VERRE_CLAIR);
-    halle(bm, bv, y0, 545, 700, -15, 15, 16, 24, 'u');
-    dome(bm, bv, y0, 528, 0, 19, 40, 20, rgb(96, 128, 150));
-    for (const s of [-1, 1]) { const p = Q(512, s * 24); box(bm, { cx: p[0], cz: p[1], ux: EXPO.u[0], uz: EXPO.u[1], hl: 6, hw: 6 }, y0 - 1, y0 + 34, { col: CREME, s0: 0.8 }); cone(bm, p[0], p[1], 7.5, y0 + 34, y0 + 44, { col: BLEU, seg: 4, a0: Math.atan2(EXPO.u[1], EXPO.u[0]) + Math.PI / 4 }); }
-  });
-  for (const s of [-1, 1]) emprise(app, V, 392, 662, s > 0 ? 88 : -205, s > 0 ? 205 : -88, y0 + 22);
-  emprise(app, V, 580, 662, -88, 88, y0 + 22); emprise(app, V, 509, 700, -19, 19, y0 + 60);
-  { const c = Q(528, 0); M.Dome = { x: c[0], z: c[1], top: y0 + 78 }; }
+  palaisJumeaux(app, y0, JOUR(1887, 4, 10), JOUR(1889, 3, 20));
+  industriesDiverses(app, y0, JOUR(1887, 9, 1), JOUR(1889, 4, 20));
   app.setChantier(FIN);
 
   // repères de l'Exposition
@@ -128,5 +145,6 @@ export async function batirExpo(app, B) {
   L.push(['Palais du Trocadéro', 'expo', 'Bâti pour l’Exposition de 1878 par Davioud et Bourdais : une rotonde, deux tours de 80 mètres et deux ailes courbes. Il a été remplacé en 1937 par le palais de Chaillot, dont les ailes reprennent le tracé. Sa forme est une évocation.', M.Trocadero, 1]);
 }
 
-// Repris par l'Exposition de 1900 (src/p1900/expo.js) : le Trocadéro, la Galerie des machines et les outils des palais.
-export { halle, dome, ensemble, emprise, trocadero, Q, CREME, OCRE, VERRE, VERRE_CLAIR, BLEU, OR, BRIQUE, PIERRE, ARDOISE };
+// Repris par l'Exposition de 1900 (src/p1900/expo.js) : le Trocadéro, la Galerie des machines, les outils des palais, et
+// les palais de 1889, que le curseur du montage démolit.
+export { halle, dome, ensemble, emprise, trocadero, palaisJumeaux, industriesDiverses, Q, CREME, OCRE, VERRE, VERRE_CLAIR, BLEU, OR, BRIQUE, PIERRE, ARDOISE };

@@ -52,7 +52,7 @@ export function initUI89(app, cfg) {
     for (const p of places) {
       v.set(p.x, p.y + 6, p.z); const dist = v.distanceTo(cam); v.project(app.camera);
       const sx = (v.x * 0.5 + 0.5) * w, sy = (-v.y * 0.5 + 0.5) * h;
-      const vis = v.z < 1 && sx > -40 && sx < w + 40 && sy > 40 && sy < h - 30 && (walking ? dist < 900 : true);
+      const vis = !p.hors && v.z < 1 && sx > -40 && sx < w + 40 && sy > 40 && sy < h - 30 && (walking ? dist < 900 : true);
       if (vis) cand.push({ p, dist, sx, sy }); else if (p.shown !== 0) { p.el.style.display = 'none'; p.shown = 0; }
     }
     const rang = (c) => (c.p === selected ? 0 : c.p.rang === 1 ? 1 : 2);
@@ -93,7 +93,7 @@ export function initUI89(app, cfg) {
     const list = $('place-list'), norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(), needle = norm(q || '');
     list.textContent = '';
     for (const [k, [name, color]] of Object.entries(CATS)) {
-      const items = places.filter((p) => p.cat === k && (!needle || norm(p.name).includes(needle))); if (!items.length) continue;
+      const items = places.filter((p) => p.cat === k && !p.hors && (!needle || norm(p.name).includes(needle))); if (!items.length) continue;
       const h = el('h3'), i = el('i'); i.style.setProperty('--c', color); h.append(i, name); list.appendChild(h);
       for (const p of items.sort((a, b) => a.name.localeCompare(b.name, 'fr'))) { const b = el('button'); b.type = 'button'; b.append(el('span', null, p.name)); b.addEventListener('click', () => select(p, true)); list.appendChild(b); }
     }
@@ -102,6 +102,11 @@ export function initUI89(app, cfg) {
   function togglePlaces(on) { $('places').hidden = !on; $('btn-places').setAttribute('aria-expanded', String(on)); body.classList.toggle('places-open', on); if (on) { fillList($('place-search').value); closeMore(); } }
   $('btn-places').addEventListener('click', () => togglePlaces($('places').hidden));
   $('place-search').addEventListener('input', (e) => fillList(e.target.value));
+  // page « Paris 1900 » : le curseur du montage cache les lieux pas encore bâtis ou déjà démolis (p.quand : [du jour,
+  // au jour] où ils sont debout ; p.hors : cachés à la date)
+  const dater = (j) => { for (const p of places) if (p.quand) p.hors = j < p.quand[0] || j >= p.quand[1]; };
+  if (app.v89 && app.v89.chantier) dater(app.v89.chantier.jour);
+  app.on('chantier', (j) => { dater(j); if (!$('places').hidden) fillList($('place-search').value); updateLabels(); });
 
   // ---------- menus, fenêtres
   function closeMore() { $('menu-more').classList.remove('open'); $('btn-more').setAttribute('aria-expanded', 'false'); }
@@ -215,7 +220,7 @@ export function initUI89(app, cfg) {
     ctx.fillStyle = 'rgb(24,36,76)'; ctx.fillRect(0, 0, cw, ch);
     ctx.drawImage(app.plan.wide, X(R.x), Y(R.z), R.w * k, R.h * k);
     if (mini.zoom === 'local') { const C = app.plan.rectCentre; ctx.drawImage(app.plan.centre, X(C.x), Y(C.z), C.w * k, C.h * k); }
-    for (const p of places) { if (p.rang !== 1 && p !== selected && mini.zoom !== 'local') continue; ctx.fillStyle = p === selected ? '#fff' : p.color; ctx.beginPath(); ctx.arc(X(p.x), Y(p.z), p === selected ? 3.4 : 2.2, 0, 6.3); ctx.fill(); }
+    for (const p of places) { if (p.hors || (p.rang !== 1 && p !== selected && mini.zoom !== 'local')) continue; ctx.fillStyle = p === selected ? '#fff' : p.color; ctx.beginPath(); ctx.arc(X(p.x), Y(p.z), p === selected ? 3.4 : 2.2, 0, 6.3); ctx.fill(); }
     const cx = X(px), cy = Y(pz), fx = -Math.sin(head), fz = -Math.cos(head);
     ctx.fillStyle = 'rgba(240,200,96,0.3)'; ctx.strokeStyle = 'rgba(240,200,96,0.95)'; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.moveTo(cx, cy); const reach = mini.zoom === 'local' ? 60 : clamp(rig.cur.dist * k * 0.9, 16, 70), a0 = Math.atan2(fz, fx); ctx.arc(cx, cy, reach, a0 - 0.42, a0 + 0.42); ctx.closePath(); ctx.fill(); ctx.stroke();

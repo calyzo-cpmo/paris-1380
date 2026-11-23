@@ -154,25 +154,34 @@ function halles(app, B) {
 // Palais de l'Industrie (1855-1897) : 250 m sur 108 m le long des Champs-Élysées, là où passent aujourd'hui l'avenue
 // Winston-Churchill et une partie des Grand et Petit Palais, qui le remplaceront en 1900 (ils sont écartés).
 // Emplacement d'après l'axe de l'avenue et celui des Invalides ; élévation évoquée : deux rangs d'arcades, pavillons
-// d'angle, porche monumental, nef vitrée de 35 m.
-function industrie(app, B) {
+// d'angle, porche monumental, nef vitrée de 35 m. La page « Paris 1900 » le reprend pour le démolir : il ne réserve
+// alors rien (reserve = false), le Grand et le Petit Palais prennent sa place. partie : 'nord', le porche sur les
+// Champs-Élysées et le pavillon nord-ouest, gardés jusqu'à la fin de 1899 (Picard, t. I) ; 'corps', tout le reste.
+export function industrie(app, B, reserve = true, partie = 'tout') {
   const V = app.v89, T = app.terrain, O = [-2677.6, -1522], ax = [0.902, 0.432], n = [-0.432, 0.902], HL = 125, HW = 54, y0 = T.height(O[0], O[1]), VERRE = rgb(166, 190, 202), ZINC = rgb(150, 158, 164);
   const P = (u, v) => [O[0] + ax[0] * u + n[0] * v, O[1] + ax[1] * u + n[1] * v], rect = (hl, hw, cu = 0, cv = 0) => [P(cu - hl, cv - hw), P(cu + hl, cv - hw), P(cu + hl, cv + hw), P(cu - hl, cv + hw)];
-  { const r = rect(HL + 22, HW + 22); let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const q of r) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); z0 = Math.min(z0, q[1]); z1 = Math.max(z1, q[1]); } V.reserves.push({ ring: r, x0, z0, x1, z1 }); }
-  reserver(V, -2864, -1458, 10);                                                                                      // une aile du Grand Palais, sans année dans les données
-  const corps = ccw(rect(HL, HW)), bp = B.at('plain', O[0], O[1]), bs = B.at('stone', O[0], O[1]);
-  facade(B.at('nef', O[0], O[1]), corps, false, y0 - 1, y0 + 18, 0, 2, PIERRE, 0, 0.84, 1, 8.9);
-  box(bs, { cx: O[0], cz: O[1], ux: ax[0], uz: ax[1], hl: HL + 0.6, hw: HW + 0.6 }, y0 + 18, y0 + 19.4, { col: PIERRE, s0: 0.92 });      // corniche et bas-côtés couverts de zinc
-  { const a = P(-HL, -HW), b = P(HL, -HW), c = P(HL, HW), d = P(-HL, HW); bp.quad(a[0], y0 + 19.45, a[1], d[0], y0 + 19.45, d[1], c[0], y0 + 19.45, c[1], b[0], y0 + 19.45, b[1], 0, 0, 1, 1, ZINC, 1, 1); bp.quad(a[0], y0 + 19.45, a[1], b[0], y0 + 19.45, b[1], c[0], y0 + 19.45, c[1], d[0], y0 + 19.45, d[1], 0, 0, 1, 1, ZINC, 1, 1); }
-  // nef vitrée : un berceau de 72 m de large sur toute la longueur
-  { const N = 10, L = HL - 14, w = 36, prof = (s) => 19.4 + 15.6 * Math.pow(Math.sin(Math.PI * s), 0.8);
-    for (let k = 0; k < N; k++) { const s0 = k / N, s1 = (k + 1) / N, va = -w + 2 * w * s0, vb = -w + 2 * w * s1, ya = y0 + prof(s0), yb = y0 + prof(s1), sh = 0.86 + 0.14 * Math.sin((Math.PI * (s0 + s1)) / 2);
-      const a = P(-L, va), b = P(L, va), c = P(L, vb), d = P(-L, vb);
-      bp.quad(a[0], ya, a[1], b[0], ya, b[1], c[0], yb, c[1], d[0], yb, d[1], 0, 0, 1, 1, VERRE, sh, sh); bp.quad(b[0], ya, b[1], a[0], ya, a[1], d[0], yb, d[1], c[0], yb, c[1], 0, 0, 1, 1, VERRE, sh, sh);
-      for (const [p, q] of [[a, d], [b, c]]) { bp.quad(p[0], y0 + 19.4, p[1], q[0], y0 + 19.4, q[1], q[0], yb, q[1], p[0], ya, p[1], 0, 0, 1, 1, VERRE, 0.95, 1); bp.quad(q[0], y0 + 19.4, q[1], p[0], y0 + 19.4, p[1], p[0], ya, p[1], q[0], yb, q[1], 0, 0, 1, 1, VERRE, 0.95, 1); } } }
+  if (reserve) {
+    { const r = rect(HL + 22, HW + 22); let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const q of r) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); z0 = Math.min(z0, q[1]); z1 = Math.max(z1, q[1]); } V.reserves.push({ ring: r, x0, z0, x1, z1 }); }
+    reserver(V, -2864, -1458, 10);                                                                                    // une aile du Grand Palais, sans année dans les données
+  }
+  const corps = ccw(rect(HL, HW)), bp = B.at('plain', O[0], O[1]), bs = B.at('stone', O[0], O[1]), nord = partie === 'nord', tout = partie === 'tout';
+  const garde = (su, sv) => su < 0 && sv < 0;                                                                         // le pavillon nord-ouest
+  if (!nord) {
+    facade(B.at('nef', O[0], O[1]), corps, false, y0 - 1, y0 + 18, 0, 2, PIERRE, 0, 0.84, 1, 8.9);
+    box(bs, { cx: O[0], cz: O[1], ux: ax[0], uz: ax[1], hl: HL + 0.6, hw: HW + 0.6 }, y0 + 18, y0 + 19.4, { col: PIERRE, s0: 0.92 });      // corniche et bas-côtés couverts de zinc
+    { const a = P(-HL, -HW), b = P(HL, -HW), c = P(HL, HW), d = P(-HL, HW); bp.quad(a[0], y0 + 19.45, a[1], d[0], y0 + 19.45, d[1], c[0], y0 + 19.45, c[1], b[0], y0 + 19.45, b[1], 0, 0, 1, 1, ZINC, 1, 1); bp.quad(a[0], y0 + 19.45, a[1], b[0], y0 + 19.45, b[1], c[0], y0 + 19.45, c[1], d[0], y0 + 19.45, d[1], 0, 0, 1, 1, ZINC, 1, 1); }
+    // nef vitrée : un berceau de 72 m de large sur toute la longueur
+    { const N = 10, L = HL - 14, w = 36, prof = (s) => 19.4 + 15.6 * Math.pow(Math.sin(Math.PI * s), 0.8);
+      for (let k = 0; k < N; k++) { const s0 = k / N, s1 = (k + 1) / N, va = -w + 2 * w * s0, vb = -w + 2 * w * s1, ya = y0 + prof(s0), yb = y0 + prof(s1), sh = 0.86 + 0.14 * Math.sin((Math.PI * (s0 + s1)) / 2);
+        const a = P(-L, va), b = P(L, va), c = P(L, vb), d = P(-L, vb);
+        bp.quad(a[0], ya, a[1], b[0], ya, b[1], c[0], yb, c[1], d[0], yb, d[1], 0, 0, 1, 1, VERRE, sh, sh); bp.quad(b[0], ya, b[1], a[0], ya, a[1], d[0], yb, d[1], c[0], yb, c[1], 0, 0, 1, 1, VERRE, sh, sh);
+        for (const [p, q] of [[a, d], [b, c]]) { bp.quad(p[0], y0 + 19.4, p[1], q[0], y0 + 19.4, q[1], q[0], yb, q[1], p[0], ya, p[1], 0, 0, 1, 1, VERRE, 0.95, 1); bp.quad(q[0], y0 + 19.4, q[1], p[0], y0 + 19.4, p[1], p[0], ya, p[1], q[0], yb, q[1], 0, 0, 1, 1, VERRE, 0.95, 1); } } }
+  }
   // pavillons d'angle, porche monumental face aux Champs-Élysées (au nord)
-  for (const su of [-1, 1]) for (const sv of [-1, 1]) { const c = P(su * (HL - 9), sv * (HW - 9)); box(bs, { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 11, hw: 11 }, y0 - 1, y0 + 24, { col: PIERRE, s0: 0.84 }); cone(bp, c[0], c[1], 15.5, y0 + 24, y0 + 30, { col: ZINC, seg: 4, a0: Math.atan2(ax[1], ax[0]) + Math.PI / 4 }); }
+  for (const su of [-1, 1]) for (const sv of [-1, 1]) { if (!tout && garde(su, sv) !== nord) continue; const c = P(su * (HL - 9), sv * (HW - 9)); box(bs, { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 11, hw: 11 }, y0 - 1, y0 + 24, { col: PIERRE, s0: 0.84 }); cone(bp, c[0], c[1], 15.5, y0 + 24, y0 + 30, { col: ZINC, seg: 4, a0: Math.atan2(ax[1], ax[0]) + Math.PI / 4 }); }
+  if (!tout && !nord) { app.foot.push({ ring: corps, top: y0 + 35 }); app.monuments.Industrie = { x: O[0], z: O[1], top: y0 + 46 }; return; }
   { const c = P(0, -(HW + 5)); box(bs, { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 24, hw: 9 }, y0 - 1, y0 + 30, { col: PIERRE, s0: 0.84 }); box(bs, { cx: c[0], cz: c[1], ux: ax[0], uz: ax[1], hl: 12, hw: 7 }, y0 + 30, y0 + 35, { col: PIERRE, s0: 0.95 }); }
+  if (nord) { app.foot.push({ ring: ccw(rect(24, 9, 0, -(HW + 5))), top: y0 + 35 }, { ring: ccw(rect(11, 11, -(HL - 9), -(HW - 9))), top: y0 + 30 }); return; }
   app.foot.push({ ring: corps, top: y0 + 35 });
   app.monuments.Industrie = { x: O[0], z: O[1], top: y0 + 46 };
 }

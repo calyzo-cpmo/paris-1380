@@ -198,6 +198,10 @@ body.no-map #stack { width: min(640px, calc(100vw - 32px)); }
 #ch-reperes { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.6; padding: 0 2px; }
 #ch-reperes span:nth-child(2) { position: relative; left: -6.5%; }
 #ch-reperes span:nth-child(3) { visibility: hidden; }
+/* Paris 1900 : le montage de l'Exposition, de 1897 à l'été 1900 ; chaque année est posée à son 1er janvier (--x) */
+#chantier.montage #ch-reperes { position: relative; display: block; height: 1.35em; }
+#chantier.montage #ch-reperes span { position: absolute; left: var(--x); transform: translateX(-50%); visibility: visible; }
+#chantier.montage #ch-reperes span:first-child { transform: none; }
 body.morph #chantier { visibility: hidden; }
 @media (max-width: 900px) { body.touring #chantier { display: none; } }      /* sur petit écran, la visite guidée prend la place du curseur du chantier */
 #frise { display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 10px; }

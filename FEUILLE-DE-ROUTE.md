@@ -7,33 +7,70 @@ son calque « Origine du bâti », ses tests et son image de partage.
 
 Le jeu en ligne (`CADRAGE-JEU.md`) reste au stade du cadrage : pas de migration pour l'instant.
 
-## Où on en est (22 novembre 2026) et la suite
+## Où on en est (23 novembre 2026) et la suite
 
 **En ligne** : cinq maquettes — Lutèce, 1380, 1789, 1889, **1900** — et l'**écran d'accueil** : sans adresse, le site
 montre les cinq époques en cartes au-dessus d'une maquette « en vitrine » qui tourne lentement ; le nom du site, en tête
 de chaque maquette, y ramène. Paris 1900 montre la ville à la date, la tour repeinte, le Champ-de-Mars de 1900, la
-Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la rue des Nations, la rive droite, le Vieux Paris, le
-palais des Armées et la passerelle Debilly, l'Esplanade des Invalides, les colonies du Trocadéro et le trottoir roulant.
+Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la rue des Nations, la porte monumentale de Binet, les
+jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le palais des Armées et la passerelle
+Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
+roulant et les entrées du métro. Un curseur montre le montage de l'Exposition, du 1er janvier 1897 au 19 juillet 1900.
 
 **La suite, dans l'ordre**
-1. **Paris 1900, finitions** (petites, indépendantes les unes des autres) :
-   - les pavillons de la rive droite entre le pont de la Concorde et le pont Alexandre-III, la rue de Paris (les
-     attractions du Cours-la-Reine, du pont des Invalides au pont de l'Alma), la porte
-     monumentale de la place de la Concorde et sa « Parisienne », le Globe céleste et le palais de l'Optique au pied de
-     la tour ;
-   - les entrées Guimard de la ligne 1 (huit stations ouvertes le 19 juillet 1900, les dix autres avant le 1er
-     septembre) : entourages de fonte et, à Bastille et à l'Étoile, pavillons ; à placer d'après les rues de la base
-     « Paris 1900 » ;
-   - les cotes d'élévation de la rue des Nations restent une évocation : à affiner pavillon par pavillon si l'on trouve
-     les plans (Picard, Revue technique, cartes postales).
-2. **Paris 1900, curseur du montage de l'Exposition** (de la démolition du palais de l'Industrie, en 1897, à l'ouverture
-   du 14 avril 1900, et jusqu'au métro du 19 juillet). Préalable : le Grand et le Petit Palais, les gares d'Orsay, des
-   Invalides et de Lyon viennent des données de la ville et ne peuvent pas disparaître avec la date. Il faut les
-   réserver (`V.reserves`) et les modeler à part, comme les palais du Champ-de-Mars (`ensemble()` de
-   `src/p1889/expo.js`, qui coupe à la cote de montage), puis rendre au palais de l'Industrie (`industrie()` de
-   `src/p1889/monuments.js`) une existence jusqu'en 1897. Le curseur de 1889 (`src/p1889/main.js`, `tour.js`) sert de
-   modèle.
-3. **Paris 1937** : d'abord l'étude des données (voir plus bas) — rues et îlots de 1937, quartiers démolis depuis.
+1. **Paris 1900, finitions** — *faites le 22 novembre*, sauf la dernière :
+   - la porte monumentale de Binet et sa « Parisienne », les jardins du Cours-la-Reine, la rive droite refaite dans
+     l'ordre de Picard (serres à leurs cotes, palais de la Danse, phare, Congrès de 100 m), la rue de Paris (quinze
+     établissements et le palais de la Danse), le Globe céleste et le palais de l'Optique ;
+   - les entrées de Guimard de la ligne 1 : une par station, au carrefour qui la nomme, d'après les rues de la base ;
+   - **reste** : les cotes d'élévation de la rue des Nations, une évocation, à affiner pavillon par pavillon si l'on
+     trouve les plans (Picard, Revue technique, cartes postales).
+   - *Ce que les sources ont corrigé* : entre la Concorde et le pont des Invalides, il n'y avait pas de pavillons mais
+     des jardins « parsemés de serres » (Picard, t. I, p. 271-272) ; les serres et le palais de la Ville de Paris
+     étaient bien en aval du pont des Invalides. À l'été 1900, les entrées du métro n'avaient que leurs balustrades :
+     candélabres, cartouches « Métropolitain » et édicules sont de la fin de 1900 à 1902, et les pavillons de la Bastille
+     et de l'Étoile étaient en chantier (article « Entrée de métro Guimard », d'après Descouturelle, Mignard et
+     Rodriguez, 2012) ; ils ne sont pas figurés.
+   - *Ouvert* : la position de chaque accès du métro en 1900 ; la hauteur réelle de la Parisienne (9 m d'après Picard,
+     6 m ailleurs) ; le diamètre du Globe (plus de 40 m chez Picard, 46 m chez Hachette ; 45 m retenus). Les huit
+     stations ouvertes le 19 juillet sont Porte de Vincennes, Nation, Gare de Lyon, Bastille, Hôtel de Ville,
+     Palais-Royal, Champs-Élysées et Porte Maillot (note de l'article « Ligne 1 du métro de Paris » de Wikipédia ; la date
+     est confirmée par Picard, t. VI, p. 215) ; les dix autres ouvrent du 6 août au 1er septembre.
+2. **Paris 1900, curseur du montage de l'Exposition** — *fait le 23 novembre*, du 1er janvier 1897 au 19 juillet 1900 :
+   - chaque ouvrage qui change est bâti à part (`src/p1900/montage.js`, `ouvrage()`), dans ses maillages, ses matières
+     clonées de celles de la ville et coupées à la cote de montage ; ses emprises, les tabliers des ponts et les
+     étiquettes suivent la date ;
+   - démolis : le palais de l'Industrie (corps du 5 février au 15 octobre 1897, porche et pavillon nord-ouest jusqu'à la
+     fin de 1899), les Beaux-Arts, les Arts libéraux, le Dôme central et la galerie de trente mètres de 1889, la gare du
+     Champ-de-Mars, l'embarcadère de Lyon ;
+   - montés : le Grand et le Petit Palais et les gares neuves (leurs bâtiments, marqués par l'extraction dans
+     `data.bati.hist`, sont écartés de la ville et bâtis à part), le pont Alexandre-III (sorti des ponts de la ville,
+     son tablier n'est praticable qu'achevé) et ses pylônes, les palais du Champ-de-Mars, la Grande Roue, la rue des
+     Nations, la rive droite, l'Esplanade, les colonies, la porte, le Globe, l'Optique, le trottoir roulant, le métro ;
+   - la tour, brun-rouge jusqu'au printemps 1899 (teinte de convention).
+   - *Ce que les sources ont corrigé* : Picard (t. I, p. 321-325) ne range parmi les démolitions de 1897-1898 que les
+     Beaux-Arts, les Arts libéraux, le Dôme central et ses pavillons, la galerie de trente mètres : les galeries des
+     Industries diverses de 1889 n'y sont pas, elles ne sont pas montrées. Le palais de l'Industrie n'est pas tombé d'un
+     bloc : son porche et un pavillon ont servi jusqu'à la fin de 1899. La gare de Lyon n'est inaugurée que le 6 avril
+     1901, bien qu'en service pour l'Exposition.
+   - *Ouvert* : les dates de la rue des Nations, des colonies, du Globe, de l'Optique, du Vieux Paris, de l'embarcadère
+     de Lyon et du début de la gare des Invalides sont des conventions ; à chercher dans les t. IV et V de Picard et dans
+     le guide Hachette. Quelques jours d'adjudication sont mal lus par l'OCR (Dôme central, Arts libéraux, Beaux-Arts) :
+     à vérifier sur les scans. Le reste de la ville est celui de l'été 1900 ; le sol du Champ-de-Mars aussi, et la
+     trame des passants, calculée une fois pour toutes à la date du 19 juillet 1900.
+3. **Paris 1937** : étude des données et première extraction *faites le 23 novembre* (`ETUDE-1937.md`) :
+   - *décidé* : la base « Paris 1900 » corrigée de ce qui a changé de 1901 à 1937, d'après la date du bâti de l'APUR ;
+     la ville à l'été 1937, Exposition ouverte (25 mai - 25 novembre), sans curseur de chantier ;
+   - *fait* : `data/paris1937.json` (`python3 tools/extract_1889.py 1937`) — 77 km de voies ouvertes de 1901 à 1937,
+     414 tronçons de 1900 sous leur nom de 1937 (avenue Foch, rue de Liège, avenue Victor-Emmanuel-III…), l'enceinte
+     remplacée par les HBM, la Cité universitaire et la zone, le plateau Beaubourg dégagé, le Champ-de-Mars en jardin
+     loti sur ses bords ; 110 867 bâtiments, dont 84 794 réels ;
+   - **reste, dans l'ordre** : (a) les grands disparus et les zones refaites depuis, d'après la photographie de 1949
+     (Halles à douze pavillons, Halle aux vins, entrepôts de Bercy, abattoirs, gare Montparnasse de 1852, gare des
+     Gobelins…) ; (b) la page `dist/1937.html` par surcouche (`src/p1937/`), frise, accueil, visite, calque, test,
+     image de partage ; (c) l'Exposition de 1937 (Chaillot est déjà réel dans l'APUR ; pavillons à modeler) ;
+   - *Ouvert* : l'Atlas municipal de 1937, dont le serveur d'images (SoDUCo) ne répond pas ; les licences de la photo
+     de 1949 (Édugéo) et des images de la BHdV.
 4. **Paris 1975**.
 5. **Jeu « mode classe »** : seulement quand il sera décidé (`CADRAGE-JEU.md`).
 
@@ -56,8 +93,26 @@ palais des Armées et la passerelle Debilly, l'Esplanade des Invalides, les colo
   continue. En rendu logiciel, le navigateur sans écran ne fournit presque plus d'images à un cadre : les tests font
   avancer les images eux-mêmes (`a.rig.update`, `a.emit('frame', …)`). Le contrôle des ports bas de 1900 écarte les
   berges que l'Exposition occupe.
-- *Sources de l'Exposition de 1900* : A. Picard, *Rapport général administratif et technique* (1902, archive.org,
-  « expositionuniver01expo ») ; *Revue technique de l'Exposition universelle de 1900* (Cnam, Cnum, cote 8XAE585.1).
+- *Sources de l'Exposition de 1900* : A. Picard, *Rapport général administratif et technique* (1902, archive.org :
+  t. I « expositionuniver01expo », t. II « rapportgeyneyra00expo », t. VI « expositionunive00goog », t. VII
+  « expositionuniver07expo ») ; guide Hachette *Paris Exposition 1900* (archive.org, « parisexposition00pari ») ;
+  *Revue technique de l'Exposition universelle de 1900* (Cnam, Cnum, cote 8XAE585.1), pas encore dépouillée.
+- *Où sont les finitions* : `src/p1900/porte.js` (porte monumentale, jardins), `src/p1900/pavillons.js` (rive droite,
+  rue de Paris), `src/p1900/attractions.js` (Globe céleste, Optique), `src/p1900/metro.js` (entrées du métro).
+- *Le montage* : `src/p1900/montage.js` (dates `DATES`, jalons `ETAPES`, `ouvrage()`, `batirHistoire()`) ; les modules
+  communs s'y raccordent par `V.montage` (gares, `src/p1889/gares.js`), `V.ouvrage` (palais, `ensemble()`), `V.ecartes`
+  (bâti de la ville, `src/p1889/ville.js`), `f.absent` (emprises) et `p.quand` / `p.hors` (étiquettes,
+  `src/p1789/ui.js`). Un ouvrage nouveau : `ouvrage(app, { monte: [d0, d1] }, (B) => …)` dans `src/p1900/expo.js`.
+- *Paris 1937, données* : `python3 tools/fetch_1889.py 1937` télécharge dans `data/source/1937/` les tronçons, voies,
+  îlots et arrondissements de l'APUR et la nomenclature des voies de la Ville de Paris ; `python3 tools/extract_1889.py
+  1937` écrit `data/paris1937.json`, en passant par `tools/ville_1937.py` (voies ouvertes de 1901 à 1937, îlots
+  remplacés, glacis, noms à la date, îlots dégagés : liste `DEGAGES`). Dans `tools/extract_1889.py`, tout ce qui est
+  propre à 1937 est sous `AN >= 1937` (ou `AN >= 1915` pour le classement du bâti), pour que 1889 et 1900 restent
+  identiques. `python3 tools/etude_1937.py` refait les mesures de l'étude ; `python3 tools/photo1949.py SORTIE.jpg LAT
+  LON` met côte à côte la photographie de 1949 et celle d'aujourd'hui.
+- *Sources de l'Exposition, pour les dates* : l'exécution des travaux est aux t. I (démolitions, pont Alexandre-III,
+  passerelles), II (Grand et Petit Palais, Esplanade, rive droite, porte) et III (« expositionuniver03expo » :
+  Champ-de-Mars, Château d'eau, Électricité, tour) de Picard ; le t. VI couvre les cérémonies et les transports.
 
 ## Méthode commune
 
@@ -84,9 +139,12 @@ pylônes, la gare de Lyon et sa tour, les gares d'Orsay et des Invalides, le pon
 
 **Fait ensuite** : la rue des Nations (vingt-trois pavillons et deux passerelles), la rive droite (Ville de Paris,
 serres, Congrès), le Vieux Paris, le palais des Armées et la passerelle Debilly, les palais de l'Esplanade des
-Invalides, la section des colonies au Trocadéro, le trottoir roulant.
+Invalides, la section des colonies au Trocadéro, le trottoir roulant. Puis les finitions : la porte monumentale, les
+jardins du Cours-la-Reine, la rive droite refaite et la rue de Paris, le Globe céleste, le palais de l'Optique, les
+entrées du métro.
 
-**Reste à faire** : voir « La suite », en tête de ce document (finitions, puis curseur du montage).
+**Reste à faire** : voir « La suite », en tête de ce document (cotes de la rue des Nations ; le curseur du montage est
+fait).
 
 **Pourquoi d'abord** : les îlots et les rues viennent déjà de la base « Paris 1900 », utilisée pour 1889. L'essentiel de
 la ville est en place ; on change l'année (`AN = 1900`) et on modèle ce qui est nouveau.
@@ -116,9 +174,8 @@ de date (pour le montage de l'Exposition 1900, comme pour la tour en 1889).
 - Les Halles au complet : douze pavillons, les deux derniers bâtis en 1936.
 - La Petite Ceinture sans voyageurs depuis 1934 ; la ligne d'Auteuil toujours en service ; le métro étendu.
 
-**Point de données à étudier** : les rues et les îlots de 1937 diffèrent de ceux de 1900 (boulevards des Maréchaux,
-percements). Les quartiers démolis après-guerre (îlots insalubres de Belleville, de Plaisance, du 13e…) manquent au
-bâti d'aujourd'hui. Sources à évaluer : photographies aériennes historiques de l'IGN, plans de l'époque.
+**Données** : étudiées le 23 novembre 2026, voir `ETUDE-1937.md` — sources, chiffres, zones refaites depuis,
+méthode proposée et points ouverts.
 
 ## 3. Paris 1975
 
@@ -135,5 +192,6 @@ depuis (Halles, abattoirs, entrepôts de Bercy, usines de la rive gauche avant P
 
 ## Ce qui reste ouvert
 
-- Pour 1937 et 1975 : la source des rues et des îlots, et celle des bâtiments disparus.
+- Pour 1937 : la densité des quartiers refaits depuis et l'Atlas municipal de 1937 comme contrôle (voir
+  `ETUDE-1937.md`). Pour 1975 : la source des rues et des îlots, et celle des bâtiments disparus.
 - Les passants, qui ne circulent qu'autour d'un quartier par maquette ; à étendre si une maquette s'y prête.

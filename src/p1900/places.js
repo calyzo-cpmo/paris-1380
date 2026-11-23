@@ -8,7 +8,7 @@ export function makePlaces(app) {
   // nom, catégorie, notice, position { x, z, top } ou [x, z], rang (1 : toujours nommé)
   const lieu = (name, cat, note, pos, rang = 2) => {
     if (!pos) return; const x = pos.x ?? pos[0], z = pos.z ?? pos[1];
-    out.push({ id: slug(name), name, cat, catName: CATS[cat][0], color: CATS[cat][1], note, absent: false, x, z, y: pos.top != null ? pos.top : T.height(x, z) + 30, rang });
+    out.push({ id: slug(name), name, cat, catName: CATS[cat][0], color: CATS[cat][1], note, absent: false, x, z, y: pos.top != null ? pos.top : T.height(x, z) + 30, rang, quand: pos.quand });      // quand : jours où il est debout (curseur du montage)
   };
   for (const l of app.v89.lieux || []) lieu(...l);
   const V = 'L’édifice est rendu par son volume réel — emprise et hauteur —, sans le détail de son élévation.';
@@ -45,7 +45,7 @@ export function makePlaces(app) {
   lieu('Buttes-Chaumont', 'quartier', 'D’anciennes carrières changées en parc par Alphand pour l’Exposition de 1867.', [2375, -3055]);
   lieu('Bassin de la Villette', 'eau', 'Le port du canal de l’Ourcq, entouré d’entrepôts ; au nord, les abattoirs et le marché aux bestiaux.', [1730, -3562]);
   lieu('Père-Lachaise', 'quartier', 'Le plus grand cimetière de Paris, sur les pentes de Ménilmontant.', [3155, -913]);
-  lieu('Place de la Bastille', 'quartier', 'La colonne de Juillet marque l’emplacement de la forteresse. Depuis le 19 juillet 1900, la ligne 1 du métropolitain passe sous la place : de la porte de Vincennes à la porte Maillot, huit stations ouvrent ce jour-là, les dix autres avant le 1er septembre. Le métro, souterrain, n’est pas figuré.', M.Juillet);
+  lieu('Place de la Bastille', 'quartier', 'La colonne de Juillet marque l’emplacement de la forteresse. Depuis le 19 juillet 1900, la ligne 1 du métropolitain passe sous la place : de la porte de Vincennes à la porte Maillot, huit stations ouvrent ce jour-là, les dix autres avant le 1er septembre. Le métro est souterrain : on n’en voit que la balustrade de fonte d’Hector Guimard autour de l’escalier ; son pavillon, sur la place, est en chantier.', M.Juillet);
   // gares : chacune est posée au bout de ses voies (src/p1889/gares.js)
   const G = ' Elle est placée en tête de ses voies ; son élévation est une évocation.';
   lieu('Gare Saint-Lazare', 'enceinte', 'La plus ancienne gare de Paris (1837) et la plus fréquentée, rebâtie par Juste Lisch de 1885 à 1889 : une longue façade sur la rue Saint-Lazare et, devant elle, l’hôtel Terminus, entre la cour de Rome et la cour du Havre.' + G, M.GareLazare, 1);
