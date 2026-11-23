@@ -203,7 +203,7 @@ def extraire(SRC, T, X, cadre, equip, anneaux_esri, ilots, seine, annee=1889):
     de chaque point au-dessus du sol, pour les viaducs, ou rien), 'nom' (tracés à la main) }.
     T : Lambert-93 → maquette ; X : outils de tools/extract_epochs.py ; equip : équipements de l'APUR ; ilots : îlots
     de 1900 ({ rings, c }) ; seine(x, z) : le point est-il sur le fleuve ?"""
-    E = Emprises(); PC = []; VETO = Emprises(); ECART = ECARTE[annee]
+    E = Emprises(); PC = []; VETO = Emprises(); ECART = ECARTE[max(k for k in ECARTE if k <= annee)]     # 1937 : les règles de 1900
     for f in equip:
         at = f['attributes']; nom = (at.get('l_ee_maj') or '').strip(); n3 = at.get('c_niv3') or 0
         if at.get('c_niv1') != 20: continue

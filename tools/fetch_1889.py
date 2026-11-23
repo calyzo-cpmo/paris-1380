@@ -10,6 +10,11 @@
     ODbL 1.0, entrepôt Nakala, DOI 10.34847/nkl.cbf5ecd0 : îlots et tronçons de voie vers 1900.
   - Relief : RGE ALTI de l'IGN (licence ouverte Etalab 2.0), par le service d'altimétrie de la Géoplateforme.
 
+  python3 tools/fetch_1889.py 1937    sources propres à Paris 1937, dans data/source/1937/ (non versionné) :
+      APUR (ODbL 1.0) : tronçons de voie, voies (leurs noms), îlots et arrondissements de Paris d'aujourd'hui, enceinte
+      de Thiers ; Ville de Paris (ODbL 1.0) : nomenclature des voies, dénominations actuelles et caduques (dates des
+      arrêtés de dénomination et des suppressions).
+
 Chaque fichier déjà présent est conservé : relancer le script reprend là où il s'est arrêté.
 """
 import json, math, os, sys, time, urllib.parse, urllib.request
@@ -20,6 +25,9 @@ APUR = 'https://carto2.apur.org/apur/rest/services/OPENDATA/%s/MapServer/0/query
 NAKALA = 'https://api.nakala.fr'
 DOI = '10.34847/nkl.cbf5ecd0'
 ALTI = 'https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json'
+OUT37 = os.path.join(HERE, '..', 'data', 'source', '1937')
+APUR37 = 'https://carto2.apur.org/apur/rest/services/%s/MapServer/%d/query'
+PARIS_OD = 'https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/%s/exports/json'
 # Emprise de travail en Lambert-93 : Paris et ses fortifications, avec une marge.
 BBOX = (641500, 6856000, 662500, 6868500)
 UA = {'User-Agent': 'paris-a-travers-le-temps/1889 (extraction de donnees ouvertes)'}
@@ -88,9 +96,40 @@ def relief(pas=50):
     with open(path, 'w') as f: json.dump({'x0': x0, 'y0': y0, 'pas': pas, 'nx': nx, 'ny': ny, 'alt': alt}, f)
 
 
+def apur_liste(service, couche, champs, nom, where='1=1', page=2000):
+    """Toutes les entités d'une couche de l'APUR, en Lambert-93, dans un seul fichier data/source/1937/nom.json (liste)."""
+    p = os.path.join(OUT37, nom + '.json')
+    if os.path.exists(p) and os.path.getsize(p) > 200: return
+    n = json.loads(get(APUR37 % (service, couche) + '?' + urllib.parse.urlencode({'where': where, 'returnCountOnly': 'true', 'f': 'json'})))['count']
+    feats = []
+    for off in range(0, n, page):
+        q = {'where': where, 'outFields': champs, 'outSR': 2154, 'geometryPrecision': 1, 'orderByFields': 'OBJECTID', 'resultOffset': off, 'resultRecordCount': page, 'f': 'json'}
+        d = json.loads(get(APUR37 % (service, couche) + '?' + urllib.parse.urlencode(q)))
+        if 'features' not in d: raise SystemExit('réponse inattendue : ' + json.dumps(d)[:300])
+        feats += d['features']
+    with open(p, 'w') as f: json.dump(feats, f)
+    print('  ', nom, ':', len(feats), 'entités')
+
+
+def sources_1937():
+    os.makedirs(OUT37, exist_ok=True)
+    apur_liste('OPENDATA/TRONCON_VOIE_PARIS', 0, 'OBJECTID,n_sq_vo,c_niveau,largeur_moyenne_t1', 'troncons_voie_paris')
+    apur_liste('OPENDATA/VOIE', 0, 'OBJECTID,n_sq_vo,l_longmin', 'voies_paris', where='c_coinsee=75056')
+    apur_liste('OPENDATA/ILOT_PHYSIQUE', 0, 'OBJECTID,c_type_il,n_sq_ip', 'ilots_paris', where='c_dep=75')
+    apur_liste('OPENDATA/ARRONDISSEMENT', 0, 'C_AR', 'arrondissements')
+    apur_liste('PLANS_HISTORIQUES/enceintes_paris', 0, 'OBJECTID', 'fortifications_thiers')
+    for ds in ('denominations-emprises-voies-actuelles', 'denominations-des-voies-caduques'):
+        p = os.path.join(OUT37, ds + '.json')
+        if os.path.exists(p) and os.path.getsize(p) > 1e5: continue
+        raw = get(PARIS_OD % ds)
+        with open(p, 'wb') as f: f.write(raw)
+        print('  ', ds, ':', len(json.loads(raw)), 'voies')
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     quoi = sys.argv[1:] or ['bati', 'eau', 'fer', 'equip', 'paris1900', 'relief']
+    if '1937' in quoi: sources_1937()
     if 'bati' in quoi: apur('EMPRISE_BATIE_PARIS', 'OBJECTID,an_const,c_perconst,h_moy,h_med,h_max,c_forme_toit,c_toiture_mat,c_tissu,c_morpho,al_med_mnt,b_dalle,an_rehab,an_surelevation')
     if 'eau' in quoi: apur('PLAN_EAU', 'OBJECTID,l_eau,c_type,b_souterrain', bbox=BBOX)
     if 'fer' in quoi: apur('VOIE_FERREE', 'OBJECTID,C_TYPE,B_VISI', bbox=BBOX)

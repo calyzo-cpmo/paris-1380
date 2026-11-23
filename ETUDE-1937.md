@@ -1,6 +1,7 @@
 # Paris 1937 — étude des données
 
-Étape 3 de la feuille de route (`FEUILLE-DE-ROUTE.md`), faite le 23 novembre 2026 : avant de bâtir la maquette, savoir
+Étape 3 de la feuille de route (`FEUILLE-DE-ROUTE.md`), faite le 23 novembre 2026, suivie de la première extraction
+(section 4) : avant de bâtir la maquette, savoir
 d'où viendront les rues, les îlots et les bâtiments de 1937, et ce qui manque pour les quartiers démolis depuis. Les
 chiffres viennent de `python3 tools/etude_1937.py` (sources de `tools/fetch_1889.py`, plus trois couches de l'APUR
 gardées dans `data/source/1937/`) ; les vérifications visuelles, de `python3 tools/photo1949.py`.
@@ -23,8 +24,8 @@ gardées dans `data/source/1937/`) ; les vérifications visuelles, de `python3 t
   Montparnasse de 1852, les entrepôts de Bercy, la Halle aux vins. L'APUR ne date que 311 bâtiments de 1938 à 1949 :
   à douze ans près, c'est l'état de 1937. C'est la source de contrôle.
 - **L'Atlas municipal de 1937** (Bibliothèque de l'Hôtel de Ville, 1/5 000, 16 planches) existe et a été géoréférencé
-  par le projet SoDUCo, mais il n'est pas vectorisé et ses images sont servies par des hôtes que l'environnement
-  bloque. Il servirait de contrôle des rues, pas de base.
+  par le projet SoDUCo, mais il n'est pas vectorisé et le serveur qui en sert les images ne répond pas (23 novembre
+  2026). Il servira de contrôle des rues, pas de base.
 - **Méthode proposée** (détail plus bas) : la base de 1900 corrigée par la date des bâtiments qui bordent ou
   recouvrent chaque rue ; la ceinture de l'ancienne enceinte reprise des îlots et des voies d'aujourd'hui ; le bâti
   recomposé comme en 1900 ; les grands disparus modelés à part d'après la photo de 1949.
@@ -37,8 +38,8 @@ gardées dans `data/source/1937/`) ; les vérifications visuelles, de `python3 t
 | Base « Paris 1900 » (Projets Time Machine, Nakala, déjà téléchargée) | îlots et rues vers 1900, construits à rebours depuis les données actuelles ; chaque îlot dit s'il a changé depuis (`modif_ilot` : ok, changements mineurs, majeurs), chaque rue aussi (`chang-topo`) et son nom de 2021 | oui | ODbL 1.0 | cadre des rues et des îlots, à corriger de 1901 à 1937 |
 | APUR, `TRONCON_VOIE_PARIS`, `ILOT_PHYSIQUE`, `PLANS_HISTORIQUES/enceintes_paris` | voies et îlots d'aujourd'hui ; emprise de l'enceinte de Thiers | oui | ODbL 1.0 | rues ouvertes de 1901 à 1937, ceinture des HBM |
 | IGN, « Photographie - Paris 1949 » (`ORTHOIMAGERY.EDUGEO.PARIS1949`, WMTS de la Géoplateforme) ; aussi « Photographies aériennes historiques 1950-1965 » | photographie aérienne orthorectifiée, noir et blanc, 0,8 m par pixel au niveau 17, bien calée sur l'actuelle | oui | IGN, données ouvertes (licence à confirmer pour la couche Édugéo) | contrôle des quartiers disparus, tracé des grands édifices disparus |
-| Atlas municipal des vingt arrondissements, édition 1937 (BHdV, ark:/73873/pf0000935528) | rues, îlots, édifices publics, au 1/5 000, à la date | **non** : images IIIF sur `iiif.geohistoricaldata.org`, notice sur `bibliotheques-specialisees.paris.fr`, bloqués | images : à vérifier ; points d'appui SoDUCo publiés sur GitHub (`soduco/allmaps_annotations`) | contrôle des rues et des îlots de 1937, si l'accès est ouvert |
-| Ville de Paris, « Dénominations caduques des voies » (9 108 noms) et « Dénominations des emprises des voies actuelles » | anciens noms, voies supprimées, date des arrêtés (`date_voie_ancienne`) et historique | **non** (`opendata.paris.fr` bloqué ; champs vérifiés par un service de lecture tiers) | Licence ouverte / ODbL (à vérifier) | noms des rues en 1937 |
+| Atlas municipal des vingt arrondissements, édition 1937 (BHdV, ark:/73873/pf0000935528) | rues, îlots, édifices publics, au 1/5 000, à la date | **non** : hôtes autorisés le 23 novembre, mais le serveur d'images de SoDUCo (`iiif.geohistoricaldata.org`) coupe la connexion, d'ici comme d'un service extérieur ; le portail de la BHdV est une application JavaScript dont l'API ne livre pas la notice | images : à vérifier ; points d'appui SoDUCo publiés sur GitHub (`soduco/allmaps_annotations`) | contrôle des rues et des îlots de 1937, quand le serveur répondra |
+| Ville de Paris, « Dénominations caduques des voies » (9 108 noms) et « Dénominations des emprises des voies actuelles » | anciens noms, voies supprimées, date des arrêtés (`date_voie_ancienne`) et historique | oui depuis le 23 novembre (`tools/fetch_1889.py 1937`) | ODbL 1.0 | noms des rues en 1937 (`tools/ville_1937.py`) |
 | APUR, `PLANS_HISTORIQUES` : carte IGN « assemblage années 30 à années 60 » (1/20 000), carte du département de la Seine de 1921 | plans calés, bâti en rouge pour la première | oui (export d'images) | Apur, IGN — pas en données ouvertes | repère secondaire seulement : dates mêlées (1930-1960) ou image trop grossière (1921) |
 
 **Écartées** : le champ `periode_construction` des tronçons de voie de l'APUR ne date pas les rues (essayé sur la rue
@@ -152,15 +153,42 @@ faisceau, les gares de marchandises.
 1937 par l'APUR (réel), le palais de Tokyo est dans la période 1915-1939 (probable) ; les pavillons sont à modeler
 d'après le guide officiel et les photographies, sources à rassembler.
 
-## 4. Points ouverts
+## 4. Décisions et première extraction (23 novembre 2026)
 
-- **Accès réseau** : l'Atlas municipal de 1937 (`iiif.geohistoricaldata.org`, `bibliotheques-specialisees.paris.fr`)
-  et la nomenclature des voies (`opendata.paris.fr`) sont bloqués par l'environnement ; il faut les autoriser pour
-  s'en servir.
-- **Date de la maquette** : l'été 1937, Exposition ouverte ? Un curseur du chantier de Chaillot (1935-1937), comme
-  celui de 1900 ?
-- **Le plateau Beaubourg** : rasé dans les années 1930 (îlot insalubre n° 1), vide en 1949 ; l'état exact en 1937 est
-  à établir.
+**Décidé** : la base de 1900 corrigée (méthode ci-dessus) ; la ville à l'**été 1937, Exposition ouverte**, sans curseur
+de chantier ; l'accès réseau à l'Atlas municipal et à la nomenclature des voies, demandé et accordé.
+
+**Fait** : `python3 tools/fetch_1889.py 1937` (sources propres à 1937 dans `data/source/1937/`), puis
+`python3 tools/extract_1889.py 1937` → `data/paris1937.json`, même format que 1889 et 1900 ; les rues, les îlots et les
+noms sont corrigés par `tools/ville_1937.py`. 1889 et 1900 sortent inchangés, à l'octet près.
+
+- **Rues** : 77 km de voies ouvertes de 1901 à 1937 (1 151 tronçons, presque tous nommés), surtout sur l'ancienne
+  enceinte et aux bords du Champ-de-Mars ; aucune dans les bois. **Noms** : 414 tronçons de 1900 portent en 1937 un
+  autre nom — avenue du Bois devenue avenue Foch (1929), rue de Berlin devenue rue de Liège (1914), avenue d'Antin devenue
+  avenue Victor-Emmanuel-III (1918), quai Debilly devenu avenue de Tokio (1918). Un renommage n'est retenu que si la
+  chaîne des dénominations aboutit au nom actuel que la base de 1900 donne à la voie : la nomenclature ne situe pas ses
+  anciens noms, et la « rue de Rivoli » de Belleville (devenue rue Julien-Lacroix) n'est pas celle du Louvre. Une voie
+  ouverte depuis 1900 et renommée depuis 1937 reprend son nom d'alors (avenue de la Porte de Gentilly pour l'actuelle
+  avenue Pierre-de-Coubertin).
+- **Îlots** : 6 521. 399 îlots de 1900 (dont les 46 du rempart) sont remplacés par 1 015 îlots d'aujourd'hui ; 1 127
+  îlots d'aujourd'hui couvrent le fossé, le glacis et la zone (111 bâtis en 1937 : HBM, Cité universitaire…) ; le
+  plateau Beaubourg est dégagé (trois îlots de 1900) ; le Champ-de-Mars est un jardin bordé des immeubles de son
+  lotissement.
+- **Bâti** : 110 867 bâtiments — 84 794 réels, 6 022 probables, 6 817 évoqués sur leur emprise actuelle, 13 234 évoqués
+  le long des rues ; ni maison de faubourg évoquée sur l'ancienne enceinte, ni atlas de Vasserot.
+- **Voies ferrées** : les règles de 1900 (Petite Ceinture, ligne d'Auteuil, ligne de Vincennes) : 582 km.
+
+**Plateau Beaubourg** : vide depuis 1935 environ, rasé et devenu parking en 1937 selon le Centre Pompidou ; parking sur
+la photographie de 1949, où la rangée de la rue Rambuteau est encore debout (elle est gardée).
+
+## 5. Points ouverts
+
+- **Zones refaites depuis** : l'évocation le long des rues y est clairsemée, faute de bâtiments anciens autour (Italie
+  13, Flandre…), alors que la photographie de 1949 y montre un faubourg serré ; à régler d'après elle, avec les grands
+  disparus à modeler à part (gare des Gobelins, Halle aux vins, entrepôts de Bercy, gare Montparnasse de 1852…).
+- **L'Atlas municipal de 1937** : à reprendre comme contrôle quand le serveur de SoDUCo répondra.
 - **Licences** : couche Édugéo « Paris 1949 » de l'IGN et images de la BHdV, à confirmer avant de diffuser quoi que ce
-  soit qui en dérive.
-- **Les 86 km de voies sans riverains** et les 41 km bordés de bâti ancien : à examiner avant l'extraction.
+  soit qui en dérive (la base `data/paris1937.json` n'en dérive pas : seul le dégagement du plateau Beaubourg s'appuie
+  sur la photographie, avec les sources écrites).
+- **Les voies sans riverains** (175 km écartés, dont le boulevard périphérique et les voies des grands ensembles) : des
+  liaisons ouvertes avant 1937 peuvent y manquer.

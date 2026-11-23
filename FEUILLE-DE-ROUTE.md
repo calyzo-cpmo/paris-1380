@@ -58,20 +58,19 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
      le guide Hachette. Quelques jours d'adjudication sont mal lus par l'OCR (Dôme central, Arts libéraux, Beaux-Arts) :
      à vérifier sur les scans. Le reste de la ville est celui de l'été 1900 ; le sol du Champ-de-Mars aussi, et la
      trame des passants, calculée une fois pour toutes à la date du 19 juillet 1900.
-3. **Paris 1937** : l'étude des données est *faite le 23 novembre* (`ETUDE-1937.md`) ; reste à décider de la méthode
-   et de la date, puis à extraire :
-   - aucune base ne décrit Paris en 1937, mais à cette date 61 % de l'emprise bâtie d'aujourd'hui est réelle ou
-     probable (APUR), et 16 342 bâtiments de 1901 à 1937 sont datés, dont 1 079 HBM de la ceinture ;
-   - le bâti postérieur à 1937 (35 %, 1 176 ha) est à 87 % dans des îlots déjà bâtis en 1900, et pour moitié dans
-     des zones refaites d'un bloc (Italie 13, Flandre, Maine-Montparnasse, Paris Rive Gauche, la Villette, Reuilly,
-     Belleville, Saint-Blaise, la Chapelle, Front de Seine, Bercy…) ;
-   - méthode proposée : la base « Paris 1900 » corrigée par la date des bâtiments qui bordent ou recouvrent chaque rue
-     (82 km de voies ouvertes de 1901 à 1937, surtout sur l'ancienne enceinte), le bâti recomposé comme en 1900, les
-     grands disparus (Halles, Halle aux vins, Bercy, abattoirs, gare Montparnasse…) tracés sur la photographie
-     aérienne de l'IGN « Paris 1949 », source de contrôle accessible d'ici ;
-   - *Ouvert* : l'Atlas municipal de 1937 (BHdV, géoréférencé par SoDUCo) et la nomenclature des voies de la Ville
-     de Paris sont sur des hôtes que l'environnement bloque ; la date de la maquette (été 1937, Exposition ouverte du
-     25 mai au 25 novembre ?) ; l'état du plateau Beaubourg en 1937.
+3. **Paris 1937** : étude des données et première extraction *faites le 23 novembre* (`ETUDE-1937.md`) :
+   - *décidé* : la base « Paris 1900 » corrigée de ce qui a changé de 1901 à 1937, d'après la date du bâti de l'APUR ;
+     la ville à l'été 1937, Exposition ouverte (25 mai - 25 novembre), sans curseur de chantier ;
+   - *fait* : `data/paris1937.json` (`python3 tools/extract_1889.py 1937`) — 77 km de voies ouvertes de 1901 à 1937,
+     414 tronçons de 1900 sous leur nom de 1937 (avenue Foch, rue de Liège, avenue Victor-Emmanuel-III…), l'enceinte
+     remplacée par les HBM, la Cité universitaire et la zone, le plateau Beaubourg dégagé, le Champ-de-Mars en jardin
+     loti sur ses bords ; 110 867 bâtiments, dont 84 794 réels ;
+   - **reste, dans l'ordre** : (a) les grands disparus et les zones refaites depuis, d'après la photographie de 1949
+     (Halles à douze pavillons, Halle aux vins, entrepôts de Bercy, abattoirs, gare Montparnasse de 1852, gare des
+     Gobelins…) ; (b) la page `dist/1937.html` par surcouche (`src/p1937/`), frise, accueil, visite, calque, test,
+     image de partage ; (c) l'Exposition de 1937 (Chaillot est déjà réel dans l'APUR ; pavillons à modeler) ;
+   - *Ouvert* : l'Atlas municipal de 1937, dont le serveur d'images (SoDUCo) ne répond pas ; les licences de la photo
+     de 1949 (Édugéo) et des images de la BHdV.
 4. **Paris 1975**.
 5. **Jeu « mode classe »** : seulement quand il sera décidé (`CADRAGE-JEU.md`).
 
@@ -104,9 +103,13 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
   communs s'y raccordent par `V.montage` (gares, `src/p1889/gares.js`), `V.ouvrage` (palais, `ensemble()`), `V.ecartes`
   (bâti de la ville, `src/p1889/ville.js`), `f.absent` (emprises) et `p.quand` / `p.hors` (étiquettes,
   `src/p1789/ui.js`). Un ouvrage nouveau : `ouvrage(app, { monte: [d0, d1] }, (B) => …)` dans `src/p1900/expo.js`.
-- *Paris 1937, données* : `python3 tools/etude_1937.py` refait les mesures de `ETUDE-1937.md` (sources de
-  `tools/fetch_1889.py`, plus trois couches de l'APUR gardées dans `data/source/1937/`) ; `python3 tools/photo1949.py
-  SORTIE.jpg LAT LON` met côte à côte la photographie de 1949 et celle d'aujourd'hui.
+- *Paris 1937, données* : `python3 tools/fetch_1889.py 1937` télécharge dans `data/source/1937/` les tronçons, voies,
+  îlots et arrondissements de l'APUR et la nomenclature des voies de la Ville de Paris ; `python3 tools/extract_1889.py
+  1937` écrit `data/paris1937.json`, en passant par `tools/ville_1937.py` (voies ouvertes de 1901 à 1937, îlots
+  remplacés, glacis, noms à la date, îlots dégagés : liste `DEGAGES`). Dans `tools/extract_1889.py`, tout ce qui est
+  propre à 1937 est sous `AN >= 1937` (ou `AN >= 1915` pour le classement du bâti), pour que 1889 et 1900 restent
+  identiques. `python3 tools/etude_1937.py` refait les mesures de l'étude ; `python3 tools/photo1949.py SORTIE.jpg LAT
+  LON` met côte à côte la photographie de 1949 et celle d'aujourd'hui.
 - *Sources de l'Exposition, pour les dates* : l'exécution des travaux est aux t. I (démolitions, pont Alexandre-III,
   passerelles), II (Grand et Petit Palais, Esplanade, rive droite, porte) et III (« expositionuniver03expo » :
   Champ-de-Mars, Château d'eau, Électricité, tour) de Picard ; le t. VI couvre les cérémonies et les transports.
@@ -189,6 +192,6 @@ depuis (Halles, abattoirs, entrepôts de Bercy, usines de la rive gauche avant P
 
 ## Ce qui reste ouvert
 
-- Pour 1937 : le choix de la méthode et l'accès à l'Atlas municipal de 1937 (voir `ETUDE-1937.md`). Pour 1975 : la
-  source des rues et des îlots, et celle des bâtiments disparus.
+- Pour 1937 : la densité des quartiers refaits depuis et l'Atlas municipal de 1937 comme contrôle (voir
+  `ETUDE-1937.md`). Pour 1975 : la source des rues et des îlots, et celle des bâtiments disparus.
 - Les passants, qui ne circulent qu'autour d'un quartier par maquette ; à étendre si une maquette s'y prête.

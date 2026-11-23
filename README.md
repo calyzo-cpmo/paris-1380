@@ -383,9 +383,11 @@ tools/extract_epochs.py      GeoPackage → data/epoques.json (recalage sur la m
 tools/extract_1789.py        GeoPackage → data/paris1789.json (même recalage, relief en grille, repères projetés en Lambert-93)
 tools/gpkg.py                lecture des GeoPackage sans dépendance (sqlite3, géométries WKB)
 data/paris1889.json          Paris 1889 recomposé : bâti (réel, probable, disparu, évoqué), îlots et rues de 1900, eau, jardins, relief, voies ferrées (actuelles, restituées, évoquées) (ODbL 1.0)
-tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/
-tools/extract_1889.py        recompose la ville de 1889 (ou de 1900 : python3 tools/extract_1889.py 1900) à partir de ces sources et de l'atlas de Vasserot
+tools/fetch_1889.py          télécharge les sources de Paris 1889 (APUR, base « Paris 1900 », relief de l'IGN) dans data/source/1889/ ; avec l'argument 1937, celles de Paris 1937 (îlots et voies de l'APUR, nomenclature des voies de la Ville de Paris) dans data/source/1937/
+tools/extract_1889.py        recompose la ville de 1889 (ou de 1900, ou de 1937 : python3 tools/extract_1889.py 1900, … 1937) à partir de ces sources et de l'atlas de Vasserot
 data/paris1900.json          Paris 1900 recomposé, même méthode et même format que Paris 1889, avec la liste des bâtiments datés d'après leur histoire (bati.hist) (ODbL 1.0)
+data/paris1937.json          Paris 1937 recomposé, même format que Paris 1900 : rues et îlots de 1900 corrigés jusqu'en 1937, noms des rues à la date, ancienne enceinte, bâti (ODbL 1.0) — pas encore de page
+tools/ville_1937.py          rues, îlots et noms de 1937 pour tools/extract_1889.py : voies ouvertes de 1901 à 1937 d'après la date de leur bâti riverain, îlots refaits, fossé et glacis de l'enceinte, îlots dégagés, noms suivis dans la nomenclature de la Ville de Paris
 tools/etude_1937.py          étude des données de Paris 1937 (ETUDE-1937.md) : bâti de l'APUR classé à la date de 1937, zones refaites depuis, rues et îlots de 1900 confrontés au bâti ; résultats dans data/source/1937/ (non versionné)
 tools/photo1949.py          planche de comparaison : photographie aérienne de Paris en 1949 (IGN) et celle d'aujourd'hui, autour d'un point
 tools/fer_1889.py            voies ferrées de 1889 et de 1900 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
