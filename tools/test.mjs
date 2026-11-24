@@ -333,7 +333,7 @@ const dess = await page.evaluate(() => {
   }
   a.ui.setEpoch('1380'); return out;
 });
-check('frise : « 1789 » y figure et mène à sa maquette', dess.lien[0] === 'A' && dess.lien[1] === 'index.html#m=1789' && dess.lien[2] === '1789' && dess.noms === 'Lutèce 1300 1380 1553 1652 1741 1789 1836 1889 1900', JSON.stringify([dess.lien, dess.noms]));
+check('frise : « 1789 » y figure et mène à sa maquette', dess.lien[0] === 'A' && dess.lien[1] === 'index.html#m=1789' && dess.lien[2] === '1789' && dess.noms === 'Lutèce 1300 1380 1553 1652 1741 1789 1836 1889 1900 1937', JSON.stringify([dess.lien, dess.noms]));
 check('dates dessinées : en 1553, maisons à pans de bois sur les quartiers nouveaux, aucun volume blanc', dess['1553'].maisons > 300 && dess['1553'].by.houses > 20000 && dess['1553'].by.roof > 5000 && !dess['1553'].blanc && !dess['1553'].by.facade, JSON.stringify(dess['1553']));
 check('dates dessinées : en 1741, maisons enduites à combles, édifices de pierre, une seule date en mémoire', dess['1741'].maisons > 1500 && dess['1741'].by.facade > 50000 && dess['1741'].by.comble > 2000 && dess['1741'].by.stonefx > 100 && !dess['1741'].blanc && dess['1741'].cache === 1, JSON.stringify(dess['1741']));
 // les chiffres racontent la croissance ; les enceintes se succèdent ; le masque de 1300 laisse en pointillé ce qui n'existe pas encore

@@ -3,7 +3,7 @@
 
 L'image de partage (1200 × 630, tools/og.mjs) porte en bas à gauche un bandeau de titre : la vignette n'en garde que le
 haut, où se voit la ville, recadré et réduit à 480 × 300 points. Une vignette pèse une quarantaine de kilo-octets ;
-l'écran d'accueil en montre cinq.
+l'écran d'accueil en montre six.
 
   python3 tools/vignettes.py        (à relancer après tools/og.mjs)
 """

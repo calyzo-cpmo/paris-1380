@@ -13,6 +13,7 @@ const MAQUETTES = [
   { page: 'lutece.html', sortie: 'lutece.jpg', titre: 'Lutèce vers 250', sous: 'Le forum, les thermes, le théâtre et les arènes de la ville gallo-romaine' },
   { page: '1889.html', sortie: '1889.jpg', titre: 'Paris en 1889', sous: 'Tout Paris dans l’enceinte de Thiers, l’Exposition universelle et la tour de 300 mètres' },
   { page: '1900.html', sortie: '1900.jpg', titre: 'Paris en 1900', sous: 'L’été de l’Exposition universelle : la tour repeinte, le Champ-de-Mars, la Grande Roue' },
+  { page: '1937.html', sortie: '1937.jpg', titre: 'Paris en 1937', sous: 'L’été de l’Exposition internationale : les Halles, Bercy, la Villette, la ceinture de brique' },
 ];
 // node tools/og.mjs 1900 : seulement les maquettes nommées (sans argument, toutes)
 const SEULES = process.argv.slice(2);

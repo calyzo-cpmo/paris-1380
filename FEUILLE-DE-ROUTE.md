@@ -7,11 +7,13 @@ son calque « Origine du bâti », ses tests et son image de partage.
 
 Le jeu en ligne (`CADRAGE-JEU.md`) reste au stade du cadrage : pas de migration pour l'instant.
 
-## Où on en est (23 novembre 2026) et la suite
+## Où on en est (24 novembre 2026) et la suite
 
-**En ligne** : cinq maquettes — Lutèce, 1380, 1789, 1889, **1900** — et l'**écran d'accueil** : sans adresse, le site
-montre les cinq époques en cartes au-dessus d'une maquette « en vitrine » qui tourne lentement ; le nom du site, en tête
-de chaque maquette, y ramène. Paris 1900 montre la ville à la date, la tour repeinte, le Champ-de-Mars de 1900, la
+**En ligne** : six maquettes — Lutèce, 1380, 1789, 1889, 1900, **1937** — et l'**écran d'accueil** : sans adresse, le site
+montre les six époques en cartes au-dessus d'une maquette « en vitrine » qui tourne lentement ; le nom du site, en tête
+de chaque maquette, y ramène. Paris 1937 montre la ville de l'été 1937 (rues et îlots de 1900 corrigés, enceinte
+démolie et ceinture des HBM, Chaillot, Champ-de-Mars en jardin, tour en jaune brun, Sacré-Cœur et son campanile, gare
+de l'Est doublée) et le Paris disparu depuis, relevé sur la photographie aérienne de 1949 ; pas encore son Exposition. Paris 1900 montre la ville à la date, la tour repeinte, le Champ-de-Mars de 1900, la
 Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la rue des Nations, la porte monumentale de Binet, les
 jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le palais des Armées et la passerelle
 Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
@@ -58,19 +60,38 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
      le guide Hachette. Quelques jours d'adjudication sont mal lus par l'OCR (Dôme central, Arts libéraux, Beaux-Arts) :
      à vérifier sur les scans. Le reste de la ville est celui de l'été 1900 ; le sol du Champ-de-Mars aussi, et la
      trame des passants, calculée une fois pour toutes à la date du 19 juillet 1900.
-3. **Paris 1937** : étude des données et première extraction *faites le 23 novembre* (`ETUDE-1937.md`) :
+3. **Paris 1937** : étude des données et première extraction *faites le 23 novembre* (`ETUDE-1937.md`), disparus et
+   page en ligne *faits le 24 novembre* :
    - *décidé* : la base « Paris 1900 » corrigée de ce qui a changé de 1901 à 1937, d'après la date du bâti de l'APUR ;
      la ville à l'été 1937, Exposition ouverte (25 mai - 25 novembre), sans curseur de chantier ;
    - *fait* : `data/paris1937.json` (`python3 tools/extract_1889.py 1937`) — 77 km de voies ouvertes de 1901 à 1937,
      414 tronçons de 1900 sous leur nom de 1937 (avenue Foch, rue de Liège, avenue Victor-Emmanuel-III…), l'enceinte
      remplacée par les HBM, la Cité universitaire et la zone, le plateau Beaubourg dégagé, le Champ-de-Mars en jardin
      loti sur ses bords ; 110 867 bâtiments, dont 84 794 réels ;
-   - **reste, dans l'ordre** : (a) les grands disparus et les zones refaites depuis, d'après la photographie de 1949
-     (Halles à douze pavillons, Halle aux vins, entrepôts de Bercy, abattoirs, gare Montparnasse de 1852, gare des
-     Gobelins…) ; (b) la page `dist/1937.html` par surcouche (`src/p1937/`), frise, accueil, visite, calque, test,
-     image de partage ; (c) l'Exposition de 1937 (Chaillot est déjà réel dans l'APUR ; pavillons à modeler) ;
+   - *fait (a)* : les grands ensembles disparus, relevés sur la photographie de 1949 (`tools/releve1949.py`, planche
+     redressée dans le repère de la maquette sous une grille cotée) : Halle aux vins, entrepôts de Bercy, abattoirs de
+     la Villette et de Vaugirard, marché aux bestiaux, usines Citroën de Javel, gare des Gobelins — des halles basses
+     de statut « disparu » le long des rues intérieures de leurs îlots (`tools/disparus_1937.py`, 709 bâtiments) — ; les
+     gazomètres de La Villette, la Petite Roquette, le Vélodrome d'Hiver, modelés à part (`src/p1937/disparus.js`) ; les
+     Halles, la gare Montparnasse de 1852 et la gare de la Bastille, des modules communs. Les **zones refaites** depuis
+     (676 îlots dont l'emprise actuelle est surtout postérieure à 1937 : Italie, Flandre, Belleville…) reçoivent des
+     maisons évoquées serrées, sur deux rangs (rue et cour), comme sur la photographie ;
+   - *fait (b)* : la page `dist/1937.html` par surcouche (`src/p1937/`, qui reprend aussi `src/p1900/palais.js` :
+     `reprend` dans `tools/build.mjs`), frise de toutes les pages, accueil, visite (16 étapes), calque (« disparu » =
+     relevé sur la photographie de 1949), test `tools/test1937.mjs` (43 vérifications), image de partage, vignette,
+     adresse courte `1937.html`, intégration continue ;
+   - *Ce que la photographie a corrigé* : elle montre **dix** pavillons aux Halles en 1949 (quatre à l'ouest, six à
+     l'est), là où les sources disent les deux derniers achevés en 1936 près de la Bourse de commerce : ce sont les dix
+     de la photographie qui sont figurés, comme en 1889 et en 1900 ; la contradiction reste à lever (plans de 1900 et
+     de 1937), et les maquettes de 1889 et de 1900 montrent peut-être deux pavillons de trop ;
+   - **reste** : (c) l'Exposition de 1937 (Chaillot et le palais de Tokyo sont réels dans l'APUR ; pavillons à
+     modeler : Union soviétique et Allemagne face à face au pont d'Iéna, Espagne, Italie…, d'après le guide officiel et
+     les photographies) ; puis les points ouverts ci-dessous ;
    - *Ouvert* : l'Atlas municipal de 1937, dont le serveur d'images (SoDUCo) ne répond pas ; les licences de la photo
-     de 1949 (Édugéo) et des images de la BHdV.
+     de 1949 (Édugéo) et des images de la BHdV — aucune image n'est diffusée, seuls des emplacements et des dimensions
+     relevés, sources citées ; les hauteurs des gazomètres et des halles disparues (conventions) ; quelques îlots non
+     bâtis de la base de 1900 qui l'étaient en 1937 (à côté du Vélodrome d'Hiver) ; la zone, au-delà des HBM, pas
+     figurée ; les passants portent encore les costumes de 1889.
 4. **Paris 1975**.
 5. **Jeu « mode classe »** : seulement quand il sera décidé (`CADRAGE-JEU.md`).
 
@@ -103,6 +124,13 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
   communs s'y raccordent par `V.montage` (gares, `src/p1889/gares.js`), `V.ouvrage` (palais, `ensemble()`), `V.ecartes`
   (bâti de la ville, `src/p1889/ville.js`), `f.absent` (emprises) et `p.quand` / `p.hors` (étiquettes,
   `src/p1789/ui.js`). Un ouvrage nouveau : `ouvrage(app, { monte: [d0, d1] }, (B) => …)` dans `src/p1900/expo.js`.
+- *Paris 1937, la page* : `src/p1937/` remplace `src/p1889/expo.js` (tour, jardin du Champ-de-Mars, palais de 1900,
+  disparus) ; les petits écarts de date sont dans les modules communs par `ANNEE` (`ANNEE >= 1907` : la tour en jaune
+  brun ; `>= 1912` : le campanile du Sacré-Cœur ; `>= 1931` : la gare de l'Est doublée ; `>= 1937` : textes du
+  calque). Les disparus : `tools/disparus_1937.py` (zones et emprises, relevées avec `python3 tools/releve1949.py
+  SORTIE.png X Z [CÔTÉ] [PAS] [ZOOM] [aujourdhui]`), et `src/p1937/disparus.js` pour ce qui ne tient pas dans un
+  bâtiment des données. Une zone de plus : un polygone grossier autour de l'enceinte du site, ses paramètres (`prof`,
+  `h`, `dens`, `lg`, `toit`), puis `python3 tools/extract_1889.py 1937`.
 - *Paris 1937, données* : `python3 tools/fetch_1889.py 1937` télécharge dans `data/source/1937/` les tronçons, voies,
   îlots et arrondissements de l'APUR et la nomenclature des voies de la Ville de Paris ; `python3 tools/extract_1889.py
   1937` écrit `data/paris1937.json`, en passant par `tools/ville_1937.py` (voies ouvertes de 1901 à 1937, îlots
@@ -171,11 +199,15 @@ de date (pour le montage de l'Exposition 1900, comme pour la tour en 1889).
   la Cité internationale universitaire, les terrains de sport de la « zone ».
 - L'Exposition internationale de 1937 : le palais de Chaillot à la place du Trocadéro de 1878, le palais de Tokyo, le
   palais d'Iéna ; les pavillons soviétique et allemand face à face au pont d'Iéna.
-- Les Halles au complet : douze pavillons, les deux derniers bâtis en 1936.
+- Les Halles : douze pavillons selon les sources, les deux derniers bâtis en 1936 ; la photographie de 1949 en montre dix
+  (voir « La suite », point 3).
 - La Petite Ceinture sans voyageurs depuis 1934 ; la ligne d'Auteuil toujours en service ; le métro étendu.
 
 **Données** : étudiées le 23 novembre 2026, voir `ETUDE-1937.md` — sources, chiffres, zones refaites depuis,
 méthode proposée et points ouverts.
+
+**Fait (24 novembre 2026)** : la page, les grands ensembles disparus et les zones refaites — voir « La suite », point 3.
+**Reste** : l'Exposition de 1937.
 
 ## 3. Paris 1975
 

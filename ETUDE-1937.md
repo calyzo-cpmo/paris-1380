@@ -192,3 +192,25 @@ la photographie de 1949, où la rangée de la rue Rambuteau est encore debout (e
   sur la photographie, avec les sources écrites).
 - **Les voies sans riverains** (175 km écartés, dont le boulevard périphérique et les voies des grands ensembles) : des
   liaisons ouvertes avant 1937 peuvent y manquer.
+
+## 6. Suite : les disparus et la page (24 novembre 2026)
+
+- **Relevé sur la photographie de 1949** : `python3 tools/releve1949.py SORTIE.png X Z [CÔTÉ] [PAS] [ZOOM] [aujourdhui]`
+  redresse la photographie dans le repère de la maquette (recalage de `tools/extract_epochs.py`, gardé dans
+  `data/source/1937/recalage.json`) et y trace une grille cotée et les îlots de 1937 ; les îlots de la base de 1900
+  tombent à quelques mètres près sur les pavillons des Halles, ce qui valide le recalage. Aucune image n'est diffusée :
+  seuls des emplacements, des diamètres et des contours en sont tirés.
+- **Grands ensembles disparus** (`tools/disparus_1937.py`) : Halle aux vins, entrepôts de Bercy, abattoirs de la Villette
+  et marché aux bestiaux, abattoirs de Vaugirard, usines Citroën de Javel — un polygone autour de l'enceinte relevée,
+  des halles basses de statut « V » (disparu) le long des rues intérieures de chaque îlot, sans maison évoquée —, et les
+  deux halles de la gare des Gobelins ; 709 bâtiments. Modelés à part (`src/p1937/disparus.js`) : dix-neuf gazomètres
+  de l'usine à gaz de La Villette (centre et diamètre relevés, de 29 à 73 m), la prison de la Petite Roquette (plan
+  hexagonal relevé), le Vélodrome d'Hiver (emprise de 105 m sur 62 relevée).
+- **Zones refaites** : un îlot bâti dont l'emprise actuelle est à plus de 60 % postérieure à 1937 (et en couvre plus de
+  12 %) reçoit ses maisons évoquées serrées comme au centre, sur deux rangs — sur la rue et sur la cour : 676 îlots.
+  Italie, Flandre, Belleville paraissent alors aussi denses que sur la photographie.
+- **Halles** : la photographie montre dix pavillons en 1949 (quatre à l'ouest, six à l'est), sur les îlots de la base
+  de 1900 ; les sources (« deux derniers achevés en 1936 », « pavillons 1 et 2 à l'ouest autour de la Bourse de
+  commerce ») ne s'y accordent pas encore. Ce sont les dix de la photographie qui sont figurés.
+- 1889 et 1900 sortent toujours inchangés, à l'octet près : tout ce qui est propre à 1937 est sous `AN >= 1937`.
+

@@ -1,0 +1,163 @@
+<div id="scene" aria-label="Maquette 3D de Paris en 1937"></div>
+<div id="labels" aria-hidden="true"></div>
+
+<header id="top">
+  <div id="brand">
+    <p id="brand-site"><a href="index.html" title="Revenir à l’accueil : les six maquettes">Paris à travers le temps</a></p>
+    <h1>Paris <span>1937</span></h1>
+    <p id="brand-sub">L’été de l’Exposition internationale</p>
+    <p id="where" hidden></p>
+  </div>
+  <nav id="menu" aria-label="Panneaux">
+    <button type="button" id="btn-places" aria-controls="places" aria-expanded="false">Lieux</button>
+    <button type="button" id="btn-more" aria-controls="menu-more" aria-expanded="false" aria-label="Autres panneaux">Menu</button>
+    <div id="menu-more">
+      <button type="button" id="btn-lutece" data-m="lutece" title="Ouvrir la maquette de Lutèce, vers 250">Lutèce</button>
+      <button type="button" id="btn-1380" data-m="1380" title="Ouvrir la maquette de Paris vers 1380">Paris 1380</button>
+      <button type="button" id="btn-1789" data-m="1789" title="Ouvrir la maquette de Paris en 1789">Paris 1789</button>
+      <button type="button" id="btn-1889" data-m="1889" title="Ouvrir la maquette de Paris en 1889">Paris 1889</button>
+      <button type="button" id="btn-1900" data-m="1900" title="Ouvrir la maquette de Paris en 1900">Paris 1900</button>
+      <button type="button" id="btn-calque" aria-pressed="false" aria-controls="legend" title="Teinter chaque maison selon ce qui la justifie : réelle, probable, disparue, évoquée">Origine du bâti</button>
+      <button type="button" id="btn-sources">Sources</button>
+      <button type="button" id="btn-share">Partager</button>
+      <button type="button" id="btn-help">Aide</button>
+    </div>
+  </nav>
+</header>
+
+<aside id="places" hidden aria-label="Liste des lieux">
+  <div class="panel-head"><h2>Lieux</h2><button type="button" class="x" data-close="places" aria-label="Fermer">×</button></div>
+  <input id="place-search" type="search" placeholder="Chercher un lieu…" autocomplete="off" aria-label="Chercher un lieu">
+  <div id="place-list"></div>
+</aside>
+
+<section id="card" hidden aria-live="polite">
+  <button type="button" id="card-grip" aria-label="Agrandir ou réduire la fiche"></button>
+  <button type="button" class="x" data-close="card" aria-label="Fermer la fiche">×</button>
+  <p id="card-cat"></p>
+  <h2 id="card-name"></h2>
+  <p id="card-text"></p>
+  <div class="row" id="card-actions">
+    <button type="button" id="card-walk" class="primary">S’y promener à pied</button>
+    <button type="button" id="card-view" class="ghost">Recadrer</button>
+  </div>
+</section>
+
+<div id="walkhud" class="row" hidden>
+  <button type="button" id="walk-exit">Reprendre de la hauteur</button>
+</div>
+
+<aside id="nav" aria-label="Se repérer">
+  <div id="map-wrap">
+    <canvas id="minimap" role="img" aria-label="Plan de situation : cliquer pour s’y rendre"></canvas>
+    <button type="button" id="map-zoom" aria-label="Changer l’échelle du plan" title="Plan entier ou quartier">Quartier</button>
+  </div>
+  <div class="row" id="nav-row">
+    <button type="button" id="btn-home" title="Revenir à la vue d’ensemble (touche O)">Vue d’ensemble</button>
+    <button type="button" id="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut (touche N)">
+      <svg viewBox="-12 -12 24 24" width="26" height="26" aria-hidden="true"><g id="compass-rose"><path d="M0-10 3.2 0H-3.2Z" fill="currentColor"/><path d="M0 10 3.2 0H-3.2Z" fill="none" stroke="currentColor" stroke-width="1"/><text x="0" y="-3.2" text-anchor="middle" font-size="5.2" font-weight="700" fill="#101c44">N</text></g></svg>
+    </button>
+  </div>
+</aside>
+
+<div id="toast" hidden role="status"></div>
+
+<div id="stack">
+<div id="tour" hidden>
+  <div id="tour-head"><span id="tour-title"></span><span id="tour-count"></span></div>
+  <div id="tour-dots" role="group" aria-label="Étapes du parcours"></div>
+  <h3 id="tour-place"></h3>
+  <p id="tour-text"></p>
+  <div class="row">
+    <button type="button" id="tour-prev" class="ghost">Précédent</button>
+    <button type="button" id="tour-play" class="ghost" aria-pressed="true">Pause</button>
+    <button type="button" id="tour-next" class="primary">Suivant</button>
+    <span class="spacer"></span>
+    <button type="button" id="tour-card" class="ghost" hidden>Fiche</button>
+    <button type="button" id="tour-stop" class="ghost">Terminer</button>
+  </div>
+</div>
+<aside id="legend" hidden aria-label="Légende : d’où vient chaque maison">
+  <div class="panel-head"><h2>D’où vient chaque maison</h2><button type="button" class="x" data-close="legend" aria-label="Masquer le calque">×</button></div>
+  <ul id="legend-list"></ul>
+  <p class="legend-note">Aucune base ne décrit le bâti de 1937 maison par maison : chacune garde la trace de ce qui la justifie. Les monuments, les gares, les édifices et les grands disparus, modelés à part, gardent leur couleur.</p>
+</aside>
+<div id="hint" hidden role="status"></div>
+<nav id="frise" hidden aria-label="Paris à d’autres dates">
+  <div id="frise-jalons" class="seg"><a class="maquette" href="index.html#m=lutece" data-m="lutece" title="Passer à la maquette détaillée de Lutèce, vers 250">Lutèce</a><a href="index.html#e=1300" data-e="1300">1300</a><a class="maquette" href="index.html" data-m="1380" title="Passer à la maquette détaillée de Paris vers 1380">1380</a><a href="index.html#e=1553" data-e="1553">1553</a><a href="index.html#e=1652" data-e="1652">1652</a><a href="index.html#e=1741" data-e="1741">1741</a><a class="maquette" href="index.html#m=1789" data-m="1789" title="Passer à la maquette détaillée de Paris en 1789">1789</a><a href="index.html#e=1836" data-e="1836">1836</a><a class="maquette" href="index.html#m=1889" data-m="1889" title="Passer à la maquette détaillée de Paris en 1889, l’année de la tour Eiffel">1889</a><a class="maquette" href="index.html#m=1900" data-m="1900" title="Passer à la maquette détaillée de Paris en 1900, l’été de l’Exposition universelle">1900</a><a class="maquette" aria-current="page" title="La maquette que vous regardez">1937</a></div>
+  <span id="frise-note">en doré : maquettes détaillées</span>
+  <button type="button" class="x" data-close="frise" aria-label="Fermer la frise des dates">×</button>
+</nav>
+</div>
+
+<footer id="dock">
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" id="mode-fly" aria-pressed="true">Survol</button>
+    <button type="button" id="mode-tour" aria-pressed="false"><span class="long">Visite guidée</span><span class="short">Visite</span></button>
+    <button type="button" id="mode-walk" aria-pressed="false">À pied</button>
+  </div>
+  <div id="hour-wrap">
+    <button type="button" id="hour-btn" aria-controls="hour-pop" aria-expanded="false"><span id="hour-label">10 h 30</span></button>
+    <div id="hour-pop">
+      <button type="button" id="hour-play" aria-pressed="false" aria-label="Faire défiler la journée" title="Faire défiler la journée"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path class="ico-play" d="M3 1.5v9l7.5-4.5z" fill="currentColor"/><path class="ico-pause" d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg></button>
+      <input id="hour" type="range" min="4.5" max="22.5" step="0.25" value="10.5" aria-label="Heure du jour">
+      <div id="hour-presets" class="chips" role="group" aria-label="Moments de la journée">
+        <button type="button" data-hour="5.25">Aube</button>
+        <button type="button" data-hour="12">Midi</button>
+        <button type="button" data-hour="18.75">Soir</button>
+        <button type="button" data-hour="21.5">Nuit</button>
+      </div>
+    </div>
+  </div>
+  <button type="button" id="btn-epoch" aria-controls="frise" aria-expanded="false" title="Voir Paris à d’autres dates"><span class="long">Époques · </span><b id="epoch-label">1937</b></button>
+</footer>
+
+<div id="sources" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="sources-title">
+  <div class="sheet">
+    <div class="panel-head"><h2 id="sources-title">D’où vient cette maquette</h2><button type="button" class="x" data-close="sources" aria-label="Fermer">×</button></div>
+    <p class="lede">Aucune base de données ne décrit Paris en 1937 maison par maison. La ville est donc recomposée, comme celles de 1889 et de 1900 : les bâtiments d’aujourd’hui que l’Atelier parisien d’urbanisme date de 1937 ou d’avant sont à leur place ; les autres sont évoqués sur leur emprise ou le long des rues. Îlots et rues viennent de la base « Paris 1900 » des Projets Time Machine, corrigée de ce qui a changé de 1901 à 1937 ; les noms des rues, de la nomenclature des voies de la Ville de Paris. Toutes ces données sont ouvertes, sous licence <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a>. Les grands ensembles disparus depuis sont relevés sur la photographie aérienne de Paris en 1949 de l’IGN.</p>
+    <ul class="method" id="sources-list"></ul>
+    <h3>Ce qui est réel, ce qui est évoqué</h3>
+    <ul class="method">
+      <li><b>Réel :</b> l’emprise et la hauteur des bâtiments encore debout — dont le Grand et le Petit Palais, les gares de Lyon, d’Orsay et des Invalides, la ceinture des habitations à bon marché, la Cité universitaire, le palais de Chaillot —, le tracé de la Seine et des canaux, le relief, l’emplacement de la tour.</li>
+      <li><b>Probable :</b> les bâtiments de la période 1915-1939 dont l’année n’est pas connue : presque tous sont antérieurs à 1937.</li>
+      <li><b>Disparu :</b> les halles, les magasins et les ateliers des grands ensembles démolis depuis — Halle aux vins, entrepôts de Bercy, abattoirs de la Villette et de Vaugirard, marché aux bestiaux, usines Citroën du quai de Javel, gare des Gobelins —, placés dans leur enceinte relevée sur la photographie de 1949, le long des rues intérieures des îlots ; leur nombre, leur longueur et leur hauteur sont une évocation. Modelés à part, d’après la même photographie : les gazomètres de l’usine à gaz de La Villette (place et diamètre relevés, hauteur de convention), la prison de la Petite Roquette (plan hexagonal relevé), le Vélodrome d’Hiver (emprise relevée). Les dix pavillons des Halles que montre la photographie, la gare Montparnasse de 1852 et la gare de la Bastille sont modelés comme dans les maquettes de 1889 et de 1900.</li>
+      <li><b>Évoqué :</b> les maisons des quartiers rebâtis depuis, sur l’emprise d’aujourd’hui là où le quartier ancien subsiste autour, le long des rues ailleurs ; dans les îlots refaits d’un bloc depuis 1937 (Italie, Flandre, Belleville, Maine-Montparnasse…), où la photographie de 1949 montre un faubourg serré, deux rangs de maisons, sur la rue et sur la cour. La forme des toits, les façades, les couleurs ; les passants, les trains, les péniches et les vapeurs.</li>
+      <li><b>Décalage de date :</b> le relief, la Seine et les jardins sont ceux d’aujourd’hui ; la photographie de contrôle est de 1949, douze ans après ; la « zone », au-delà de la ceinture des habitations à bon marché, n’est pas figurée.</li>
+      <li><b>Monuments :</b> le corps de chaque édifice vient des données ; dômes, tours, flèches et colonnes y sont ajoutés à leur hauteur connue, comme dans les maquettes de 1889 et de 1900. Le Sacré-Cœur a son campanile, achevé en 1912 ; la gare de l’Est est doublée (1931). La tour Eiffel est peinte en « jaune brun », sa couleur de 1907 à 1954 (site officiel de la tour) ; le léger dégradé est de convention. Le Champ-de-Mars est le jardin de Formigé, dont le dessin est une évocation.</li>
+      <li><b>Rues et ponts :</b> les rues de 1900, plus 77 km de voies ouvertes de 1901 à 1937, datées par les bâtiments qui les bordent ; 414 tronçons portent leur nom de 1937 (avenue Foch, rue de Liège…). Les ponts sont ceux que portent ces rues ; leur forme est de convention.</li>
+      <li><b>Chemins de fer :</b> les voies d’aujourd’hui posées sur une emprise du chemin de fer qui existait alors, et les lignes déposées depuis restituées ou évoquées (ligne d’Auteuil, ligne de Vincennes, arrivée à l’ancienne gare Montparnasse). La Petite Ceinture ne porte plus de voyageurs depuis 1934, sauf sur la ligne d’Auteuil.</li>
+      <li><b>Pas encore modelé :</b> l’Exposition internationale de 1937 et ses pavillons, dont ceux de l’Union soviétique et de l’Allemagne face à face au pont d’Iéna (le palais de Chaillot et le palais de Tokyo, eux, sont dans les données) ; la zone ; les entrées du métro.</li>
+    </ul>
+    <p class="group-note">Les couches ont été recalées sur le même repère que les maquettes de 1380 et de 1789 : on passe de l’une à l’autre au même endroit.</p>
+  </div>
+</div>
+
+<div id="help" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sheet narrow">
+    <div class="panel-head"><h2 id="help-title">Se déplacer</h2><button type="button" class="x" data-close="help" aria-label="Fermer">×</button></div>
+    <dl class="keys">
+      <dt>Glisser</dt><dd>déplacer la vue au-dessus de la ville</dd>
+      <dt>Clic droit ou Maj + glisser</dt><dd>pivoter et incliner</dd>
+      <dt>Molette, pincement</dt><dd>s’approcher ou s’éloigner</dd>
+      <dt>Double-clic</dt><dd>descendre à pied à cet endroit</dd>
+      <dt>Visite guidée</dt><dd>un parcours commenté, d’étape en étape ; la lecture avance seule, toucher la maquette la met en pause</dd>
+      <dt>Origine du bâti</dt><dd>teinte chaque maison selon ce qui la justifie : réelle, probable, disparue, évoquée</dd>
+      <dt>À pied</dt><dd>glisser pour regarder, cliquer le sol pour avancer, flèches ou Z Q S D pour marcher, Maj pour courir</dd>
+      <dt>Échap</dt><dd>reprendre de la hauteur, fermer un panneau</dd>
+      <dt>/</dt><dd>chercher un lieu</dd>
+      <dt>N, O</dt><dd>nord en haut, vue d’ensemble</dd>
+      <dt>Époques</dt><dd>le bouton « Époques » ouvre la frise des dates. « Lutèce », « 1380 », « 1789 », « 1889 » et « 1900 », en doré, mènent aux autres maquettes détaillées sans quitter la page, au même point de vue et à la même heure : la ville s’enfonce, l’autre s’élève. Les autres dates se posent sur la maquette de 1380.</dd>
+    </dl>
+  </div>
+</div>
+
+<div id="loading">
+  <div id="load-box">
+    <p id="load-site">Paris à travers le temps</p>
+    <h1>Paris <span>1937</span></h1>
+    <p id="load-pitch">Tout Paris l’été de l’Exposition internationale : l’enceinte de Thiers démolie et sa ceinture de logements de brique, les Halles de Baltard, la Halle aux vins, les entrepôts de Bercy, les abattoirs de la Villette, l’ancienne gare Montparnasse, la tour peinte en jaune brun, plus de cent dix mille bâtiments. La ville est recomposée à partir de données ouvertes ; ce qui est réel et ce qui est évoqué est dit dans le panneau « Sources ».</p>
+    <div id="load-label">Chargement…</div>
+    <div id="load-track"><div id="load-bar"></div></div>
+  </div>
+</div>

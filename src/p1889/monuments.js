@@ -91,7 +91,8 @@ function arc(app, B) {
 
 // Sacré-Cœur en 1889 : la crypte est achevée, les murs de la nef montent dans leurs échafaudages ; ni dôme ni campanile.
 // En 1900, le grand dôme est achevé (1899) : 83 mètres au sommet du lanternon ; le campanile ne sera bâti qu'à partir de
-// 1904. La façade, tournée vers Paris (au sud), porte deux petits dômes. Cotes d'ensemble ; le détail est une évocation.
+// 1904. Il est achevé en 1912 : une tour carrée de 84 mètres derrière le chevet, au nord (page « Paris 1937 »). La
+// façade, tournée vers Paris (au sud), porte deux petits dômes. Cotes d'ensemble ; le détail est une évocation.
 function sacreCoeur1900(app, B) {
   const V = app.v89, x = -504, z = -3712, y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), col = PIERRE_BLANCHE;
   V.reserves.push({ ring: [[x - 40, z - 52], [x + 40, z - 52], [x + 40, z + 52], [x - 40, z + 52]], x0: x - 40, z0: z - 52, x1: x + 40, z1: z + 52 });
@@ -102,6 +103,12 @@ function sacreCoeur1900(app, B) {
   for (const s of [-1, 1]) coupole(app, B, x + s * 12, z + 35, 4.6, 24, 30, 37, 40, 42, col, { pierre: col, lanterne: col, debord: 1.06 });      // dômes de la façade
   const top = coupole(app, B, x, z - 4, 11.5, 27, 50, 74, 79, 83, col, { pierre: col, lanterne: col, debord: 1.04, seg: 24 });
   app.foot.push({ ring: [[x - 19, z - 42], [x + 19, z - 42], [x + 19, z + 42], [x - 19, z + 42]], top: y0 + 50 });
+  if (ANNEE >= 1912) {                                                                                               // campanile, contre le chevet
+    const zc = z - 62; reserver(V, x, zc, 10);
+    tour(app, B, x, zc, 1, 0, 7.5, -4, 60, { baies: 42, col });
+    coupole(app, B, x, zc, 5.6, 60, 66, 77, 81, 84, col, { pierre: col, lanterne: col, debord: 1.06, seg: 12 });
+    app.foot.push({ ring: [[x - 7.5, zc - 7.5], [x + 7.5, zc - 7.5], [x + 7.5, zc + 7.5], [x - 7.5, zc + 7.5]], top: y0 + 84 });
+  }
   app.monuments.SacreCoeur = { x, z, top };
 }
 function sacreCoeur(app, B) {

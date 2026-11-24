@@ -7,9 +7,9 @@ import { CADRE, ANNEE } from './data.js';
 
 export const STATUTS = [
   { code: 1, s: 'R', nom: 'Réel', css: '#3f9a54', note: `Encore debout, daté de ${ANNEE} ou d’avant par l’APUR : emprise et hauteur réelles.` },
-  { code: 2, s: 'P', nom: 'Probable', css: '#4f8fd6', note: ANNEE >= 1900 ? 'Bâti entre 1851 et 1914, sans année connue ou daté de « 1900 », année ronde des relevés, dans un voisinage ancien.' : 'Bâti entre 1851 et 1914, sans année connue, dans un voisinage ancien.' },
-  { code: 3, s: 'V', nom: 'Disparu', css: '#e2a92e', note: 'Emprise de l’atlas de Vasserot (1810-1836), là où le bâtiment actuel est plus récent.' },
-  { code: 4, s: 'EG', nom: 'Évoqué', css: '#d77393', note: 'Maison évoquée, sur l’emprise actuelle ou le long des rues de 1900.' },
+  { code: 2, s: 'P', nom: 'Probable', css: '#4f8fd6', note: ANNEE >= 1937 ? 'Bâti entre 1915 et 1939, sans année connue : presque toujours avant 1937.' : ANNEE >= 1900 ? 'Bâti entre 1851 et 1914, sans année connue ou daté de « 1900 », année ronde des relevés, dans un voisinage ancien.' : 'Bâti entre 1851 et 1914, sans année connue, dans un voisinage ancien.' },
+  { code: 3, s: 'V', nom: 'Disparu', css: '#e2a92e', note: ANNEE >= 1937 ? 'Halle, magasin ou atelier d’un grand ensemble disparu depuis, relevé sur la photographie aérienne de 1949.' : 'Emprise de l’atlas de Vasserot (1810-1836), là où le bâtiment actuel est plus récent.' },
+  { code: 4, s: 'EG', nom: 'Évoqué', css: '#d77393', note: `Maison évoquée, sur l’emprise actuelle ou le long des rues de ${ANNEE >= 1937 ? ANNEE : 1900}.` },
 ];
 const CODE = { R: 1, P: 2, V: 3, E: 4, G: 4 }, PAS = 60;          // la trame code chaque statut par paliers de 60
 

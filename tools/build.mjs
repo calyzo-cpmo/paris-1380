@@ -65,9 +65,12 @@ console.log('build ok', (fragment.length / 1024).toFixed(0) + ' Ko');
 // Ainsi Paris 1900 reprend tout src/p1889/ ; src/p1900/ ne contient que ce qui change (l'Exposition, les lieux, la
 // visite). Un module de la surcouche qui importe un module de `de` par un chemin explicite obtient l'original : c'est
 // ainsi que src/p1900/expo.js reprend le Trocadéro et les outils de src/p1889/expo.js, qu'il remplace.
-function surcouche({ de, vers, donnees = {} }) {
-  const D = resolve(root, de), W = resolve(root, vers), remplace = new Map(Object.entries(donnees).map(([a, b]) => [resolve(root, a), resolve(root, b)]));
-  const dansSurcouche = (f) => { const r = relative(W, f); return !r.startsWith('..') && !isAbsolute(r); };
+// reprend : dossiers d'autres surcouches dont celle-ci reprend des modules (Paris 1937 reprend les palais de 1900, de
+// src/p1900/palais.js) ; leurs imports explicites de `de` obtiennent eux aussi l'original.
+function surcouche({ de, vers, reprend = [], donnees = {} }) {
+  const D = resolve(root, de), remplace = new Map(Object.entries(donnees).map(([a, b]) => [resolve(root, a), resolve(root, b)]));
+  const W = resolve(root, vers), Ws = [W, ...reprend.map((d) => resolve(root, d))];
+  const dansSurcouche = (f) => Ws.some((w) => { const r = relative(w, f); return !r.startsWith('..') && !isAbsolute(r); });
   return {
     name: 'surcouche',
     setup(b) {
@@ -131,11 +134,16 @@ await maquette({
   description: 'Maquette 3D interactive de Paris en 1900, l’été de l’Exposition universelle : tout Paris dans son enceinte, la tour repeinte en jaune, le Champ-de-Mars, la Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III.',
   sur: { de: 'src/p1889', vers: 'src/p1900', donnees: { 'data/paris1889.json': 'data/paris1900.json' } },
 });
+await maquette({
+  entree: 'src/p1937/main.js', corps: 'src/body1937.html', sortie: '1937.html', image: '1937.jpg', titre: 'Paris à travers le temps — Paris 1937 en maquette 3D',
+  description: 'Maquette 3D interactive de Paris en 1937, l’été de l’Exposition internationale : l’enceinte démolie et sa ceinture de logements, les Halles de Baltard, la Halle aux vins, les entrepôts de Bercy, les abattoirs de la Villette, l’ancienne gare Montparnasse.',
+  sur: { de: 'src/p1889', vers: 'src/p1937', reprend: ['src/p1900'], donnees: { 'data/paris1889.json': 'data/paris1937.json' } },
+});
 
 // ---- page d'accueil : héberge les maquettes et fait la transition entre époques
 const resShell = await build({ entryPoints: [join(root, 'src/shell/main.js')], bundle: true, format: 'iife', write: false, minify: !dev, target: 'es2020', legalComments: 'none' });
 const jsShell = resShell.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-const descShell = 'Paris de Lutèce à 1900 : neuf dates et cinq maquettes 3D détaillées — Lutèce vers 250, Paris vers 1380, Paris en 1789, Paris en 1889 avec la tour Eiffel qui se monte, Paris en 1900, l’été de l’Exposition universelle : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
+const descShell = 'Paris de Lutèce à 1937 : dix dates et six maquettes 3D détaillées — Lutèce vers 250, Paris vers 1380, Paris en 1789, Paris en 1889 avec la tour Eiffel qui se monte, Paris en 1900, l’été de l’Exposition universelle, Paris en 1937, l’été de l’Exposition internationale : survol, promenade à pied, passage d’une époque à l’autre au même endroit.';
 const shell = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -143,7 +151,7 @@ const shell = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Paris à travers le temps</title>
 <meta name="description" content="${descShell}">
-<meta property="og:title" content="Paris à travers le temps — maquettes 3D de Paris, de Lutèce à l’Exposition de 1900">
+<meta property="og:title" content="Paris à travers le temps — maquettes 3D de Paris, de Lutèce à l’Exposition de 1937">
 <meta property="og:description" content="${descShell}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
