@@ -47,7 +47,7 @@ autre lance le passage. Le nom du site, en tête de chaque maquette, ramène à 
 **Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur l'écran d'accueil ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900 ; <https://calyzo-cpmo.github.io/paris-1380/1937.html> s'ouvre sur Paris 1937. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` (les sept fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
-**Prochaines maquettes :** Paris 1937 est en ligne, sans encore son Exposition ; viendra 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md) ; l'étude des données de 1937 est dans [`ETUDE-1937.md`](ETUDE-1937.md).
+**Prochaine maquette :** Paris 1975, à l'été 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md) ; l'étude de ses données est dans [`ETUDE-1975.md`](ETUDE-1975.md), celle de 1937 dans [`ETUDE-1937.md`](ETUDE-1937.md).
 **Projet de jeu :** le cadrage d'un « mode classe » (séance animée par un enseignant, sans compte) est dans [`CADRAGE-JEU.md`](CADRAGE-JEU.md) ; rien n'en est encore construit.
 
 ## Ce que montre la maquette
@@ -400,6 +400,8 @@ tools/etude_1937.py          étude des données de Paris 1937 (ETUDE-1937.md) :
 tools/disparus_1937.py       grands ensembles disparus depuis 1937, relevés sur la photographie aérienne de 1949 : zones (îlots où des halles basses sont évoquées, statut « disparu ») et emprises
 tools/releve1949.py          planche de relevé : la photographie aérienne de 1949 redressée dans le repère de la maquette, sous une grille cotée et les îlots de 1937
 tools/photo1949.py          planche de comparaison : photographie aérienne de Paris en 1949 (IGN) et celle d'aujourd'hui, autour d'un point
+tools/etude_1975.py          étude des données de Paris 1975 (ETUDE-1975.md) : bâti de l'APUR classé à la date de 1975, tours, zones refaites depuis, voies ouvertes ou supprimées avant et après 1975, noms ; résultats dans data/source/1975/ (non versionné)
+tools/photo1975.py          planche de comparaison : photographie aérienne de Paris en 1965, carte de 1979 (IGN) et photographie d'aujourd'hui, autour d'un point
 tools/fer_1889.py            voies ferrées de 1889 et de 1900 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
 tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
 tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), entrées du métro, montage de 1897 à 1900 et son curseur, monuments, calque, visite, frise, téléphone

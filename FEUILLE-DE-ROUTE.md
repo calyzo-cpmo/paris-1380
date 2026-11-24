@@ -19,6 +19,8 @@ Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la rue des Nati
 jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le palais des Armées et la passerelle
 Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
 roulant et les entrées du métro. Un curseur montre le montage de l'Exposition, du 1er janvier 1897 au 19 juillet 1900.
+**Paris 1975** : l'étude des données est faite (25 novembre, `ETUDE-1975.md`) ; deux décisions sont attendues avant
+l'extraction (point 4 ci-dessous).
 
 **La suite, dans l'ordre**
 1. **Paris 1900, finitions** — *faites le 22 novembre*, sauf la dernière :
@@ -117,7 +119,29 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
      relevés, sources citées ; les hauteurs des gazomètres et des halles disparues (conventions) ; quelques îlots non
      bâtis de la base de 1900 qui l'étaient en 1937 (à côté du Vélodrome d'Hiver) ; la zone, au-delà des HBM, pas
      figurée ; les passants portent encore les costumes de 1889.
-4. **Paris 1975**.
+4. **Paris 1975** : étude des données *faite le 25 novembre* (`ETUDE-1975.md`) :
+   - *décidé* : la ville à l'**été 1975, sans curseur** de chantier ;
+   - *ce que dit l'étude* : 76 % de l'emprise bâtie d'aujourd'hui est réelle en 1975 (61 % de 1937 ou d'avant, 15 % de
+     1938 à 1975) ; la période « 1968-1975 » de l'APUR s'arrête à la date, il n'y a plus de bâti probable ; le bâti
+     postérieur (20,5 %, 683 ha) tient pour 38 % dans des zones refaites d'un bloc, surtout des gares de marchandises,
+     des entrepôts et des usines déjà dans la maquette de 1937 (Paris Rive Gauche, Bercy, la Chapelle, Batignolles,
+     Reuilly, la Villette, Javel) ; 65 tours de 60 m et plus sont réelles, hauteurs comprises ; 44 km de voies ouvertes
+     de 1938 à 1975, 64 km après ; 139 voies renommées depuis 1975 dont on connaît le nom d'alors ;
+   - *sources d'images* : aucune photographie orthorectifiée de 1975 n'est servie ; la photographie de **1965** (IGN,
+     « 1965-1980 » : Paris est de 1965) et la carte de **1979** (Édugéo) encadrent la date ; les clichés de 1974-1976 de
+     « Remonter le temps » (IGN) sont refusés par le réseau de l'environnement ;
+   - **à décider avant l'extraction** : (a) la méthode — proposée : la ville de 1937 corrigée de 1938 à 1975 par
+     l'algorithme de `tools/ville_1937.py` (voies ajoutées d'après leurs riverains, îlots remplacés, voies recouvertes
+     retirées, noms suivis), plus le boulevard périphérique et les voies express ; (b) demander ou non l'accès à
+     « Remonter le temps » pour vérifier les quartiers en rénovation à la date (Italie, Belleville, Flandre, Plaisance,
+     Saint-Blaise, Front de Seine, Halles), au lieu des conventions proposées (bâti daté de 1976 à 1978 : chantier ;
+     de 1979 ou après : tissu de 1937) ;
+   - **ensuite, dans l'ordre** : l'extraction (`python3 tools/extract_1889.py 1975` → `data/paris1975.json`, tout ce qui
+     est propre à 1975 sous `AN >= 1975`, pour que 1889, 1900 et 1937 sortent identiques à l'octet près) ; les voies
+     ferrées de 1975 (`tools/fer_1889.py`) ; les grands sites (trou des Halles, Centre Pompidou en chantier, abattoirs
+     de la Villette fermés et salle des ventes inachevée, usines Citroën, entrepôts de Bercy et gare de la Bastille repris
+     de 1937) ; la page `dist/1975.html` par surcouche (`src/p1975/`), frise, accueil, visite, calque, test, image ;
+     les passants et les voitures de 1975.
 5. **Jeu « mode classe »** : seulement quand il sera décidé (`CADRAGE-JEU.md`).
 
 **Pour reprendre le travail** (notes techniques)
@@ -173,6 +197,13 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
   propre à 1937 est sous `AN >= 1937` (ou `AN >= 1915` pour le classement du bâti), pour que 1889 et 1900 restent
   identiques. `python3 tools/etude_1937.py` refait les mesures de l'étude ; `python3 tools/photo1949.py SORTIE.jpg LAT
   LON` met côte à côte la photographie de 1949 et celle d'aujourd'hui.
+- *Paris 1975, données* : `python3 tools/etude_1975.py` lit les sources de 1889 et de 1937 (`data/source/1889/`,
+  `data/source/1937/`) et écrit ses mesures dans `data/source/1975/etude_1975.json` (non versionné) ; `python3
+  tools/photo1975.py SORTIE.jpg LAT LON [ZOOM] [TUILES]` met côte à côte la photographie de 1965, la carte de 1979 et la
+  photographie d'aujourd'hui (couches WMTS de la Géoplateforme : `ORTHOIMAGERY.ORTHOPHOTOS.1965-1980`, style
+  `BDORTHOHISTORIQUE` ; `GEOGRAPHICALGRIDSYSTEMS.EDUGEO.PARIS1979`, niveau 16 au plus). Dans l'extraction, la règle du
+  bâti réel devra compter les périodes 1940-1967 et 1968-1975 (`c_perconst` 6 et 7) ; les emprises hautes de moins de
+  200 m² sont des cheminées.
 - *Sources de l'Exposition, pour les dates* : l'exécution des travaux est aux t. I (démolitions, pont Alexandre-III,
   passerelles), II (Grand et Petit Palais, Esplanade, rive droite, porte) et III (« expositionuniver03expo » :
   Champ-de-Mars, Château d'eau, Électricité, tour) de Picard ; le t. VI couvre les cérémonies et les transports.
@@ -255,11 +286,12 @@ méthode proposée et points ouverts.
 - La gare d'Orsay désaffectée (musée en 1986), les abattoirs de la Villette fermés (1974).
 - Le RER : la ligne A sous Paris.
 
-**Point de données à étudier** : la plus grande part du bâti de 1975 est encore debout, donc réelle. Ce qui a disparu
-depuis (Halles, abattoirs, entrepôts de Bercy, usines de la rive gauche avant Paris Rive Gauche) est à modeler à part.
+**Données** : étudiées le 25 novembre 2026, voir `ETUDE-1975.md` — sources, chiffres, zones refaites depuis, méthode
+proposée, décisions à prendre. **Décidé** : l'été 1975, sans curseur.
 
 ## Ce qui reste ouvert
 
 - Pour 1937 : la densité des quartiers refaits depuis et l'Atlas municipal de 1937 comme contrôle (voir
-  `ETUDE-1937.md`). Pour 1975 : la source des rues et des îlots, et celle des bâtiments disparus.
+  `ETUDE-1937.md`). Pour 1975 : la méthode et l'accès aux clichés de 1974-1976, puis les quartiers en rénovation à la
+  date (voir `ETUDE-1975.md`).
 - Les passants, qui ne circulent qu'autour d'un quartier par maquette ; à étendre si une maquette s'y prête.
