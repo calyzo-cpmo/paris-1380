@@ -7,13 +7,14 @@ son calque « Origine du bâti », ses tests et son image de partage.
 
 Le jeu en ligne (`CADRAGE-JEU.md`) reste au stade du cadrage : pas de migration pour l'instant.
 
-## Où on en est (24 novembre 2026) et la suite
+## Où on en est (25 novembre 2026) et la suite
 
 **En ligne** : six maquettes — Lutèce, 1380, 1789, 1889, 1900, **1937** — et l'**écran d'accueil** : sans adresse, le site
 montre les six époques en cartes au-dessus d'une maquette « en vitrine » qui tourne lentement ; le nom du site, en tête
 de chaque maquette, y ramène. Paris 1937 montre la ville de l'été 1937 (rues et îlots de 1900 corrigés, enceinte
 démolie et ceinture des HBM, Chaillot, Champ-de-Mars en jardin, tour en jaune brun, Sacré-Cœur et son campanile, gare
-de l'Est doublée) et le Paris disparu depuis, relevé sur la photographie aérienne de 1949 ; pas encore son Exposition. Paris 1900 montre la ville à la date, la tour repeinte, le Champ-de-Mars de 1900, la
+de l'Est doublée), le Paris disparu depuis, relevé sur la photographie aérienne de 1949, et **son Exposition** (première
+version, 25 novembre : une centaine de pavillons, de l'île aux Cygnes à l'Esplanade des Invalides). Paris 1900 montre la ville à la date, la tour repeinte, le Champ-de-Mars de 1900, la
 Grande Roue, le Grand et le Petit Palais, le pont Alexandre-III, la rue des Nations, la porte monumentale de Binet, les
 jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le palais des Armées et la passerelle
 Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
@@ -84,9 +85,33 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
      l'est), là où les sources disent les deux derniers achevés en 1936 près de la Bourse de commerce : ce sont les dix
      de la photographie qui sont figurés, comme en 1889 et en 1900 ; la contradiction reste à lever (plans de 1900 et
      de 1937), et les maquettes de 1889 et de 1900 montrent peut-être deux pavillons de trop ;
-   - **reste** : (c) l'Exposition de 1937 (Chaillot et le palais de Tokyo sont réels dans l'APUR ; pavillons à
-     modeler : Union soviétique et Allemagne face à face au pont d'Iéna, Espagne, Italie…, d'après le guide officiel et
-     les photographies) ; puis les points ouverts ci-dessous ;
+   - *fait (c), 25 novembre* : l'Exposition de 1937 (`src/p1937/expo37.js`), une centaine de pavillons — au
+     Trocadéro, l'URSS (Iofan, 160 × 21 m, statue posée à 33 m) et l'Allemagne (Speer, tour et aigle à 54 m) face à
+     face au-dessus des rampes de l'avenue de Tokio, de part et d'autre de la place de Varsovie ; le pavillon pontifical
+     (campanile de 75 m), l'Espagne (Sert et Lacasa), la Pologne et vingt autres sections étrangères dans les jardins,
+     le Portugal au bord du quai ; le bassin de la fontaine de Varsovie peint au sol ; sur le quai d'Orsay, de l'ouest
+     à l'est, États-Unis, Tchécoslovaquie, Suède, Grande-Bretagne, Belgique, Suisse, Italie (tour carrée) et des
+     pavillons français jusqu'à l'Alma ; le Centre des métiers (site du musée du quai Branly) ; sur la rive droite,
+     l'Hygiène (Mallet-Stevens), le Yachting (100 × 20 m sur poteaux), les concessions scientifiques de l'Alma aux
+     Invalides, la porte d'honneur et son mât de 100 m au débouché du pont Alexandre-III ; au Champ-de-Mars, deux files
+     de pavillons le long du parterre, la Publicité (plan incliné de 28 m), le palais de la Lumière et son mur courbe ;
+     le Centre régional (25 provinces) entre la tour et le pont de Passy ; le Centre des colonies sur l'île aux
+     Cygnes ; sur l'Esplanade, le palais de l'Air (166 × 36 m), les Chemins de fer, la Navigation, le planétarium et le
+     parc d'attractions. Fiches, visite (20 étapes), test (deux vérifications de plus) ;
+   - *Comment* : le plan général (vue cavalière de Martzloff et Gréber, Wikimedia Commons, « Plan général de
+     l'Exposition universelle de 1937 », avec la légende numérotée de son encart) ne se cale pas sur la maquette
+     (deux feuilles décalées à la pliure, perspective libre : 20 à 65 m d'écart sur une homographie) ; les pavillons
+     sont posés à la main, dans l'ordre et les proportions du plan, dans le repère de l'axe Trocadéro–École militaire
+     (`AXE`, `expoXZ`) et le long des berges relevées dans les données de la Seine (`RIVE_G`, `RIVE_D`, `ILE`). Les
+     cotes publiées viennent de *L'Architecture d'aujourd'hui*, août 1937 (numéro de l'Exposition, scan d'archive.org
+     servi par usmodernist.org) ; le bâti évoqué qui tombait sur les terrains de l'Exposition est écarté (`V.ecartes`),
+     le bâti réel reste ;
+   - **reste** : les points ouverts ci-dessous, et pour l'Exposition : le plan officiel à l'échelle de G. Peltier
+     (3 mars 1937, BnF, Gallica « btv1b531927012 », domaine public) — le serveur de Gallica, autorisé dans
+     l'environnement le 25 novembre, répond par une protection Cloudflare au téléchargement ; à le récupérer à la main
+     pour recaler les pavillons ; le guide officiel et le *Catalogue général* (dimensions, numéros) ; la passerelle de
+     l'Alma (Bloch), pas figurée faute de cote sûre ; les silhouettes des petits pavillons (boîtes à bandeaux, toits
+     de tuile ou d'ardoise selon la région) ;
    - *Ouvert* : l'Atlas municipal de 1937, dont le serveur d'images (SoDUCo) ne répond pas ; les licences de la photo
      de 1949 (Édugéo) et des images de la BHdV — aucune image n'est diffusée, seuls des emplacements et des dimensions
      relevés, sources citées ; les hauteurs des gazomètres et des halles disparues (conventions) ; quelques îlots non
@@ -131,6 +156,16 @@ roulant et les entrées du métro. Un curseur montre le montage de l'Exposition,
   SORTIE.png X Z [CÔTÉ] [PAS] [ZOOM] [aujourdhui]`), et `src/p1937/disparus.js` pour ce qui ne tient pas dans un
   bâtiment des données. Une zone de plus : un polygone grossier autour de l'enceinte du site, ses paramètres (`prof`,
   `h`, `dens`, `lg`, `toit`), puis `python3 tools/extract_1889.py 1937`.
+- *Paris 1937, l'Exposition* : `src/p1937/expo37.js`, appelé par `batirExpo` (`src/p1937/expo.js`), qui écarte aussi le
+  bâti évoqué de ses terrains (`terrainsExpo()`). Un pavillon : `bloc(app, B, F, u, v, lu, lv, h, o)` dans un repère
+  `F` (`AXE` pour l'axe Trocadéro–École militaire, `RD` pour le Cours-la-Reine, celui de l'Esplanade), options
+  `col`, `verre`, `pilotis`, `toit: [hauteur, couleur]`, `a` (rotation), `bandes`. Les listes : `JARDINS` (Trocadéro),
+  `QUAI` (quai d'Orsay, `[nom, v0, v1, profondeur, h]` le long de `riveG`), `CHAMP` (`[nom, u0, u1, côté, h]`),
+  `REGIONS`, `COLONIES` (le long de `ile`). Les pavillons à part : `urss`, `allemagne`, `pontifical`, `espagne`,
+  `pologne`, `riveDroiteAmont` (Hygiène, Yachting), `riveDroiteAval` (concessions, porte d'honneur), `esplanade`. Le
+  bassin de la fontaine de Varsovie est peint dans `peindreExpo`. Les fiches sont dans `batirExpo` (`L.unshift`).
+  Planches de relevé : le plan général (Commons) et l'encart ; la maquette dans le repère de l'axe se dessine avec un
+  petit script Python sur `data/paris1937.json` (fonctions `uv`/`xz` : origine à la tour, u = (0,71538 ; 0,69873)).
 - *Paris 1937, données* : `python3 tools/fetch_1889.py 1937` télécharge dans `data/source/1937/` les tronçons, voies,
   îlots et arrondissements de l'APUR et la nomenclature des voies de la Ville de Paris ; `python3 tools/extract_1889.py
   1937` écrit `data/paris1937.json`, en passant par `tools/ville_1937.py` (voies ouvertes de 1901 à 1937, îlots
@@ -207,7 +242,8 @@ de date (pour le montage de l'Exposition 1900, comme pour la tour en 1889).
 méthode proposée et points ouverts.
 
 **Fait (24 novembre 2026)** : la page, les grands ensembles disparus et les zones refaites — voir « La suite », point 3.
-**Reste** : l'Exposition de 1937.
+**Fait (25 novembre 2026)** : l'Exposition de 1937, première version — voir « La suite », point 3 (c).
+**Reste** : recaler l'Exposition sur le plan officiel à l'échelle (Gallica) quand on l'aura ; les points ouverts.
 
 ## 3. Paris 1975
 

@@ -87,6 +87,18 @@ const teinte = await page.evaluate(async () => { const a = window.__app; a.setHo
   a.setHour(10.5); return { brun, rouge, jaune }; });
 check('image : la tour en « jaune brun » (1907-1954), ni rouge de Venise ni jaune clair de 1899', teinte.brun > 3000 && teinte.rouge < teinte.brun / 10 && teinte.jaune < teinte.brun / 5, JSON.stringify(teinte));
 
+// ---------- l'Exposition de 1937 (src/p1937/expo37.js)
+const ex = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? Math.round(m.top - T.height(m.x, m.z)) : -1), pied = (m) => !!(m && a.footAt(m.x, m.z));
+  const statue = a.landmarks.filter((l) => M.URSS && Math.hypot(l.x - M.URSS.x, l.z - M.URSS.z) < 2).map((l) => Math.round(l.top - T.height(l.x, l.z)));
+  const pavillons = Object.keys(M).filter((k) => /^Pavillon /.test(k)).length;
+  // de part et d'autre de la place de Varsovie, dans l'axe du pont d'Iéna : l'URSS à l'ouest (aval), l'Allemagne à l'est (amont)
+  const U = [0.71538, 0.69873], O = [-4039.4, -604.3], v = (m) => -(m.x - O[0]) * U[1] + (m.z - O[1]) * U[0];
+  return { pavillons, urss: h(M.URSS), statue, allemagne: h(M.Allemagne), cotes: M.URSS && M.Allemagne ? [Math.round(v(M.URSS)), Math.round(v(M.Allemagne))] : [], pontifical: h(M.Pontifical), mat: h(M.PorteHonneur),
+    air: pied(M.PalaisAir) && pied(M.PalaisRail), lumiere: pied(M.Lumiere), colonies: pied(M['Pavillon Maroc']) && pied(M['Pavillon Indochine']), regional: pied(M['Pavillon Bretagne']), ecartes: a.stats.ecartesExpo,
+    parterre: !a.footAt(-3820, -380) && !a.footAt(-3600, -160), noms: ['Pavillon de l’URSS', 'Pavillon de l’Allemagne', 'Palais de l’Air', 'Porte d’honneur'].filter((n) => !a.ui.places.some((p) => p.name === n)) }; });
+check('Exposition de 1937 : l’URSS (statue posée à 33 m) et l’Allemagne (tour et aigle, 54 m) face à face de part et d’autre de la place de Varsovie, le pavillon pontifical (82 m), le mât de 100 m de la porte d’honneur', ex.urss > 55 && ex.statue.some((t) => t >= 55 && t <= 62) && ex.allemagne >= 56 && ex.cotes[0] > 60 && ex.cotes[1] < -50 && ex.pontifical === 82 && ex.mat === 104 && ex.noms.length === 0, JSON.stringify(ex));
+check('Exposition de 1937 : près de cent pavillons — Trocadéro, quais, Champ-de-Mars (le grand parterre dégagé), Centre régional, colonies de l’île aux Cygnes, palais de l’Air et des Chemins de fer ; le bâti évoqué de leurs terrains effacé', ex.pavillons > 90 && ex.air && ex.lumiere && ex.colonies && ex.regional && ex.parterre && ex.ecartes > 20, JSON.stringify(ex));
+
 // ---------- les grands ensembles disparus depuis 1937 (tools/disparus_1937.py, src/p1937/disparus.js)
 const di = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, S = a.statuts, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1);
   const dans = (x0, z0, x1, z1) => { let n = 0; for (let x = x0; x <= x1; x += 12) for (let z = z0; z <= z1; z += 12) if (S.lire(x, z) === 3) n++; return n; };
@@ -134,7 +146,7 @@ check('fiche : la tour, en jaune brun depuis 1907', fiche.vu && /Tour Eiffel/.te
 await page.evaluate(() => window.__app.ui.select(null));
 await page.click('#btn-sources');
 const src = await page.evaluate(() => { const d = document.getElementById('sources'); return { vu: !d.hidden, n: d.querySelectorAll('#sources-list li').length, t: d.textContent }; });
-check('sources : APUR, base « Paris 1900 » corrigée, nomenclature des voies, IGN (relief, photographie de 1949), voies ferrées ; ce qui est réel, disparu, évoqué', src.vu && src.n === 6 && /Voies ferrées/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /1949/.test(src.t) && /IGN/.test(src.t) && /Disparu/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t) && !/Vasserot/.test(src.t) && !/1900 ou d’avant/.test(src.t), `${src.n} sources`);
+check('sources : APUR, base « Paris 1900 » corrigée, plan général de l’Exposition, nomenclature des voies, IGN (relief, photographie de 1949), voies ferrées ; ce qui est réel, disparu, évoqué', src.vu && src.n === 7 && /Exposition de 1937/.test(src.t) && /Voies ferrées/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /1949/.test(src.t) && /IGN/.test(src.t) && /Disparu/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t) && !/Vasserot/.test(src.t) && !/1900 ou d’avant/.test(src.t), `${src.n} sources`);
 await page.click('#sources [data-close="sources"]');
 { const og = await page.evaluate(() => (document.querySelector('meta[property="og:image"]') || {}).content || ''), { existsSync } = await import('node:fs');
   check('partage : l’image de la maquette (og:image, adresse absolue) est dans dist/og/', /^https:\/\/.+\/dist\/og\/1937\.jpg$/.test(og) && existsSync(join(root, 'dist/og/1937.jpg')), og); }
@@ -146,7 +158,7 @@ const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.vi
   for (let i = 0; i < 1500 && V.etat().k === e1.k; i++) tic(1); const e2 = V.etat();
   $('tour-stop').click(); const fin = { actif: V.etat().actif, panneau: !$('tour').hidden, survol: $('mode-fly').getAttribute('aria-pressed') };
   return { t0, e1, pres, fiche, e2, fin, manquants: V.manquants }; });
-check('parcours commenté « Paris en 1937 » : 16 étapes, chaque lieu existe, la vue s’y rend, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1937' && vi.t0.compte === '1 / 16' && vi.t0.points === 16 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
+check('parcours commenté « Paris en 1937 » : 20 étapes, chaque lieu existe, la vue s’y rend, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1937' && vi.t0.compte === '1 / 20' && vi.t0.points === 20 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
 
 // ---------- heure, marche, frise
 const nuit = await page.evaluate(() => { const a = window.__app; a.setHour(22); const n = a.materials.facade.emissiveIntensity; a.setHour(10.5); return [n, a.materials.facade.emissiveIntensity]; });
