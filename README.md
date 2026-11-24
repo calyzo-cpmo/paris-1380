@@ -30,10 +30,14 @@ de brique, le palais de Chaillot, le Champ-de-Mars en jardin, la tour en jaune b
 le Paris disparu depuis, relevé sur la photographie aérienne de 1949 de l'IGN : la Halle aux vins, les entrepôts de
 Bercy, les abattoirs de la Villette et de Vaugirard, le marché aux bestiaux, les usines Citroën de Javel, la gare des
 Gobelins, les gazomètres de La Villette, la Petite Roquette, le Vélodrome d'Hiver, avec les Halles, la gare Montparnasse
-de 1852 et la gare de la Bastille. L'Exposition internationale de 1937 n'y est pas encore.
+de 1852 et la gare de la Bastille ; la « zone » au-delà des logements de brique, ses baraques et ses terrains vagues ;
+les passants en tenues des années 1930. Et l'**Exposition internationale de 1937**, une centaine de pavillons, de l'île
+aux Cygnes à l'Esplanade des Invalides : l'URSS et l'Allemagne face à face au Trocadéro, le pavillon pontifical, les
+pavillons étrangers du quai d'Orsay, le Centre régional et ses vingt-cinq provinces, le Centre des colonies, le palais
+de l'Air, la porte d'honneur et son mât de 100 mètres, la passerelle de l'Alma.
 
 Les cinq dernières ont chacune leur visite guidée (quinze étapes en 1789, douze pour Lutèce, quatorze en 1889,
-seize en 1900, seize en 1937).
+seize en 1900, vingt en 1937).
 
 Une **page d'accueil** héberge les six maquettes et fait passer de l'une à l'autre sans changer de page : on choisit
 « Lutèce », « 1380 », « 1789 », « 1889 », « 1900 » ou « 1937 » dans la frise des époques, l'autre ville se construit en arrière-plan, puis, au même point de vue
@@ -44,10 +48,10 @@ téléphone, parmi les plus légères : Lutèce, 1380, 1789). Choisir l'époque 
 autre lance le passage. Le nom du site, en tête de chaque maquette, ramène à cet écran. Les liens partagés (`#m=…`,
 `#c=…`) ouvrent toujours directement leur maquette ; `#accueil=1900` ouvre l'écran d'accueil sur ce fond.
 
-**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur l'écran d'accueil ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900 ; <https://calyzo-cpmo.github.io/paris-1380/1937.html> s'ouvre sur Paris 1937. Les cinq adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html` et `dist/1900.html`.
+**Voir les maquettes en ligne** (GitHub Pages) : <https://calyzo-cpmo.github.io/paris-1380/> s'ouvre sur l'écran d'accueil ; <https://calyzo-cpmo.github.io/paris-1380/1789.html> s'ouvre sur Paris 1789 ; <https://calyzo-cpmo.github.io/paris-1380/lutece.html> s'ouvre sur Lutèce ; <https://calyzo-cpmo.github.io/paris-1380/1889.html> s'ouvre sur Paris 1889 ; <https://calyzo-cpmo.github.io/paris-1380/1900.html> s'ouvre sur Paris 1900 ; <https://calyzo-cpmo.github.io/paris-1380/1937.html> s'ouvre sur Paris 1937. Les six adresses mènent à la page d'accueil, `dist/index.html`, qui héberge les maquettes `dist/lutece.html`, `dist/1380.html`, `dist/1789.html`, `dist/1889.html`, `dist/1900.html` et `dist/1937.html`.
 **Les ouvrir sur son ordinateur :** `dist/index.html` (les sept fichiers de `dist/` côte à côte, aucun serveur nécessaire) ; chaque maquette s'ouvre aussi seule.
 **La mettre en ligne :** voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) (Dockerfile nginx, hébergement statique).
-**Prochaine maquette :** Paris 1975, à l'été 1975 — voir [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md) ; l'étude de ses données est dans [`ETUDE-1975.md`](ETUDE-1975.md), celle de 1937 dans [`ETUDE-1937.md`](ETUDE-1937.md).
+**Le projet s'arrête à ces six maquettes** (décidé le 24 novembre 2026) : ce qui reste ouvert, et comment reprendre, est dans [`FEUILLE-DE-ROUTE.md`](FEUILLE-DE-ROUTE.md) ; l'étude des données de 1937 est dans [`ETUDE-1937.md`](ETUDE-1937.md). Paris 1975 a été étudié puis abandonné : l'étude est gardée pour mémoire dans [`ETUDE-1975.md`](ETUDE-1975.md).
 **Projet de jeu :** le cadrage d'un « mode classe » (séance animée par un enseignant, sans compte) est dans [`CADRAGE-JEU.md`](CADRAGE-JEU.md) ; rien n'en est encore construit.
 
 ## Ce que montre la maquette
@@ -400,12 +404,12 @@ tools/etude_1937.py          étude des données de Paris 1937 (ETUDE-1937.md) :
 tools/disparus_1937.py       grands ensembles disparus depuis 1937, relevés sur la photographie aérienne de 1949 : zones (îlots où des halles basses sont évoquées, statut « disparu ») et emprises
 tools/releve1949.py          planche de relevé : la photographie aérienne de 1949 redressée dans le repère de la maquette, sous une grille cotée et les îlots de 1937
 tools/photo1949.py          planche de comparaison : photographie aérienne de Paris en 1949 (IGN) et celle d'aujourd'hui, autour d'un point
-tools/etude_1975.py          étude des données de Paris 1975 (ETUDE-1975.md) : bâti de l'APUR classé à la date de 1975, tours, zones refaites depuis, voies ouvertes ou supprimées avant et après 1975, noms ; résultats dans data/source/1975/ (non versionné)
+tools/etude_1975.py          étude des données de Paris 1975, maquette abandonnée (ETUDE-1975.md) : bâti de l'APUR classé à la date de 1975, tours, zones refaites depuis, voies ouvertes ou supprimées avant et après 1975, noms ; résultats dans data/source/1975/ (non versionné)
 tools/photo1975.py          planche de comparaison : photographie aérienne de Paris en 1965, carte de 1979 (IGN) et photographie d'aujourd'hui, autour d'un point
 tools/fer_1889.py            voies ferrées de 1889 et de 1900 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
 tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
 tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), entrées du métro, montage de 1897 à 1900 et son curseur, monuments, calque, visite, frise, téléphone
-tools/test1937.mjs           test fonctionnel de la page Paris 1937 : ville, ponts, voies et gares de 1937 (gare de l'Est doublée), tour en jaune brun, grands ensembles disparus, quartiers refaits, monuments, calque, repères, visite, frise, téléphone
+tools/test1937.mjs           test fonctionnel de la page Paris 1937 : ville, ponts, voies et gares de 1937 (gare de l'Est doublée), tour en jaune brun, grands ensembles disparus, quartiers refaits, zone, Exposition et passerelle de l'Alma, passants de 1937, monuments, calque, repères, visite, frise, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html, 1900.html, 1937.html) ; la page de 1900 reprend src/p1889/ par surcouche
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
@@ -512,6 +516,8 @@ src/p1900/parcours.js        visite guidée de Paris 1900
 src/body1937.html            page Paris 1937 (mêmes styles)
 src/p1937/main.js            page Paris 1937 : le moteur de Paris 1889 sur data/paris1937.json
 src/p1937/expo.js            remplace src/p1889/expo.js à l'assemblage : la tour en jaune brun, le jardin du Champ-de-Mars, les palais de 1900, les disparus
+src/p1937/expo37.js          l'Exposition internationale de 1937 : pavillons du Trocadéro, des quais, du Champ-de-Mars, Centre régional, colonies, rive droite, Esplanade des Invalides, passerelle de l'Alma
+src/p1937/figures.js         remplace src/p1889/figures.js à l'assemblage : les passants de l'été 1937, en tenues des années 1930, et la part des attelages
 src/p1937/disparus.js        grands ensembles disparus depuis 1937 : gazomètres de La Villette, Petite Roquette, Vélodrome d'Hiver, et les notices des autres
 src/p1937/places.js          repères de Paris 1937 et leurs notices
 src/p1937/parcours.js        visite guidée de Paris 1937

@@ -41,7 +41,8 @@ const tourner = (F, a) => { const c = Math.cos(a * deg), s = Math.sin(a * deg); 
 
 // Un pavillon moderne : un corps de lu × lv centré en (u, v) du repère F, tourné de o.a degrés ; h au-dessus du sol moyen.
 // o : col, verre (murs vitrés), bandes (bandeaux vitrés, nombre), pilotis (hauteur), toit ([hauteur, couleur] d'un
-// comble à deux versants), y0 (pied imposé), dalle (débord de la terrasse). Rend { L (repère local), c, y0, yt }.
+// comble à deux versants, et en troisième terme les options de gableRoof : overhang, hip), y0 (pied imposé), dalle
+// (débord de la terrasse). Rend { L (repère local), c, d, y0, yb, ye (égout), yt (faîte ou terrasse) }.
 export function bloc(app, B, F, u, v, lu, lv, h, o = {}) {
   const d = tourner(F, o.a || 0), c = F.P(u, v), L = repere(c, d), ring = L.rect(-lu / 2, lu / 2, -lv / 2, lv / 2), { lo, moy } = sol(app, ring);
   const y0 = (o.y0 ?? lo) - 1, yb = (o.base ?? moy), ya = o.pilotis ? yb + o.pilotis : y0, yt = yb + h, col = o.col || BLANC;
@@ -56,10 +57,10 @@ export function bloc(app, B, F, u, v, lu, lv, h, o = {}) {
   const nb = o.bandes ?? (o.verre ? 0 : Math.max(1, Math.floor(h / 5)));
   for (let k = 0; k < nb; k++) { const yk = ya + ((yt - ya) * (k + 0.45)) / (nb + 0.3); box(bp, { ...r, hl: r.hl + 0.12, hw: r.hw + 0.12 }, yk, yk + Math.min(2.2, (yt - ya) / (nb + 1)), { col: VITRE, top: false }); }
   let top = yt;
-  if (o.toit) { const [hr, ct] = o.toit, rr = lu >= lv ? r : { cx: c[0], cz: c[1], ux: -d[1], uz: d[0], hl: lv / 2, hw: lu / 2 }; top = gableRoof(B.at('roof', c[0], c[1]), bp, rr, yt, hr, { col: ct || TUILE, gable: { col } }); }
+  if (o.toit) { const [hr, ct, ot] = o.toit, rr = lu >= lv ? r : { cx: c[0], cz: c[1], ux: -d[1], uz: d[0], hl: lv / 2, hw: lu / 2 }; top = gableRoof(B.at('roof', c[0], c[1]), bp, rr, yt, hr, { col: ct || TUILE, gable: { col }, ...(ot || {}) }); }
   else { const db = o.dalle ?? 0.5; box(bp, { ...r, hl: r.hl + db, hw: r.hw + db }, yt, yt + 0.6, { col: o.dalleCol || col }); top = yt + 0.6; }
   app.foot.push({ ring, top }); app.v89.reserves.push(boite(L.rect(-lu / 2 - 1, lu / 2 + 1, -lv / 2 - 1, lv / 2 + 1)));
-  return { L, c, d, y0, yb, yt: top };
+  return { L, c, d, y0, yb, ye: yt, yt: top };
 }
 // Tour carrée de demi-côtés hl × hw, au point c, d'axe d ; o.cotes : nombre de côtes (pilastres) par face.
 function tourCarree(app, B, c, d, hl, hw, ya, yb, o = {}) {
@@ -300,16 +301,67 @@ function champDeMars(app, B) {
 }
 
 // ---- le Centre régional, sur le quai entre la tour et le pont de Passy : vingt-cinq pavillons des provinces, chacun
-// dans le style de sa région — murs blancs ou de pierre, toits de tuile ou d'ardoise.
+// dans le style de sa région. Leurs silhouettes sont une évocation, par familles : toits bas de tuile et clocheton au
+// Midi, grands débords des chalets de montagne, colombages et combles raides de Normandie, d'Alsace et de Champagne,
+// granit, ardoise et souches de Bretagne et du Massif central, brique des Flandres, combles à croupes d'ardoise du
+// Centre et de l'Île-de-France, tuiles vernissées de Bourgogne, tuile creuse à faible pente de Lorraine et du Poitou.
 const REGIONS = ['Corse', 'Côte d’Azur', 'Provence', 'Pyrénées atlantiques', 'Guyenne et Gascogne', 'Poitou', 'Bretagne', 'Vallée de la Loire', 'Normandie', 'Nivernais et Berry', 'Massif central', 'Artois et Flandre', 'Champagne', 'Limousin et Périgord', 'Alsace', 'Bourgogne et Franche-Comté', 'Dauphiné', 'Savoie', 'Lorraine', 'Île-de-France', 'Lyonnais', 'Forez et Vivarais', 'Pyrénées et Languedoc', 'Roussillon', 'Languedoc'];
-const MIDI = new Set(['Corse', 'Côte d’Azur', 'Provence', 'Roussillon', 'Languedoc', 'Pyrénées et Languedoc', 'Guyenne et Gascogne', 'Forez et Vivarais', 'Lyonnais']);
+const LAUZE = C(96, 96, 98), CHAUME = C(122, 100, 72), VERNIS = C(176, 128, 58), COLOMBAGE = C(74, 52, 40);
+const STYLES = {
+  midi: { mur: C(240, 228, 206), toit: [2.6, TUILE, { overhang: 0.7 }], clocher: true },
+  canal: { mur: C(236, 226, 208), toit: [2.4, C(184, 104, 72), { overhang: 0.6 }] },
+  basque: { mur: C(244, 240, 230), toit: [3.4, C(168, 84, 60), { overhang: 1.4 }], colomb: C(132, 42, 36) },
+  montagne: { mur: C(226, 214, 190), toit: [3.0, C(112, 106, 102), { overhang: 1.8 }], bois: true },
+  colomb: { mur: C(238, 230, 212), toit: [6.5, C(156, 86, 62)], colomb: COLOMBAGE },
+  chaume: { mur: C(238, 230, 212), toit: [7.0, CHAUME], colomb: COLOMBAGE },
+  granit: { mur: C(190, 188, 182), toit: [5.5, ARDOISE], chem: true },
+  lauze: { mur: C(170, 160, 150), toit: [5.0, LAUZE, { hip: 2.5 }], chem: true },
+  brique: { mur: C(176, 102, 78), toit: [5.5, ARDOISE], chem: true },
+  centre: { mur: C(236, 228, 208), toit: [5.0, ARDOISE, { hip: 3 }], chem: true },
+  perigord: { mur: C(222, 196, 150), toit: [6.5, C(136, 84, 60), { hip: 3 }] },
+  bourgogne: { mur: C(230, 220, 200), toit: [6.0, VERNIS, { hip: 3 }] },
+};
+const STYLE_DE = { 'Corse': 'midi', 'Côte d’Azur': 'midi', 'Provence': 'midi', 'Pyrénées atlantiques': 'basque', 'Guyenne et Gascogne': 'canal', 'Poitou': 'canal', 'Bretagne': 'granit',
+  'Vallée de la Loire': 'centre', 'Normandie': 'chaume', 'Nivernais et Berry': 'centre', 'Massif central': 'lauze', 'Artois et Flandre': 'brique', 'Champagne': 'colomb', 'Limousin et Périgord': 'perigord',
+  'Alsace': 'colomb', 'Bourgogne et Franche-Comté': 'bourgogne', 'Dauphiné': 'montagne', 'Savoie': 'montagne', 'Lorraine': 'canal', 'Île-de-France': 'centre', 'Lyonnais': 'canal',
+  'Forez et Vivarais': 'canal', 'Pyrénées et Languedoc': 'midi', 'Roussillon': 'midi', 'Languedoc': 'midi' };
+
+// Détails des petits pavillons : sur un bloc S de lu × lv dont l'égout est à S.ye.
+const lame = (S, u, v, hl, hw) => { const p = S.L.P(u, v); return { cx: p[0], cz: p[1], ux: S.d[0], uz: S.d[1], hl, hw }; };
+function colombages(bp, S, lu, lv, col) {                              // poteaux et lisse, sur les deux longs pans
+  const n = Math.max(3, Math.round(lu / 1.7)), mi = S.y0 + 1 + (S.ye - S.y0 - 1) * 0.5;
+  for (const sg of [-1, 1]) {
+    for (let i = 0; i <= n; i++) box(bp, lame(S, -lu / 2 + 0.15 + ((lu - 0.3) * i) / n, sg * (lv / 2 + 0.06), 0.13, 0.07), S.y0 + 1.2, S.ye, { col, top: false });
+    box(bp, lame(S, 0, sg * (lv / 2 + 0.07), lu / 2, 0.07), mi, mi + 0.24, { col, top: false });
+    for (let i = 0; i < n; i += 2) { const u = -lu / 2 + ((lu - 0.3) * (i + 0.5)) / n + 0.15; box(bp, lame(S, u, sg * (lv / 2 + 0.07), 0.5, 0.06), mi + 0.9, mi + 1.1, { col, top: false }); }
+  }
+}
+function souches(bp, S, lu, faite, col) {                              // deux souches de cheminée, aux pignons
+  for (const sg of [-1, 1]) box(bp, lame(S, sg * (lu / 2 - 0.8), 0, 0.45, 0.8), S.ye - 1, faite + 1.3, { col, topCol: C(80, 76, 72) });
+}
+function clocheton(app, B, S, lu, lv, col, toit) {                     // un clocheton carré au coin du pavillon, toit en pavillon de tuile
+  const p = S.L.P(lu / 2 - 1.9, lv / 2 - 1.9), yb = S.ye + 4.5;
+  tourCarree(app, B, p, S.d, 1.7, 1.7, S.y0, yb, { col });
+  gableRoof(B.at('roof', p[0], p[1]), null, { cx: p[0], cz: p[1], ux: S.d[0], uz: S.d[1], hl: 1.7, hw: 1.7 }, yb, 2.2, { col: toit, hip: 1.7, overhang: 0.35 });
+}
+function galerie(bp, S, lu, lv, col, prof = 2.4) {                     // galerie couverte sur poteaux, le long d'un pan
+  const y = S.y0 + 1 + Math.min(3.2, (S.ye - S.y0 - 1) * 0.75), n = Math.max(2, Math.round(lu / 3.5));
+  box(bp, lame(S, 0, lv / 2 + prof / 2, lu / 2, prof / 2), y, y + 0.22, { col });
+  for (let i = 0; i <= n; i++) box(bp, lame(S, -lu / 2 + 0.3 + ((lu - 0.6) * i) / n, lv / 2 + prof - 0.25, 0.12, 0.12), S.y0 + 1, y, { col: BLANC });
+}
 function centreRegional(app, B) {
   const M = app.monuments; let k = 0;
   for (const [v0, v1, rangs] of [[214, 340, 3], [350, 470, 2]]) {
     const n = 5;
     for (let i = 0; i < n && k < REGIONS.length; i++) for (let r = 0; r < rangs && k < REGIONS.length; r++) {
-      const nom = REGIONS[k++], v = v0 + ((v1 - v0) * (i + 0.5)) / n, u = riveG(v) + 14 + r * 30 + ((i + r) % 2) * 4, midi = MIDI.has(nom);
-      const S = bloc(app, B, AXE, u, v + (r % 2 ? 4 : -2), 16 + ((k * 7) % 3) * 4, 11 + ((k * 5) % 3) * 2, 6 + ((k * 3) % 3), { a: (k % 3) - 1, col: midi ? C(240, 232, 214) : nom === 'Bretagne' || nom === 'Normandie' ? C(214, 206, 192) : C(232, 222, 202), toit: [4 + (k % 2) * 2, midi ? TUILE : k % 2 ? ARDOISE : C(150, 84, 62)], bandes: 0 });
+      const nom = REGIONS[k++], v = v0 + ((v1 - v0) * (i + 0.5)) / n, u = riveG(v) + 14 + r * 30 + ((i + r) % 2) * 4, st = STYLES[STYLE_DE[nom]];
+      const lu = 16 + ((k * 7) % 3) * 4, lv = 11 + ((k * 5) % 3) * 2, h = st.toit[0] > 5.5 ? 5 + (k % 2) : 6 + ((k * 3) % 3);
+      const S = bloc(app, B, AXE, u, v + (r % 2 ? 4 : -2), lu, lv, h, { a: (k % 3) - 1, col: st.mur, toit: st.toit, bandes: 0 }), bp = B.at('plain', S.c[0], S.c[1]);
+      if (st.colomb) colombages(bp, S, lu, lv, st.colomb);
+      if (st.bois) box(bp, { ...lame(S, 0, 0, lu / 2 + 0.08, lv / 2 + 0.08) }, S.ye - 2.2, S.ye, { col: BOIS, top: false });     // étage de planches du chalet
+      if (st.chem) souches(bp, S, lu, S.yt, st.mur);
+      if (st.clocher) clocheton(app, B, S, lu, lv, st.mur, st.toit[1]);
+      if (STYLE_DE[nom] === 'basque' || STYLE_DE[nom] === 'montagne') galerie(bp, S, lu * 0.7, lv, st.bois ? BOIS : C(132, 42, 36), 1.6);
       M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 5 };
     }
   }
@@ -318,9 +370,10 @@ function centreRegional(app, B) {
 
 // ---- l'île aux Cygnes : le Centre des colonies, ses pavillons sur des plates-formes au-dessus de l'eau.
 const COLONIES = [
-  ['États du Levant', 620, 26, 9, { col: BLANC, dome: 5 }], ['Maroc', 660, 34, 9, { col: BLANC, toit: [4, C(60, 120, 90)], minaret: 18 }], ['Afrique-Équatoriale française', 710, 30, 8, { col: OCRE }],
-  ['Guadeloupe', 752, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE] }], ['Martinique', 786, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE] }], ['Indochine', 830, 40, 9, { col: C(196, 84, 60), toit: [7, C(120, 50, 40)] }],
-  ['Indes françaises', 880, 26, 9, { col: C(236, 220, 190), dome: 5 }], ['Madagascar', 922, 28, 7, { col: C(200, 172, 132), toit: [7, C(140, 120, 80)] }], ['Réunion', 960, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE] }],
+  ['États du Levant', 620, 26, 9, { col: BLANC, dome: 5 }], ['Maroc', 660, 34, 9, { col: BLANC, toit: [4, C(60, 120, 90)], minaret: 18 }], ['Afrique-Équatoriale française', 710, 30, 8, { col: OCRE, cases: true }],
+  ['Guadeloupe', 752, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }], ['Martinique', 786, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }],
+  ['Indochine', 830, 40, 9, { col: C(196, 84, 60), toit: [7, C(120, 50, 40), { overhang: 1.2 }], etage: true }],
+  ['Indes françaises', 880, 26, 9, { col: C(236, 220, 190), dome: 5 }], ['Madagascar', 922, 28, 7, { col: C(200, 172, 132), toit: [7, C(140, 120, 80), { overhang: 1 }], galerie: true }], ['Réunion', 960, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }],
   ['Afrique-Occidentale française', 1010, 44, 10, { col: C(186, 132, 88), aof: true }], ['Territoires sous mandat', 1066, 30, 8, {}], ['Algérie', 1116, 40, 9, { col: BLANC, dome: 7 }], ['Tunisie', 1170, 36, 9, { col: BLANC, dome: 6, minaret: 20 }],
 ];
 function colonies(app, B) {
@@ -330,6 +383,12 @@ function colonies(app, B) {
     if (o.dome) { cyl(bp, S.c[0], S.c[1], o.dome, S.yt - 0.6, S.yt + 2, { col: o.col, seg: 16 }); calotte(bp, S.c[0], S.c[1], o.dome, S.yt + 2, S.yt + 2 + o.dome, BLANC, 16); }
     if (o.minaret) { const p = S.L.P(10, lv / 2 - 3); tourCarree(app, B, p, S.d, 1.8, 1.8, S.y0, S.yb + o.minaret, { col: o.col }); }
     if (o.aof) for (let i = 0; i < 9; i++) { const p = S.L.P(-15.3, -lv / 2 + 3 + ((lv - 6) * i) / 8); cone(bp, p[0], p[1], 1.1, S.yt, S.yt + 4, { col: o.col, seg: 6 }); }
+    if (o.galerie) galerie(bp, S, 30, lv, BOIS, 2.2);                                                            // varangue sur poteaux
+    if (o.etage) {                                                                                                // second toit, au-dessus du premier et dans le même sens
+      const r2 = lv > 30 ? { cx: S.c[0], cz: S.c[1], ux: -S.d[1], uz: S.d[0], hl: lv / 2 - 6, hw: 8 } : lame(S, 0, 0, 9, lv / 2 - 5);
+      box(bp, r2, S.ye + 1, S.yt + 2.5, { col: o.col, top: false }); gableRoof(B.at('roof', S.c[0], S.c[1]), bp, r2, S.yt + 2.5, 4, { col: o.toit[1], overhang: 1, gable: { col: o.col } });
+    }
+    if (o.cases) for (let i = 0; i < 3; i++) { const p = S.L.P(-6 + i * 6, lv / 2 + 4.5); cyl(bp, p[0], p[1], 2.2, S.y0, S.yb + 2.8, { col: OCRE, seg: 10 }); cone(B.at('roof', p[0], p[1]), p[0], p[1], 2.9, S.yb + 2.6, S.yb + 6, { col: CHAUME, seg: 10 }); }   // cases rondes, toit de chaume
     M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 8 };
   }
   { const c = AXE.P(ile(900), 900); M.Colonies = { x: c[0], z: c[1], top: app.terrain.height(c[0], c[1]) + 26 }; }
@@ -383,11 +442,44 @@ function esplanade(app, B) {
   { const c = F.P(-260, 0); M.Attractions = { x: c[0], z: c[1], top: app.terrain.height(c[0], c[1]) + 24 }; }
 }
 
+// ---- la passerelle de l'Alma (Léon-Henry Bloch, architecte ; établissements Daydé, constructeurs), parallèle au pont de
+// l'Alma, réservée au public de l'Exposition et démontée après elle. Cotes de L'Architecture d'aujourd'hui, août 1937,
+// p. 56-57 (plan, coupe et élévation d'après Le Génie civil) : trois travées de 38,10, 46,40 et 40 m, 133,26 m d'une rive
+// à l'autre ; une poutre échelle de type Vierendeel, en caisson de 6 m de large et 6,80 m de haut, où sont logées des
+// boutiques ; au-dessus, le passage supérieur, élargi de 6 m en encorbellement vers l'amont ; au pied, le passage
+// inférieur, élargi de 6,25 m vers l'aval ; 88 pieux en Seine, 700 tonnes d'acier ; des moulures d'aluminium rouge
+// enferment les rampes d'éclairage. Elle part de la porte monumentale de la place de l'Alma (septembre 1937, p. 35-38),
+// qui n'est pas figurée. Sa place en aval du pont est déduite : elle menait à la moitié ouest de l'Exposition, et
+// Achille Duchêne en photographie le chantier depuis la rue Gaston-de-Saint-Paul. Ses piles sont alignées sur celles du
+// pont (les deux franchissent la Seine d'un quai à l'autre sur 133 m), son axe à 30 m du sien.
+const ALMA = { n: [-3524, -1222], s: [-3519, -1089], ecart: 30 }, ROUGE_ALU = C(176, 62, 54);
+function passerelleAlma(app, B) {
+  const T = app.terrain, dx = ALMA.s[0] - ALMA.n[0], dz = ALMA.s[1] - ALMA.n[1], lg = Math.hypot(dx, dz), d = [dx / lg, dz / lg];
+  const aval = [-d[1], d[0]], m = [(ALMA.n[0] + ALMA.s[0]) / 2 + aval[0] * ALMA.ecart, (ALMA.n[1] + ALMA.s[1]) / 2 + aval[1] * ALMA.ecart];
+  const L = repere(m, d), hl = 133.26 / 2, bp = B.at('plain', m[0], m[1]);                  // repère : s du nord (rive droite) au sud, t vers l'aval
+  const R = (s, t, a, b) => { const p = L.P(s, t); return { cx: p[0], cz: p[1], ux: d[0], uz: d[1], hl: a, hw: b }; };
+  const yq = Math.max(T.height(...L.P(-hl + 1, 0)), T.height(...L.P(hl - 1, 0))), yi = yq + 0.3, yt = yi + 5.9;   // passage inférieur au niveau du quai
+  box(bp, R(0, 0, hl, 3), yi - 0.9, yi + 0.2, { col: BLANC });                                // membrure basse et plancher du passage inférieur
+  box(bp, R(0, 0, hl - 0.2, 2.75), yi + 0.2, yt - 0.9, { col: VITRE });                       // boutiques, derrière les panneaux de la poutre
+  for (let k = 0, n = 22; k <= n; k++) box(bp, R(-hl + 0.45 + ((2 * hl - 0.9) * k) / n, 0, 0.45, 3.05), yi + 0.2, yt - 0.9, { col: BLANC, top: false });   // montants de la poutre échelle
+  box(bp, R(0, 0, hl, 3), yt - 0.9, yt, { col: BLANC });                                      // membrure haute
+  box(bp, R(0, -6, hl, 3), yt - 0.45, yt, { col: BLANC });                                    // passage supérieur, encorbellement amont
+  box(bp, R(0, 6.125, hl, 3.125), yi - 0.45, yi + 0.2, { col: BLANC });                       // passage inférieur, encorbellement aval
+  for (const [t, y] of [[-9, yt], [3, yt], [9.25, yi + 0.2]]) {                               // garde-corps et moulures rouges des rampes d'éclairage
+    box(bp, R(0, t, hl, 0.12), y, y + 1.05, { col: ACIER, top: false });
+    box(bp, R(0, t + (t < 0 ? -0.1 : 0.1), hl, 0.1), y - 0.55, y - 0.2, { col: ROUGE_ALU, top: false });
+  }
+  for (const s of [-hl + 38.1 + 1.7, -hl + 38.1 + 3.4 + 46.4 + 1.7]) box(bp, R(s, 0, 1.7, 4.5), yq - 12, yi - 0.9, { col: GRIS });   // palées en Seine
+  for (const s of [-hl + 2, hl - 2]) box(bp, R(s, 1, 2, 5.5), yq - 8, yi - 0.9, { col: GRIS });  // culées, sur les berges
+  app.foot.push({ ring: L.rect(-hl, hl, -9, 9.25), top: yt + 1.05 });
+  app.monuments.PasserelleAlma = { x: m[0], z: m[1], top: yt + 10 };
+}
+
 // Le bâti évoqué qui tombe dans l'Exposition s'efface : terrains de l'Exposition (quais, Centre des métiers, Centre
 // régional, berges), dans le repère de l'axe [u0, u1, v0, v1]. Le bâti réel y reste.
-const TERRAINS = [[-200, 70, 200, 560], [-200, -100, -680, 210], [-140, 20, -470, -180]];
+const TERRAINS = [[-200, 70, 200, 560], [-200, -100, -680, 210], [-140, 20, -470, -180], [-170, -105, 580, 1380]];      // le dernier : l'île aux Cygnes (Centre des colonies)
 export function terrainsExpo() { return TERRAINS.map(([u0, u1, v0, v1]) => AXE.rect(u0, u1, v0, v1)); }
 
 export function batirExpo37(app, B) {
-  trocadero(app, B); quaiOrsay(app, B); riveDroiteAmont(app, B); champDeMars(app, B); centreRegional(app, B); colonies(app, B); riveDroiteAval(app, B); esplanade(app, B);
+  trocadero(app, B); quaiOrsay(app, B); riveDroiteAmont(app, B); champDeMars(app, B); centreRegional(app, B); colonies(app, B); riveDroiteAval(app, B); esplanade(app, B); passerelleAlma(app, B);
 }

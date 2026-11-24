@@ -214,3 +214,12 @@ la photographie de 1949, où la rangée de la rue Rambuteau est encore debout (e
   commerce ») ne s'y accordent pas encore. Ce sont les dix de la photographie qui sont figurés.
 - 1889 et 1900 sortent toujours inchangés, à l'octet près : tout ce qui est propre à 1937 est sous `AN >= 1937`.
 
+## 7. Finitions (24 novembre 2026)
+
+- **La zone** : des baraques évoquées dans les îlots non bâtis du glacis et de la zone, hors de l'emprise de l'enceinte,
+  là seulement où la photographie de 1949 est « texturée » (écart type local de la luminance sur 15 m au-dessus de 35) :
+  les stades et les terrains vagues, unis sur la photographie, restent vides. 3 898 baraques ; pas le long du bois de
+  Boulogne, ni dans les îlots de plus de 6 ha (`tools/extract_1889.py`, sous `AN >= 1937`).
+- **Les îlots non bâtis à tort, à côté du Vélodrome d'Hiver** : l'îlot du vélodrome porte en 1949 des garages et des
+  ateliers bas le long du boulevard de Grenelle ; sept halles relevées (`tools/disparus_1937.py`, `EMPRISES`).
+- 1889 et 1900 sortent toujours inchangés, à l'octet près.

@@ -1,13 +1,17 @@
 # Paris 1975 — étude des données
 
-Première étape de Paris 1975 (`FEUILLE-DE-ROUTE.md`, point 4), faite le 25 novembre 2026. Avant de bâtir la maquette,
+> **Abandonné le 24 novembre 2026** : le projet s'arrête aux six maquettes (Lutèce, 1380, 1789, 1889, 1900, 1937).
+> Cette étude est gardée pour mémoire, si la maquette de 1975 était reprise un jour : ses chiffres, ses sources et sa
+> méthode restent valables, ses deux décisions (méthode, accès aux clichés de 1974-1976) n'ont pas été prises.
+
+Première étape de Paris 1975 (`FEUILLE-DE-ROUTE.md`, point 4), faite le 24 novembre 2026. Avant de bâtir la maquette,
 il faut savoir d'où viendront les rues, les îlots et les bâtiments de l'été 1975, et ce qui manque pour les lieux
 démolis ou rebâtis depuis.
 
 Les chiffres viennent de `python3 tools/etude_1975.py`, qui lit les sources déjà téléchargées pour 1889 et 1937. Les
 vérifications visuelles viennent de `python3 tools/photo1975.py SORTIE.jpg LAT LON`.
 
-**Décidé le 25 novembre 2026** : la ville à l'**été 1975, sans curseur** de chantier.
+**Décidé le 24 novembre 2026** : la ville à l'**été 1975, sans curseur** de chantier.
 
 ## En bref
 

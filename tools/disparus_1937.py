@@ -44,6 +44,15 @@ ZONES = [
 EMPRISES = [
     ('Gare des Gobelins', 1190, 2985, 0.283, 0.959, 113, 8, 9.0, 2),
     ('Gare des Gobelins', 1060, 2939, 0.243, 0.970, 58, 7, 8.0, 2),
+    # Abords du Vélodrome d'Hiver : l'îlot, non bâti dans la base de 1900, porte en 1949 autour de la piste des garages et des
+    # ateliers bas, le long du boulevard de Grenelle et de la rue Nélaton ; sept halles relevées, hauteurs de convention
+    ('Abords du Vélodrome d’Hiver', -4425, -75, 0.537, 0.844, 15, 6, 7.0, 2),
+    ('Abords du Vélodrome d’Hiver', -4405, -40, 0.537, 0.844, 18, 7, 8.0, 2),
+    ('Abords du Vélodrome d’Hiver', -4370, 12, 0.537, 0.844, 13, 9, 9.0, 1),
+    ('Abords du Vélodrome d’Hiver', -4400, 35, 0.95, -0.31, 20, 5, 6.0, 1),
+    ('Abords du Vélodrome d’Hiver', -4405, 50, 0.95, -0.31, 20, 5, 6.0, 1),
+    ('Abords du Vélodrome d’Hiver', -4440, 40, 0.627, -0.779, 10, 6, 7.0, 2),
+    ('Abords du Vélodrome d’Hiver', -4365, 55, 0.537, 0.844, 12, 7, 7.0, 2),
 ]
 
 

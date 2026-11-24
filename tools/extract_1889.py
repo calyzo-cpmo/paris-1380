@@ -561,6 +561,56 @@ def main():
                   s += lg + (0.0 if hasard(ni, e, cle(s), 4) < 0.7 else 2.5)
     print('  évoqués le long des rues de 1900 :', len(G))
     if zg: print('  halles et magasins des grands ensembles disparus :', zg)
+    # 1937 : la zone, au-delà de l'enceinte démolie. Rattachée à Paris en 1925-1930, on la dégage peu à peu pour des
+    # stades et des jardins, mais la photographie de 1949 y montre encore, par endroits, des baraques et des jardins
+    # ouvriers. Dans les îlots non bâtis du glacis et de la zone, hors de l'emprise de l'enceinte : des baraques
+    # évoquées, une par case de 13 m au plus, là seulement où la photographie est « texturée » (écart type local de la
+    # luminance sur 15 m au-dessus de TEXTURE) ; là où elle montre un sol uni (stade, terrain vague), rien. Pas le long du
+    # bois de Boulogne (de la porte Maillot à la porte de Saint-Cloud), où la zone était surtout faite de stades et de
+    # jardins, ni dans les îlots de plus de 6 ha. Une évocation : les baraques elles-mêmes ne sont pas relevées.
+    if AN >= 1937:
+        import numpy as np
+        import releve1949 as RV
+        from photo1949 import COUCHES as C49
+        TEXTURE, FEN = 35.0, 15
+        def texture(x0, z0, cote):
+            """Écart type local de la luminance de la photographie de 1949, au mètre, sur un carré de `cote` mètres."""
+            im = np.asarray(RV.redresser(C49[0][0], C49[0][1], x0, z0, cote, 1.0, 17).convert('L'), dtype=np.float64)
+            p_ = np.pad(im, FEN // 2, mode='edge'); s1 = np.pad(p_.cumsum(0).cumsum(1), ((1, 0), (1, 0))); s2 = np.pad((p_ * p_).cumsum(0).cumsum(1), ((1, 0), (1, 0)))
+            bs = lambda A: A[FEN:, FEN:] - A[:-FEN, FEN:] - A[FEN:, :-FEN] + A[:-FEN, :-FEN]
+            m = bs(s1) / FEN ** 2; return np.sqrt(np.maximum(bs(s2) / FEN ** 2 - m * m, 0))[:im.shape[0], :im.shape[1]]
+        gf = Grille(300)
+        for f in json.load(open(os.path.join(SRC37, 'fortifications_thiers.json'))):
+            for poly in anneaux_esri(f.get('geometry')):
+                r = [T(p[0], p[1]) for p in poly[0]]; gf.boite(boite(r), r)
+        def en_fortif(x, z): return any(dans(r, x, z) for r in gf.en(x, z))
+        PZ = 13.0; n_zone = 0
+        for ni, i in enumerate(ilots):
+            if not i.get('anneau') or i['bati'] or i['fortif'] or i['aire'] < 1500 or i['aire'] > 60000: continue
+            r = i['rings'][0]; bb = boite(r); cx, cz = (bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2
+            if en_fortif(cx, cz) or (cx < -5000 and cz < 1700): continue
+            lg_max, sens = 0.0, (1.0, 0.0)                                 # les baraques suivent le plus long côté de l'îlot
+            for e in range(len(r)):
+                q0, q1 = r[e], r[(e + 1) % len(r)]; L = math.hypot(q1[0] - q0[0], q1[1] - q0[1])
+                if L > lg_max: lg_max, sens = L, ((q1[0] - q0[0]) / L, (q1[1] - q0[1]) / L)
+            px_, pz_ = -sens[1], sens[0]
+            tx0, tz0 = math.floor(bb[0]) - 10, math.floor(bb[1]) - 10; tex = texture(tx0, tz0, max(bb[2] - bb[0], bb[3] - bb[1]) + 20)
+            gx = math.floor(bb[0] / PZ) * PZ
+            while gx < bb[2]:
+                gz = math.floor(bb[1] / PZ) * PZ
+                while gz < bb[3]:
+                    k = (int(gx), int(gz)); gz += PZ
+                    if hasard(k[0], k[1], 7) > 0.6: continue
+                    x = k[0] + PZ / 2 + (hasard(k[0], k[1], 8) - 0.5) * 3; z = k[1] + PZ / 2 + (hasard(k[0], k[1], 9) - 0.5) * 3
+                    ti, tj = int(z - tz0), int(x - tx0)
+                    if not (0 <= ti < tex.shape[0] and 0 <= tj < tex.shape[1]) or tex[ti, tj] < TEXTURE: continue
+                    hl = 2.0 + 2.2 * hasard(k[0], k[1], 10); hw = 1.6 + 1.4 * hasard(k[0], k[1], 11)
+                    ring = [(x + sens[0] * a * hl + px_ * b * hw, z + sens[1] * a * hl + pz_ * b * hw) for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+                    if not all(dans_poly(i['rings'], q[0], q[1]) and not occupe(q[0], q[1]) and not au_jardin(q[0], q[1]) and not sur_rails(q[0], q[1]) and not dans_expo(q[0], q[1]) for q in ring + [(x, z)]): continue
+                    rb = boite(ring)
+                    G.append({'rings': [ring], 'aire': 4 * hl * hw, 'bb': rb, 'c': (x, z), 'st': 'G', 'h': 2.6 + 0.8 * hasard(k[0], k[1], 12), 'toit': 1, 'tissu': '', 'sur': None}); n_zone += 1
+                gx += PZ
+        print('  1937, la zone : baraques évoquées', n_zone, 'dans les îlots non bâtis du glacis et de la zone')
 
     # ---- hauteurs : ce que l'on mesure aujourd'hui, moins un étage quand le bâtiment a été surélevé depuis
     tout = pose + G

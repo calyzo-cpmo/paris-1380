@@ -4,11 +4,11 @@ Tout ce qu'il faut pour mettre la maquette en ligne est dans ce dépôt.
 
 ## Ce qui est à déployer
 
-Six fichiers autonomes, à servir côte à côte : `dist/index.html` (page d'accueil, 8 Ko : elle héberge les maquettes
+Sept fichiers autonomes, à servir côte à côte : `dist/index.html` (page d'accueil, 8 Ko : elle héberge les maquettes
 dans des cadres et fait passer de l'une à l'autre), `dist/1380.html` (Paris 1380, environ 1,8 Mo, 720 Ko une fois
 compressé), `dist/1789.html` (Paris 1789, environ 1,5 Mo, 660 Ko compressé) `dist/lutece.html` (Lutèce, environ
-0,8 Mo, 240 Ko compressé), `dist/1889.html` (Paris 1889, environ 3,4 Mo, 1,8 Mo compressé) et `dist/1900.html` (Paris 1900,
-environ 3,7 Mo, 1,9 Mo compressé). Chaque maquette contient son code et
+0,8 Mo, 240 Ko compressé), `dist/1889.html` (Paris 1889, environ 3,4 Mo, 1,8 Mo compressé), `dist/1900.html` (Paris 1900,
+environ 3,7 Mo, 1,9 Mo compressé) et `dist/1937.html` (Paris 1937, environ 5,0 Mo, 2,7 Mo compressé). Chaque maquette contient son code et
 ses données ; toutes les textures et la géométrie sont
 calculées dans le navigateur. Pas de base de données, pas de
 variables d'environnement, pas de secret, pas de volume.
@@ -31,17 +31,17 @@ En local : `docker build -t paris-1380 . && docker run --rm -p 8080:80 paris-138
 Variante sans Docker : n'importe quel hébergement statique, en publiant le répertoire `dist`. Le Dockerfile ajoute
 seulement la compression gzip, le point `/healthz` et trois en-têtes.
 
-Le Dockerfile ne reconstruit pas les pages : il copie `dist/index.html`, `dist/1380.html`, `dist/1789.html`, `dist/lutece.html`, `dist/1889.html` et `dist/1900.html` tels qu'ils
+Le Dockerfile ne reconstruit pas les pages : il copie `dist/index.html`, `dist/1380.html`, `dist/1789.html`, `dist/lutece.html`, `dist/1889.html`, `dist/1900.html` et `dist/1937.html` tels qu'ils
 sont versionnés. Après une modification des sources, lancer `npm install && npm run build && npm test` puis committer
-les six fichiers.
+les sept fichiers.
 
 ## GitHub Pages (gratuit)
 
 Le dépôt est prêt à être servi tel quel : à la racine, `index.html` renvoie vers la page d'accueil `dist/index.html` et
-`1789.html`, `lutece.html`, `1889.html` et `1900.html` vers cette même page ouverte sur 1789, sur Lutèce, sur 1889 ou sur 1900 (en gardant le lien partagé), et `.nojekyll` évite toute transformation des fichiers. Pour l'activer : dans le dépôt, *Settings* → *Pages* → *Build and deployment* →
+`1789.html`, `lutece.html`, `1889.html`, `1900.html` et `1937.html` vers cette même page ouverte sur 1789, sur Lutèce, sur 1889, sur 1900 ou sur 1937 (en gardant le lien partagé), et `.nojekyll` évite toute transformation des fichiers. Pour l'activer : dans le dépôt, *Settings* → *Pages* → *Build and deployment* →
 *Source* : « Deploy from a branch », branche `main`, dossier `/ (root)`, puis *Save*. Le site répond au bout d'une minute
 ou deux aux adresses <https://calyzo-cpmo.github.io/paris-1380/> (Paris 1380) et
-<https://calyzo-cpmo.github.io/paris-1380/1789.html> (Paris 1789) , <https://calyzo-cpmo.github.io/paris-1380/lutece.html> (Lutèce), <https://calyzo-cpmo.github.io/paris-1380/1889.html> (Paris 1889) et <https://calyzo-cpmo.github.io/paris-1380/1900.html> (Paris 1900) ; chaque envoi sur `main` le met à jour.
+<https://calyzo-cpmo.github.io/paris-1380/1789.html> (Paris 1789) , <https://calyzo-cpmo.github.io/paris-1380/lutece.html> (Lutèce), <https://calyzo-cpmo.github.io/paris-1380/1889.html> (Paris 1889), <https://calyzo-cpmo.github.io/paris-1380/1900.html> (Paris 1900) et <https://calyzo-cpmo.github.io/paris-1380/1937.html> (Paris 1937) ; chaque envoi sur `main` le met à jour.
 
 ## À savoir avant d'ouvrir au public
 
@@ -61,14 +61,14 @@ ou deux aux adresses <https://calyzo-cpmo.github.io/paris-1380/> (Paris 1380) et
   1200 × 630, dans `dist/og/`, refaite par `node tools/og.mjs`). Les réseaux sociaux exigent une adresse absolue : elle
   est fixée à la construction, par défaut celle de GitHub Pages ; pour un autre domaine, construire avec
   `SITE_URL=https://exemple.fr/ npm run build` (le Dockerfile sert les images sous `/dist/og/`, comme GitHub Pages).
-  Les cinq pages d'entrée de la racine (`index.html`, `1789.html`, `lutece.html`, `1889.html`, `1900.html`) portent les mêmes
+  Les six pages d'entrée de la racine (`index.html`, `1789.html`, `lutece.html`, `1889.html`, `1900.html`, `1937.html`) portent les mêmes
   balises, à l'adresse de GitHub Pages. Ajouter au besoin un `robots.txt` au niveau du serveur.
 
 ## Vérifier après déploiement
 
 1. `curl -sI https://<domaine>/healthz` répond `200`.
 2. `curl -sI -H 'Accept-Encoding: gzip' https://<domaine>/` montre `Content-Encoding: gzip`.
-3. Ouvrir la page : l'écran d'accueil propose les cinq époques, une maquette tourne en fond ; choisir « Paris de
+3. Ouvrir la page : l'écran d'accueil propose les six époques, une maquette tourne en fond ; choisir « Paris de
    Charles V » montre la ville de 1380, un clic sur Notre-Dame ouvre sa fiche et « Entrer à l'intérieur » lance la
    visite. Le nom du site, en haut à gauche, ramène à l'écran d'accueil.
 4. Ouvrir `https://<domaine>/#in=sainte-chapelle` : la page s'ouvre directement dans la chapelle haute.

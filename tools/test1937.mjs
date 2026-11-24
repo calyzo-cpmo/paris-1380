@@ -1,7 +1,7 @@
 // Test fonctionnel de la page « Paris 1937 » (le test lit l'image : l'avertissement du pilote sur cette lecture est ignoré) : charge la page, vérifie la ville recomposée à
 // l'été 1937 (bâti, Seine, ponts, voirie), les chemins de fer et les gares (gare de l'Est doublée, gare Montparnasse de 1852, gare de la Bastille), la tour en jaune brun, le
 // Champ-de-Mars en jardin, le palais de Chaillot, les grands ensembles disparus depuis (Halle aux vins, entrepôts de Bercy, abattoirs, usines Citroën, gare des Gobelins, usine à
-// gaz, Petite Roquette, Vélodrome d'Hiver), les quartiers refaits depuis, les monuments (Sacré-Cœur et son campanile), le calque, les repères, la visite, la marche à pied, l'heure,
+// gaz, Petite Roquette, Vélodrome d'Hiver et ses abords), les quartiers refaits depuis, la zone, l'Exposition et la passerelle de l'Alma, les passants de 1937, les monuments (Sacré-Cœur et son campanile), le calque, les repères, la visite, la marche à pied, l'heure,
 // la frise, les sources, le téléphone et l'absence d'erreurs. Le moteur est celui de la page « Paris 1889 » (tools/test1889.mjs en vérifie le reste).
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -110,6 +110,16 @@ check('disparus : halles, magasins et ateliers de la Halle aux vins, des entrep�
 check('disparus modelés à part : les gazomètres de La Villette, la Petite Roquette (hexagone, cour entre les ailes), le Vélodrome d’Hiver', di.gaz === 1 && di.gazPied && di.roquette > 30 && di.roquettePied && di.velhiv > 30 && di.velPied, JSON.stringify(di));
 const rf = await page.evaluate(() => { const a = window.__app, S = a.statuts; let ev = 0, n = 0; for (let x = 950; x <= 1350; x += 10) for (let z = 2550; z <= 2850; z += 10) { n++; if (S.lire(x, z) === 4) ev++; } return { ev, n }; });
 check('quartiers refaits depuis 1937 (Italie) : un faubourg serré évoqué, comme sur la photographie de 1949', rf.ev > 0.12 * rf.n, JSON.stringify(rf));
+const fi = await page.evaluate(() => { const a = window.__app, S = a.statuts, M = a.monuments, T = a.terrain, P = a.people;
+  let zone = 0; for (let x = 4480; x <= 4740; x += 5) for (let z = -700; z <= 400; z += 5) if (S.lire(x, z) === 4) zone++;          // la zone, au-delà des HBM de la porte de Montreuil
+  const U = [0.71538, 0.69873], O = [-4039.4, -604.3], N = [-U[1], U[0]]; let ile = 0;                                          // l'île aux Cygnes : aucun bâtiment évoqué
+  for (let v = 600; v <= 1360; v += 4) { const u = -144 + ((v - 600) * 15) / 760; for (const t of [-6, 0, 6]) { const x = O[0] + U[0] * (u + t) + N[0] * v, z = O[1] + U[1] * (u + t) + N[1] * v; if (S.lire(x, z) === 4) ile++; } }
+  const pa = M.PasserelleAlma, r = () => 0.5, garde = P.outfit(r, 'man', 'guard').col, cav = P.pools.find((p) => p.kind === 'rider'), char = P.pools.find((p) => p.kind === 'cart');
+  return { zone, ile, velhiv: [[-4405, -40], [-4370, 12], [-4400, 35]].filter(([x, z]) => S.lire(x, z) === 3).length,
+    passerelle: !!(pa && a.footAt(pa.x, pa.z) && a.footAt(pa.x, pa.z - 60) && a.footAt(pa.x, pa.z + 60) && !a.footAt(pa.x, pa.z + 75)), haut: pa ? Math.round(pa.top - T.height(pa.x, pa.z - 66)) : -1,
+    fiche: a.ui.places.some((p) => p.name === 'Passerelle de l’Alma'), garde, attelages: [cav.n, char.n] }; });
+check('finitions de 1937 : baraques évoquées dans la zone, rien sur l’île aux Cygnes, garages et ateliers relevés autour du Vélodrome d’Hiver, passerelle de l’Alma (133 m), passants des années 1930 et peu d’attelages',
+  fi.zone > 20 && fi.ile === 0 && fi.velhiv === 3 && fi.passerelle && fi.haut >= 14 && fi.fiche && fi.garde.join() === '120,112,72' && fi.attelages[0] < 60 && fi.attelages[1] < 40, JSON.stringify(fi));
 
 // ---------- silhouettes des monuments
 const mo = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1), fl = a.landmarks.find((l) => l.nom === 'fleche');
@@ -146,7 +156,7 @@ check('fiche : la tour, en jaune brun depuis 1907', fiche.vu && /Tour Eiffel/.te
 await page.evaluate(() => window.__app.ui.select(null));
 await page.click('#btn-sources');
 const src = await page.evaluate(() => { const d = document.getElementById('sources'); return { vu: !d.hidden, n: d.querySelectorAll('#sources-list li').length, t: d.textContent }; });
-check('sources : APUR, base « Paris 1900 » corrigée, plan général de l’Exposition, nomenclature des voies, IGN (relief, photographie de 1949), voies ferrées ; ce qui est réel, disparu, évoqué', src.vu && src.n === 7 && /Exposition de 1937/.test(src.t) && /Voies ferrées/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /1949/.test(src.t) && /IGN/.test(src.t) && /Disparu/.test(src.t) && /Évoqué/.test(src.t) && /Pas encore modelé/.test(src.t) && !/Vasserot/.test(src.t) && !/1900 ou d’avant/.test(src.t), `${src.n} sources`);
+check('sources : APUR, base « Paris 1900 » corrigée, plan général de l’Exposition, nomenclature des voies, IGN (relief, photographie de 1949), voies ferrées ; ce qui est réel, disparu, évoqué', src.vu && src.n === 7 && /Exposition de 1937/.test(src.t) && /Voies ferrées/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /1949/.test(src.t) && /IGN/.test(src.t) && /Disparu/.test(src.t) && /Évoqué/.test(src.t) && /Non figuré/.test(src.t) && !/Pas encore modelé/.test(src.t) && !/Vasserot/.test(src.t) && !/1900 ou d’avant/.test(src.t), `${src.n} sources`);
 await page.click('#sources [data-close="sources"]');
 { const og = await page.evaluate(() => (document.querySelector('meta[property="og:image"]') || {}).content || ''), { existsSync } = await import('node:fs');
   check('partage : l’image de la maquette (og:image, adresse absolue) est dans dist/og/', /^https:\/\/.+\/dist\/og\/1937\.jpg$/.test(og) && existsSync(join(root, 'dist/og/1937.jpg')), og); }
