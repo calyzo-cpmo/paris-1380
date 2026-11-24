@@ -24,8 +24,8 @@ jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le
 Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
 roulant et les entrées du métro. Un curseur montre le montage de l'Exposition, du 1er janvier 1897 au 19 juillet 1900.
 Le déploiement Docker (`Dockerfile`, `DEPLOIEMENT.md`) sert les six maquettes, `1937.html` compris (il manquait
-jusqu'au 24 novembre). **Rien n'est en cours** ; la dernière pull request est à fusionner dans `main` pour que le site
-en ligne soit à jour.
+jusqu'au 24 novembre). **Rien n'est en cours** : tout est fusionné dans `main` (pull request n° 24, le 24 novembre 2026) et le site en
+ligne est à jour.
 
 **Ce qui a été fait, maquette par maquette, et ce qui reste ouvert**
 1. **Paris 1900, finitions** — *faites le 22 novembre*, sauf la dernière :
