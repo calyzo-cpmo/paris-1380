@@ -3,7 +3,7 @@
 import { CADRE, COMPTE, ANNEE, eau, relief } from './data.js';
 import { TUILE_SOL, CENTRE_RECT, motifBanlieue, enveloppe, peindre, voirie } from './sol.js';
 import { construire } from './ville.js';
-import { makeFigureAtlas1889, outfit1889 } from './figures.js';
+import { makeFigureAtlas1889, outfit1889, ATTELAGES } from './figures.js';
 import { Terrain89 } from '../p1789/terrain.js';
 import { pointInPoly } from '../geom.js';
 import { batirExpo, peindreExpo, ESPLANADES, jardinsExpo } from './expo.js';
@@ -46,7 +46,7 @@ export const MONDE_1889 = {
   peindre,
   voirie,
   construire,
-  figures: (mobile) => ({ atlas: makeFigureAtlas1889(mobile ? 0.5 : 1), outfit: outfit1889 }),
+  figures: (mobile) => ({ atlas: makeFigureAtlas1889(mobile ? 0.5 : 1), outfit: outfit1889, attelages: ATTELAGES }),
   lumieres: ['facade', 'rdc', 'comble'],
   bilan: (app) => `${app.stats.bati} bâtiments (${COMPTE.R} réels, ${COMPTE.P} probables, ${COMPTE.V} disparus, ${COMPTE.E + COMPTE.G} évoqués), ${app.v89.ponts.length} ponts, ${app.v89.fer.n} voies ferrées (${Math.round(app.v89.fer.km)} km, ${app.v89.fer.viaduc} m sur viaduc), ${app.stats.tris} triangles, ${app.treeCount} arbres de jardin, ${app.stats.alignements} arbres d’alignement, ${app.people.total} passants possibles`,
 };

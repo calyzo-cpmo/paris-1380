@@ -90,6 +90,8 @@ function costume(P, r, X, Y, row, v) {
 }
 
 export const makeFigureAtlas1889 = (scale = 1) => makeAtlas(scale, HOMMES, FEMMES, costume, 1889);
+// Part des cavaliers et des voitures à cheval dans la foule (src/people.js) : toute la circulation de 1889.
+export const ATTELAGES = 1;
 
 const pick = (r, a) => a[(r() * a.length) | 0];
 const BLOUSES = [[64, 92, 142], [78, 102, 152], [56, 80, 124], [88, 104, 136]];                                  // toile bleue, plus ou moins délavée

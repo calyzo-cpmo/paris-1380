@@ -39,7 +39,7 @@ const page = await browser.newPage({ viewport: { width: 1000, height: 720 }, dev
 watch(page); page.setDefaultTimeout(180000);
 await page.goto(URL + '#accueil=1380');                 // l'époque du fond est tirée au hasard ; ici, fixée par l'adresse
 const ecran0 = await page.evaluate(() => ({ vu: window.__shell.accueil && !document.getElementById('accueil').hidden, cartes: [...document.querySelectorAll('#acc-eres .acc-ere')].map((b) => b.dataset.ere).join(' '), titre: document.title, ici: [...document.querySelectorAll('.acc-ici')].filter((b) => !b.hidden).length }));
-check('écran d’accueil : affiché tout de suite, sans attendre la 3D ; les cinq époques dans l’ordre', ecran0.vu && ecran0.cartes === 'lutece 1380 1789 1889 1900' && ecran0.titre === 'Paris à travers le temps' && ecran0.ici === 1, JSON.stringify(ecran0));
+check('écran d’accueil : affiché tout de suite, sans attendre la 3D ; les six époques dans l’ordre', ecran0.vu && ecran0.cartes === 'lutece 1380 1789 1889 1900 1937' && ecran0.titre === 'Paris à travers le temps' && ecran0.ici === 1, JSON.stringify(ecran0));
 const f1380 = await pret(page, '1380');
 await page.waitForTimeout(1500);
 let s = await shell(page), e = await etat(f1380);

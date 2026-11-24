@@ -55,14 +55,18 @@ export function batirGares(app, B) {
     for (const s of [-1, 1]) pavillon(app, B, F, -17, s * 76, 19, 12, y0 - 1, y0 + 23);
     return y0 + 38;
   });
-  // ---- gare de l'Est (embarcadère de Strasbourg, 1849) : en 1889 la seule moitié ouest de la gare d'aujourd'hui —
-  // une halle de trente-six mètres entre deux bâtiments, un pignon à demi-rose, une cour entre deux ailes
-  gare('GareEst', [664, -2667], [0.367, -0.93], [-82, 160, -112, 112], [-30, -50], (F, y0, B) => {
-    nef(app, B, F, 0, 150, -68, -32, y0 - 0.5, y0 + 13, y0 + 24);
-    corps(app, B, F, 0, 120, -90, -68, y0 - 1, y0 + 13, { comble: 3 }); corps(app, B, F, 0, 120, -32, -10, y0 - 1, y0 + 13, { comble: 3 });
-    corps(app, B, F, -30, 0, -100, 0, y0 - 1, y0 + 15, { comble: 3.5 });
-    corps(app, B, F, -33, 2, -70, -30, y0 - 1, y0 + 21, { travee: 8, toit: ZINC }); fronton(B, F, -33, 2, -70, -30, y0 + 21, y0 + 28.5);
-    corps(app, B, F, -72, -30, -100, -84, y0 - 1, y0 + 13, { comble: 3 }); corps(app, B, F, -72, -30, -16, 0, y0 - 1, y0 + 13, { comble: 3 });
+  // ---- gare de l'Est (embarcadère de Strasbourg, 1849) : en 1889 et en 1900 la seule moitié ouest de la gare
+  // d'aujourd'hui — une halle de trente-six mètres entre deux bâtiments, un pignon à demi-rose, une cour entre deux
+  // ailes. Doublée de 1928 à 1931 par une moitié est qui la répète (page « Paris 1937 ») : la même, en miroir (s = 1).
+  gare('GareEst', [664, -2667], [0.367, -0.93], [-82, 160, -112, 112], [-30, ANNEE >= 1931 ? 0 : -50], (F, y0, B) => {
+    for (const s of ANNEE >= 1931 ? [-1, 1] : [-1]) {
+      const V2 = (a, b) => (s < 0 ? [a, b] : [-b, -a]), n = (u0, u1, a, b, ...r) => nef(app, B, F, u0, u1, ...V2(a, b), ...r), c = (u0, u1, a, b, ...r) => corps(app, B, F, u0, u1, ...V2(a, b), ...r);
+      n(0, 150, -68, -32, y0 - 0.5, y0 + 13, y0 + 24);
+      c(0, 120, -90, -68, y0 - 1, y0 + 13, { comble: 3 }); c(0, 120, -32, -10, y0 - 1, y0 + 13, { comble: 3 });
+      c(-30, 0, -100, 0, y0 - 1, y0 + 15, { comble: 3.5 });
+      c(-33, 2, -70, -30, y0 - 1, y0 + 21, { travee: 8, toit: ZINC }); fronton(B, F, -33, 2, ...V2(-70, -30), y0 + 21, y0 + 28.5);
+      c(-72, -30, -100, -84, y0 - 1, y0 + 13, { comble: 3 }); c(-72, -30, -16, 0, y0 - 1, y0 + 13, { comble: 3 });
+    }
     return y0 + 28.5;
   });
   // ---- gare Saint-Lazare (rebâtie par Juste Lisch, 1885-1889) : la longue façade de la rue Saint-Lazare et ses trois

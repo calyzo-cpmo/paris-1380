@@ -36,6 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import extract_epochs as X
 import fer_1889 as FER
+import disparus_1937 as DIS
 
 SRC = os.path.join(HERE, '..', 'data', 'source', '1889')
 SRC37 = os.path.join(HERE, '..', 'data', 'source', '1937')
@@ -456,6 +457,8 @@ def main():
             b['h'] = min(mediane(hs) or 13.0, 19.0) * (0.75 if b['aire'] < 60 else 1.0)
     n0 = len(V); V = [b for b in V if not sur_voie(b)]                  # une maison de l'atlas n'était plus là où passe le chemin de fer
     print('  disparus, d’après Vasserot :', len(V), 'sur', len(vieux), '; écartés des îlots refondus ou tenus par un édifice public :', refondus, '; écartés des voies ferrées :', n0 - len(V))
+    if AN >= 1937:                                                      # grands ensembles disparus depuis, relevés sur la photographie de 1949
+        V = DIS.emprises(); print('  disparus, relevés un à un sur la photographie de 1949 :', len(V))
 
     # ---- bâtiments évoqués : hors de l'atlas, là où le bâtiment actuel est postérieur à 1889 dans un quartier déjà bâti
     gV = Grille(60)
@@ -466,6 +469,7 @@ def main():
         x, z = b['c']
         if au_jardin(x, z): continue
         if any(True for _ in gv.autour(x, z, 45)): continue                                      # l'atlas couvre l'endroit : c'est lui qui parle
+        if AN >= 1937 and DIS.zone_de(x, z): continue                                            # un grand ensemble disparu (tools/disparus_1937.py)
         i = ilot_en(x, z)
         if not i or not i['bati'] or i['fortif'] or i.get('anneau'): continue          # anneau : l'enceinte démolie, rebâtie de neuf (1937)
         E.append({**b, 'st': 'E', 'h': min(b['h'] if b['h'] > 3 else 12.0, (b.get('hv') or 15.0) + 1.5), 'toit': b.get('tv') or 4, 'sur': None})
@@ -497,10 +501,29 @@ def main():
         for x in v: h = ((h ^ (int(x) & 0xffffffff)) * 16777619) & 0xffffffff
         h ^= h >> 15; h = (h * 2246822519) & 0xffffffff; h ^= h >> 13
         return (h & 0xffffff) / 0x1000000
-    G = []
+    # 1937 : un îlot bâti dont l'emprise d'aujourd'hui est surtout postérieure à 1937 a été refait d'un bloc depuis ; la
+    # photographie de 1949 y montre un faubourg serré (ETUDE-1937.md), que le peu de bâtiments anciens alentour ferait
+    # paraître vide. Ses maisons évoquées y sont serrées comme au centre.
+    refaits = set()
+    if AN >= 1937:
+        part = {}
+        for b in B:
+            if b['st'] not in 'RPN': continue
+            i = ilot_en(b['c'][0], b['c'][1])
+            if i: q = part.setdefault(id(i), [0.0, 0.0]); q[0 if b['st'] == 'N' else 1] += b['aire']
+        for i in ilots:
+            q = part.get(id(i))
+            if q and i['bati'] and not i['fortif'] and not i.get('anneau') and q[0] > 0.6 * (q[0] + q[1]) and q[0] > 0.12 * i['aire']: refaits.add(id(i))
+        print('  îlots refaits depuis', AN, '(maisons évoquées serrées) :', len(refaits))
+    G = []; zg = {}
     for ni, i in enumerate(ilots):
-        if not i['bati'] or i['fortif'] or i.get('anneau') or i['aire'] < 500 or i['aire'] > 60000: continue
-        r = i['rings'][0]; poses = []; gros = 0.5 if i['aire'] > 30000 else 1.0
+        Z = None
+        if AN >= 1937:
+            bb = boite(i['rings'][0]); Z = DIS.zone_de((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2)
+            if Z and (Z['mode'] == 'vide' or i['fortif']): continue
+        if not Z and (not i['bati'] or i['fortif'] or i.get('anneau') or i['aire'] < 500 or i['aire'] > (150000 if id(i) in refaits else 60000)): continue
+        if Z and i['aire'] < 300: continue
+        r = i['rings'][0]; poses = []; gros = 0.5 if i['aire'] > 30000 and not Z else 1.0
         if aire_signee(r) < 0: r = r[::-1]
         for e in range(len(r)):
             a, b = r[e], r[(e + 1) % len(r)]; L = math.hypot(b[0] - a[0], b[1] - a[1])
@@ -511,24 +534,83 @@ def main():
             anciens = [o for o in ga.autour(mx, mz, 160) if math.hypot(o['c'][0] - mx, o['c'][1] - mz) < 160]
             dens = min(0.95, 0.28 + len(anciens) / 60) * gros
             hv = mediane([o['h'] for o in anciens if o['h'] > 3]) or 8.0
-            prof = 9.0 if hv < 11 else 10.5; s = prof + 1.0
-            while s < L - 8:
-                lg = min(10 + 16 * hasard(ni, e, s, 1), L - 0.5 - s)
-                if hasard(ni, e, s, 2) > dens: s += lg + 3; continue        # terrain vague, jardin, cour
-                P = lambda fu, fv: (a[0] + t[0] * (s + lg * fu) + nrm[0] * (0.3 + prof * fv), a[1] + t[1] * (s + lg * fu) + nrm[1] * (0.3 + prof * fv))
-                libre = True
-                for fu in (0.08, 0.5, 0.92):
-                    for fv in (0.08, 0.5, 0.95):
-                        x, z = P(fu, fv)
-                        if not dans_poly(i['rings'], x, z) or occupe(x, z) or au_jardin(x, z) or dans_expo(x, z) or sur_rails(x, z) or any(dans(q, x, z) for q in poses): libre = False; break
-                    if not libre: break
-                if not libre: s += 4; continue
-                ring = [P(0, 0), P(1, 0), P(1, 1), P(0, 1)]; poses.append(ring)
-                h = max(5.5, min(18.0, hv * (0.62 + 0.42 * hasard(ni, e, s, 3))))
-                bb = boite(ring)
-                G.append({'rings': [ring], 'aire': lg * prof, 'bb': bb, 'c': ((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2), 'st': 'G', 'h': h, 'toit': 2 if h < 10.5 else 4, 'tissu': '', 'sur': None})
-                s += lg + (0.0 if hasard(ni, e, s, 4) < 0.7 else 2.5)
+            if id(i) in refaits: dens = max(dens, 0.88); hv = max(hv, 12.0)
+            prof = 9.0 if hv < 11 else 10.5
+            if Z: dens = Z['dens']; prof = min(Z['prof'], 0.45 * math.sqrt(i['aire']))
+            for rang, off in enumerate((0.0, prof + 5.0) if id(i) in refaits else (0.0,)):      # 1937, îlot refait : un second rang, sur cour
+              cle = (lambda v: v) if rang == 0 else (lambda v: v + 7919.0)
+              s = prof + 1.0
+              while s < L - 8:
+                  lg = min((Z['lg'][0] + (Z['lg'][1] - Z['lg'][0]) * hasard(ni, e, cle(s), 1)) if Z else 10 + 16 * hasard(ni, e, cle(s), 1), L - 0.5 - s)
+                  if hasard(ni, e, cle(s), 2) > dens: s += lg + 3; continue        # terrain vague, jardin, cour
+                  P = lambda fu, fv: (a[0] + t[0] * (s + lg * fu) + nrm[0] * (off + 0.3 + prof * fv), a[1] + t[1] * (s + lg * fu) + nrm[1] * (off + 0.3 + prof * fv))
+                  libre = True
+                  for fu in (0.08, 0.5, 0.92):
+                      for fv in (0.08, 0.5, 0.95):
+                          x, z = P(fu, fv)
+                          if not dans_poly(i['rings'], x, z) or occupe(x, z) or au_jardin(x, z) or dans_expo(x, z) or sur_rails(x, z) or any(dans(q, x, z) for q in poses): libre = False; break
+                      if not libre: break
+                  if not libre: s += 4; continue
+                  ring = [P(0, 0), P(1, 0), P(1, 1), P(0, 1)]; poses.append(ring)
+                  h = max(5.5, min(18.0, hv * (0.62 + 0.42 * hasard(ni, e, cle(s), 3))))
+                  bb = boite(ring)
+                  if Z:                                                    # une halle, un magasin, un atelier du grand ensemble disparu
+                      h = Z['h'][0] + (Z['h'][1] - Z['h'][0]) * hasard(ni, e, cle(s), 3); zg[Z['nom']] = zg.get(Z['nom'], 0) + 1
+                      G.append({'rings': [ring], 'aire': lg * prof, 'bb': bb, 'c': ((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2), 'st': 'V', 'h': h, 'toit': Z['toit'], 'tissu': 'TI', 'sur': None})
+                  else: G.append({'rings': [ring], 'aire': lg * prof, 'bb': bb, 'c': ((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2), 'st': 'G', 'h': h, 'toit': 2 if h < 10.5 else 4, 'tissu': '', 'sur': None})
+                  s += lg + (0.0 if hasard(ni, e, cle(s), 4) < 0.7 else 2.5)
     print('  évoqués le long des rues de 1900 :', len(G))
+    if zg: print('  halles et magasins des grands ensembles disparus :', zg)
+    # 1937 : la zone, au-delà de l'enceinte démolie. Rattachée à Paris en 1925-1930, on la dégage peu à peu pour des
+    # stades et des jardins, mais la photographie de 1949 y montre encore, par endroits, des baraques et des jardins
+    # ouvriers. Dans les îlots non bâtis du glacis et de la zone, hors de l'emprise de l'enceinte : des baraques
+    # évoquées, une par case de 13 m au plus, là seulement où la photographie est « texturée » (écart type local de la
+    # luminance sur 15 m au-dessus de TEXTURE) ; là où elle montre un sol uni (stade, terrain vague), rien. Pas le long du
+    # bois de Boulogne (de la porte Maillot à la porte de Saint-Cloud), où la zone était surtout faite de stades et de
+    # jardins, ni dans les îlots de plus de 6 ha. Une évocation : les baraques elles-mêmes ne sont pas relevées.
+    if AN >= 1937:
+        import numpy as np
+        import releve1949 as RV
+        from photo1949 import COUCHES as C49
+        TEXTURE, FEN = 35.0, 15
+        def texture(x0, z0, cote):
+            """Écart type local de la luminance de la photographie de 1949, au mètre, sur un carré de `cote` mètres."""
+            im = np.asarray(RV.redresser(C49[0][0], C49[0][1], x0, z0, cote, 1.0, 17).convert('L'), dtype=np.float64)
+            p_ = np.pad(im, FEN // 2, mode='edge'); s1 = np.pad(p_.cumsum(0).cumsum(1), ((1, 0), (1, 0))); s2 = np.pad((p_ * p_).cumsum(0).cumsum(1), ((1, 0), (1, 0)))
+            bs = lambda A: A[FEN:, FEN:] - A[:-FEN, FEN:] - A[FEN:, :-FEN] + A[:-FEN, :-FEN]
+            m = bs(s1) / FEN ** 2; return np.sqrt(np.maximum(bs(s2) / FEN ** 2 - m * m, 0))[:im.shape[0], :im.shape[1]]
+        gf = Grille(300)
+        for f in json.load(open(os.path.join(SRC37, 'fortifications_thiers.json'))):
+            for poly in anneaux_esri(f.get('geometry')):
+                r = [T(p[0], p[1]) for p in poly[0]]; gf.boite(boite(r), r)
+        def en_fortif(x, z): return any(dans(r, x, z) for r in gf.en(x, z))
+        PZ = 13.0; n_zone = 0
+        for ni, i in enumerate(ilots):
+            if not i.get('anneau') or i['bati'] or i['fortif'] or i['aire'] < 1500 or i['aire'] > 60000: continue
+            r = i['rings'][0]; bb = boite(r); cx, cz = (bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2
+            if en_fortif(cx, cz) or (cx < -5000 and cz < 1700): continue
+            lg_max, sens = 0.0, (1.0, 0.0)                                 # les baraques suivent le plus long côté de l'îlot
+            for e in range(len(r)):
+                q0, q1 = r[e], r[(e + 1) % len(r)]; L = math.hypot(q1[0] - q0[0], q1[1] - q0[1])
+                if L > lg_max: lg_max, sens = L, ((q1[0] - q0[0]) / L, (q1[1] - q0[1]) / L)
+            px_, pz_ = -sens[1], sens[0]
+            tx0, tz0 = math.floor(bb[0]) - 10, math.floor(bb[1]) - 10; tex = texture(tx0, tz0, max(bb[2] - bb[0], bb[3] - bb[1]) + 20)
+            gx = math.floor(bb[0] / PZ) * PZ
+            while gx < bb[2]:
+                gz = math.floor(bb[1] / PZ) * PZ
+                while gz < bb[3]:
+                    k = (int(gx), int(gz)); gz += PZ
+                    if hasard(k[0], k[1], 7) > 0.6: continue
+                    x = k[0] + PZ / 2 + (hasard(k[0], k[1], 8) - 0.5) * 3; z = k[1] + PZ / 2 + (hasard(k[0], k[1], 9) - 0.5) * 3
+                    ti, tj = int(z - tz0), int(x - tx0)
+                    if not (0 <= ti < tex.shape[0] and 0 <= tj < tex.shape[1]) or tex[ti, tj] < TEXTURE: continue
+                    hl = 2.0 + 2.2 * hasard(k[0], k[1], 10); hw = 1.6 + 1.4 * hasard(k[0], k[1], 11)
+                    ring = [(x + sens[0] * a * hl + px_ * b * hw, z + sens[1] * a * hl + pz_ * b * hw) for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+                    if not all(dans_poly(i['rings'], q[0], q[1]) and not occupe(q[0], q[1]) and not au_jardin(q[0], q[1]) and not sur_rails(q[0], q[1]) and not dans_expo(q[0], q[1]) for q in ring + [(x, z)]): continue
+                    rb = boite(ring)
+                    G.append({'rings': [ring], 'aire': 4 * hl * hw, 'bb': rb, 'c': (x, z), 'st': 'G', 'h': 2.6 + 0.8 * hasard(k[0], k[1], 12), 'toit': 1, 'tissu': '', 'sur': None}); n_zone += 1
+                gx += PZ
+        print('  1937, la zone : baraques évoquées', n_zone, 'dans les îlots non bâtis du glacis et de la zone')
 
     # ---- hauteurs : ce que l'on mesure aujourd'hui, moins un étage quand le bâtiment a été surélevé depuis
     tout = pose + G

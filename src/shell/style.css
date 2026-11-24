@@ -1,5 +1,5 @@
 /* Page d'accueil « Paris à travers le temps » : elle héberge les maquettes, chacune dans son cadre, et le passage de
-   l'une à l'autre. Sans adresse, elle s'ouvre sur l'écran d'accueil (#accueil) : le choix des cinq époques, au-dessus
+   l'une à l'autre. Sans adresse, elle s'ouvre sur l'écran d'accueil (#accueil) : le choix des six époques, au-dessus
    d'une maquette en vitrine qui tourne lentement. Le reste de l'interface visible appartient aux maquettes. */
 html, body { margin: 0; height: 100%; background: #0b1230; overflow: hidden; }
 #scene { position: fixed; inset: 0; }

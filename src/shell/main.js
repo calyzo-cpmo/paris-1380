@@ -1,10 +1,10 @@
 // Page d'accueil « Paris à travers le temps ». Elle héberge chaque maquette dans un cadre et orchestre le passage de
 // l'une à l'autre sans changer de page : la ville d'arrivée se construit en arrière-plan, puis, au même point de vue et
 // à la même heure, la ville de départ s'enfonce dans le sol, les deux plans se fondent, et l'autre ville s'élève.
-// Ouverte sans adresse, elle montre l'écran d'accueil : les cinq époques à choisir, au-dessus d'une maquette « en
+// Ouverte sans adresse, elle montre l'écran d'accueil : les six époques à choisir, au-dessus d'une maquette « en
 // vitrine » (interface masquée, ville qui tourne lentement, src/embed.js). Choisir l'époque du fond la rend à la main ;
 // en choisir une autre lance le passage. Le nom du site, en tête de chaque maquette, ramène à cet écran.
-// Les maquettes restent des pages autonomes (lutece.html, 1380.html, 1789.html, 1889.html, 1900.html) ; le dialogue passe par des messages
+// Les maquettes restent des pages autonomes (lutece.html, 1380.html, 1789.html, 1889.html, 1900.html, 1937.html) ; le dialogue passe par des messages
 // (src/embed.js).
 
 // leger : maquette assez légère pour servir de fond sur téléphone
@@ -14,8 +14,9 @@ const ERES = {
   1789: { page: '1789.html', nom: 'Paris 1789', date: '1789', titre: 'Paris en 1789', ligne: 'Vingt mille bâtiments dans le mur des Fermiers généraux, à la veille de la Révolution.', leger: true },
   1889: { page: '1889.html', nom: 'Paris 1889', date: '1889', titre: 'Paris en 1889', ligne: 'L’Exposition universelle et la tour Eiffel qui se monte, jour après jour.' },
   1900: { page: '1900.html', nom: 'Paris 1900', date: '1900', titre: 'Paris en 1900', ligne: 'L’été de l’Exposition : la tour repeinte, la Grande Roue, le Grand Palais.' },
+  1937: { page: '1937.html', nom: 'Paris 1937', date: '1937', titre: 'Paris en 1937', ligne: 'L’enceinte démolie, les Halles, Bercy, la Villette : la ville de l’Exposition internationale.' },
 };
-const ORDRE = ['lutece', '1380', '1789', '1889', '1900'];
+const ORDRE = ['lutece', '1380', '1789', '1889', '1900', '1937'];
 const DEFAUT = '1380', SITE = 'Paris à travers le temps';
 const $ = (id) => document.getElementById(id);
 const scene = $('scene'), voile = $('voile'), attente = $('attente');
@@ -122,7 +123,7 @@ async function aller(ere, extra = '') {
   } finally { voile.hidden = true; occupe = false; }
 }
 
-// ---------- écran d'accueil : le choix des cinq époques, au-dessus d'une maquette en vitrine
+// ---------- écran d'accueil : le choix des six époques, au-dessus d'une maquette en vitrine
 const liste = $('acc-eres'), cartes = new Map();
 for (const ere of ORDRE) {
   const E = ERES[ere], li = document.createElement('li'), b = document.createElement('button');

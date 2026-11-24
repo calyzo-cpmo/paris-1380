@@ -34,10 +34,11 @@ export function hauteur(j) {
 const E1 = 57.6, E2 = 115.7, E3 = 276.1;
 const FER = rgb(134, 66, 48), FER_SOMBRE = rgb(96, 50, 40), BOIS = rgb(196, 160, 112), MACONNERIE = rgb(206, 196, 172);
 // Teinte de la tour à la hauteur y : rouge de Venise en 1889 ; repeinte en 1899 en cinq teintes dégradées, du jaune
-// orangé à la base au jaune clair au sommet (site officiel de la tour Eiffel). Les bandes sont de convention.
-const BANDES = [[214, 150, 70], [222, 166, 86], [228, 180, 102], [234, 194, 120], [238, 208, 140]].map((c) => rgb(...c));
+// orangé à la base au jaune clair au sommet ; « jaune brun » de 1907 à 1954 (campagnes de 1907, 1917, 1924, 1932…),
+// d'après le site officiel de la tour Eiffel. Les bandes, et le léger dégradé du jaune brun, sont de convention.
+const BANDES = (ANNEE >= 1907 ? [[172, 132, 74], [178, 138, 79], [184, 144, 84], [190, 150, 90], [196, 156, 96]] : [[214, 150, 70], [222, 166, 86], [228, 180, 102], [234, 194, 120], [238, 208, 140]]).map((c) => rgb(...c));
 const teinte = (y) => (ANNEE >= 1899 ? BANDES[Math.max(0, Math.min(4, Math.floor(y / 62)))] : FER);
-const SOMBRE = ANNEE >= 1899 ? rgb(160, 112, 56) : FER_SOMBRE;
+const SOMBRE = ANNEE >= 1907 ? rgb(128, 96, 54) : ANNEE >= 1899 ? rgb(160, 112, 56) : FER_SOMBRE;
 // Axe d'une pile (distance à l'axe de la tour) et demi-côté de sa section, à la hauteur y.
 const axe = (y) => 66.88 * Math.exp(-0.008759 * y) - 11.88, demi = (y) => 7.5 - 0.025 * y;
 // Demi-côté du fût, au-dessus du deuxième étage.

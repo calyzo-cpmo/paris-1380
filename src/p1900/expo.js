@@ -16,23 +16,22 @@
 import { box, cyl, cone, rgb } from '../builder.js';
 import { EXPO, expoXZ } from '../p1889/data.js';
 import { batirTour } from '../p1889/tour.js';
-import { batirMonuments, coupole, industrie } from '../p1889/monuments.js';
+import { batirMonuments, industrie } from '../p1889/monuments.js';
 import { batirGares } from '../p1889/gares.js';
 import { batirEdifices } from '../p1889/edifices.js';
-import { repere } from '../p1889/corps.js';
 import { fill } from '../p1789/outils.js';
-import { halle, dome, ensemble, emprise, trocadero, palaisJumeaux, industriesDiverses, Q, CREME, OCRE, VERRE, VERRE_CLAIR, BLEU, OR, PIERRE } from '../p1889/expo.js';
-import { poutre, berceau, calotte } from './outils.js';
+import { halle, dome, ensemble, emprise, trocadero, palaisJumeaux, industriesDiverses, Q, CREME, OCRE, VERRE, VERRE_CLAIR, BLEU, OR } from '../p1889/expo.js';
+import { poutre } from './outils.js';
 import { batirPavillons } from './pavillons.js';
 import { batirMetro } from './metro.js';
 import { batirPorte, batirJardinsRD } from './porte.js';
 import { batirGlobe, batirOptique } from './attractions.js';
+import { grandPalais, petitPalais, pylones, STATIQUE, STUC } from './palais.js';
 import { ouvrage, installer, batirHistoire, DATES } from './montage.js';
 
-const STUC = rgb(236, 228, 208), VERT = rgb(92, 140, 120), ROSE = rgb(212, 164, 140), ACIER = rgb(88, 86, 84), CABINE = rgb(150, 72, 58), BRIQUE = rgb(170, 96, 72), EAU = rgb(178, 206, 222);
+const VERT = rgb(92, 140, 120), ROSE = rgb(212, 164, 140), ACIER = rgb(88, 86, 84), CABINE = rgb(150, 72, 58), BRIQUE = rgb(170, 96, 72), EAU = rgb(178, 206, 222);
 const U = EXPO.u, AXE = { ux: U[0], uz: U[1] };
 const boite = (ring) => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return { ring, x0, z0, x1, z1 }; };
-const STATIQUE = [-2, -1];                       // dates de chantier passées : achevés (ce qui suit le curseur est dans un ouvrage, src/p1900/montage.js)
 
 // ---- Champ-de-Mars : six palais en fer à cheval autour du jardin, le palais de l'Électricité au fond
 // Repère de l'Exposition (src/p1889/data.js) : u de la tour vers l'École militaire, v vers l'avenue de Suffren ; Q(u, v)
@@ -121,39 +120,6 @@ function grandeRoue(app, B) {
   V.reserves.push(boite(ring)); app.foot.push({ ring, top: y0 + 6 });
   app.landmarks.push({ x: C[0], z: C[1], top: H + R });
   app.monuments.GrandeRoue = { x: C[0], z: C[1], top: H + R + 8 };
-}
-
-// ---- Grand Palais (1897-1900) : la nef de 200 m sur 50 m le long de l'avenue (Winston-Churchill aujourd'hui), le
-// transept vers le palais d'Antin, la coupole de verre à 45 m au-dessus de leur croisée, le mât à 60 m. Les corps de
-// pierre viennent des données ; la verrière est posée dessus.
-function grandPalais(app) {
-  const F = repere([-2720, -1454], [0, 1]), y0 = app.terrain.height(-2720, -1454);
-  ensemble(app, y0, ...STATIQUE, 60, (bm, bv) => {
-    berceau(bv, F.P, y0, -100, 100, -26, 26, 26.5, 35);
-    berceau(bv, (u, v) => F.P(v, u), y0, 26, 106, -26, 26, 26.5, 35);                                 // transept : u et v échangés
-    calotte(bv, -2720, -1454, 25, y0 + 33, y0 + 45);
-    cyl(bm, -2720, -1454, 2.4, y0 + 44.5, y0 + 49, { col: OR, seg: 8 }); box(bm, { cx: -2720, cz: -1454, ux: 1, uz: 0, hl: 0.2, hw: 0.2 }, y0 + 49, y0 + 60, { col: rgb(60, 60, 60) });
-  });
-  app.landmarks.push({ x: -2720, z: -1454, top: y0 + 60 });
-  app.monuments.GrandPalais = { x: -2720, z: -1454, top: y0 + 64 };
-}
-// ---- Petit Palais (Charles Girault, 1897-1900) : le dôme du porche d'entrée, face au Grand Palais. Évocation.
-function petitPalais(app, B) {
-  const x = -2592, z = -1442, top = coupole(app, B, x, z, 8.5, 15, 21, 31, 33.5, 36, rgb(196, 190, 176), { pierre: STUC, fleche: OR });
-  app.monuments.PetitPalais = { x: -2556, z: -1440, top: top + 4 };
-}
-// ---- pont Alexandre-III : quatre pylônes de 17 m aux têtes du pont, couronnés de groupes dorés (Renommées et Pégase)
-function pylones(app, B) {
-  const a = [-2667, -1109], b = [-2655, -1257], L = Math.hypot(b[0] - a[0], b[1] - a[1]), dx = (b[0] - a[0]) / L, dz = (b[1] - a[1]) / L, nx = -dz, nz = dx;
-  for (const [e, sg] of [[a, -1], [b, 1]]) for (const s of [-1, 1]) {
-    const x = e[0] + dx * sg * 10 + nx * s * 24, z = e[1] + dz * sg * 10 + nz * s * 24, y0 = app.terrain.height(x, z), bs = B.at('stone', x, z), bp = B.at('plain', x, z);
-    box(bs, { cx: x, cz: z, ux: dx, uz: dz, hl: 3.6, hw: 3.6 }, y0 - 1, y0 + 5, { col: PIERRE, s0: 0.84 });
-    box(bs, { cx: x, cz: z, ux: dx, uz: dz, hl: 2.4, hw: 2.4 }, y0 + 5, y0 + 17, { col: PIERRE, s0: 0.88 });
-    cyl(bp, x, z, 1.8, y0 + 17, y0 + 19.5, { col: OR, seg: 8 }); cone(bp, x, z, 1.4, y0 + 19.5, y0 + 23, { col: OR, seg: 6 });
-    app.foot.push({ ring: [[x - 3.6, z - 3.6], [x + 3.6, z - 3.6], [x + 3.6, z + 3.6], [x - 3.6, z + 3.6]], top: y0 + 23 });
-    app.landmarks.push({ x, z, top: y0 + 23 });
-  }
-  app.monuments.AlexandreIII = { x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, top: app.terrain.height(a[0], a[1]) + 30 };
 }
 
 // Sol du Champ-de-Mars : sable des allées, pelouses du jardin central et des abords de la tour, bassin du Château d'eau.
