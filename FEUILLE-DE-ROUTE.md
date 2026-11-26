@@ -238,8 +238,10 @@ lot du 26 novembre, ci-dessus, attend sa fusion.
      numérote les lots sans les nommer) ; les volumes ;
    - *textes* : fiches (Champ-de-Mars, palais de la Lumière, Publicité, Centre régional, Centre des métiers, Centre des
      colonies, Italie, palais de l'Air), panneau « Sources », étape de la visite, `ETUDE-1937.md` (§ 8), README ;
-   - *vérifié* : `node tools/test1937.mjs`, 56 vérifications (une de plus : le recalage) ; `npm test` pour les
-     autres maquettes ; planches de contrôle (plan redressé sous les emprises de la page) et vues de la page.
+   - *vérifié* : `node tools/test1937.mjs`, 56 vérifications (une de plus : le recalage) ; les autres maquettes
+     passent aussi (Paris 1380 : 117, 1789 : 56, Lutèce : 41, 1889 : 56, 1900 : 69) ; les sept suites de
+     l'intégration continue, accueil compris, sont vertes sur la pull request n° 25 (commit 01d0fac) ; planches de
+     contrôle (plan redressé sous les emprises de la page) et vues de la page.
 4. **Paris 1975** — *abandonné le 24 novembre*, après l'étude des données (`ETUDE-1975.md`, gardée pour mémoire) :
    - *décidé* : la ville à l'**été 1975, sans curseur** de chantier ;
    - *ce que dit l'étude* : 76 % de l'emprise bâtie d'aujourd'hui est réelle en 1975 (61 % de 1937 ou d'avant, 15 % de
