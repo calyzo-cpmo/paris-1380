@@ -17,7 +17,8 @@ C'est un vrai plan : une similitude le pose sur la maquette. Elle est trouvée p
 bords des îlots de 1937 (data/paris1937.json) glissent sur les traits du plan jusqu'à tomber sur l'alignement des
 façades — un trait, avec la bordure du trottoir quelques pixels dehors et du blanc dedans, ce qui écarte la rue d'à
 côté et l'autre trottoir. Les cases sûres donnent la similitude ; on recommence de plus en plus fin. Les coefficients
-retenus sont dans CALAGE, plus bas ; « caler » les recalcule et dit les écarts (2 m en médiane sur les cases sûres).
+retenus sont dans CALAGE, plus bas ; « caler » les recalcule et dit les écarts : 3 m en médiane, neuf sur dix sous
+5,5 m, sur 32 cases sûres ; 1,027 unité de la maquette par pixel.
 La feuille, pliée, a joué : par endroits (Esplanade des Invalides), le plan s'écarte d'une dizaine de mètres. Les
 îlots de la maquette, tracés en rouge sur chaque planche, disent l'écart local.
 
@@ -41,7 +42,7 @@ URL = 'https://apicollections.parismusees.paris.fr/sites/default/files/styles/4k
 DATA = os.path.join(HERE, '..', 'data', 'paris1937.json')
 
 # Maquette → plan : [X, Y] = [a b ; c d] · [x, z] + [e, f] (pixels de l'image de 3 418 × 2 160). Rempli par « caler ».
-CALAGE = [[0.678038, -0.698512, 3882.677855], [0.698512, 0.678038, 4220.731995]]
+CALAGE = [[0.676699, -0.699795, 3876.144407], [0.699795, 0.676699, 4222.528672]]
 
 
 def image():

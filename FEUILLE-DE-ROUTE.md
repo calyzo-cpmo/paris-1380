@@ -215,8 +215,8 @@ lot du 26 novembre, ci-dessus, attend sa fusion.
      ajoutés au réseau de l'environnement « DESIGN - Paris médiéval » (demandé et accordé le 26 novembre) ;
    - *le plan du musée Carnavalet* est le **plan directeur** de l'Exposition, à 0,0005 par mètre (1:2 000), signé du
      service d'architecture (Martzloff, Letrosne, Gréber, Crevel) et daté d'**août 1935** — deux ans avant l'ouverture.
-     C'est un vrai plan : `tools/plan1935.py` le pose sur la maquette par une similitude (2 m d'écart médian sur les
-     rues voisines ; une dizaine de mètres par endroits, la feuille pliée ayant joué). Il fixe les terrains et les
+     C'est un vrai plan : `tools/plan1935.py` le pose sur la maquette par une similitude (3 m d'écart médian sur les
+     rues voisines, neuf cases sur dix sous 5,5 m ; une dizaine de mètres par endroits, la feuille pliée ayant joué). Il fixe les terrains et les
      grands partis, pas les pavillons étrangers, attribués en 1936 ;
    - *deux autres plans à l'échelle*, trouvés sur Wikimedia Commons (BnF, domaine public) : le plan des emplacements
      concédés (1935, 1:5 000), qui confirme les limites, et le **plan du Centre régional** (« Canalisations », 1:500,

@@ -4,7 +4,7 @@
 // Trois plans à l'échelle fixent les terrains et les grands partis :
 // - le plan directeur de l'Exposition (Services d'architecture et des promenades, R. Martzloff, Ch. Letrosne, J. Gréber,
 //   É. Crevel ; août 1935, au 1:2 000 ; musée Carnavalet, Paris Musées, CC0), posé sur la maquette par tools/plan1935.py
-//   (2 m d'écart médian sur les rues voisines, une dizaine par endroits) : la limite du Champ-de-Mars, ses ailes et ses
+//   (3 m d'écart médian sur les rues voisines, une dizaine par endroits) : la limite du Champ-de-Mars, ses ailes et ses
 //   galeries, les bandes bâties du quai d'Orsay, le Centre des métiers, l'île aux Cygnes, l'Esplanade, les concessions du
 //   Cours-la-Reine ;
 // - le plan des emplacements concédés (1935, au 1:5 000 ; BnF, GE C-3042, sur Wikimedia Commons), qui confirme les limites ;

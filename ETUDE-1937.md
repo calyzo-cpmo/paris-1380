@@ -246,7 +246,7 @@ Jusque-là, les pavillons étaient posés à la main d'après deux vues cavaliè
   maquette par une similitude : dans des cases de 300 px, les bords des îlots de 1937 glissent sur les traits du plan
   jusqu'à tomber sur l'alignement des façades (un trait, la bordure du trottoir quelques pixels dehors, du blanc
   dedans — ce qui écarte l'autre trottoir et la rue voisine) ; les cases sûres donnent la similitude. Écart médian de
-  2 m sur ces cases ; 1,027 unité de la maquette par pixel, soit 500 m pour 479 px quand l'échelle graphique du plan en
+  3 m sur les 32 cases sûres, neuf sur dix sous 5,5 m ; 1,027 unité de la maquette par pixel, soit 500 m pour 479 px quand l'échelle graphique du plan en
   donne 472 (1,5 % : le papier). Contrôlé sur les ponts d'Iéna et de l'Alma et sur le Grand Palais (2 à 4 m). La
   feuille, pliée, a joué : une dizaine de mètres par endroits (Esplanade des Invalides) ; les îlots de la maquette,
   tracés sur chaque planche, disent l'écart local.
