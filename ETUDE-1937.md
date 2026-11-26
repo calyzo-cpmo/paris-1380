@@ -163,11 +163,16 @@ de chantier ; l'accès réseau à l'Atlas municipal et à la nomenclature des vo
 noms sont corrigés par `tools/ville_1937.py`. 1889 et 1900 sortent inchangés, à l'octet près.
 
 - **Rues** : 77 km de voies ouvertes de 1901 à 1937 (1 151 tronçons, presque tous nommés), surtout sur l'ancienne
-  enceinte et aux bords du Champ-de-Mars ; aucune dans les bois. **Noms** : 414 tronçons de 1900 portent en 1937 un
+  enceinte et aux bords du Champ-de-Mars ; aucune dans les bois. **Noms** : 472 tronçons de 1900 portent en 1937 un
   autre nom — avenue du Bois devenue avenue Foch (1929), rue de Berlin devenue rue de Liège (1914), avenue d'Antin devenue
-  avenue Victor-Emmanuel-III (1918), quai Debilly devenu avenue de Tokio (1918). Un renommage n'est retenu que si la
-  chaîne des dénominations aboutit au nom actuel que la base de 1900 donne à la voie : la nomenclature ne situe pas ses
-  anciens noms, et la « rue de Rivoli » de Belleville (devenue rue Julien-Lacroix) n'est pas celle du Louvre. Une voie
+  avenue Victor-Emmanuel-III (1918), quai Debilly devenu avenue de Tokio (1918), avenue de l'Alma devenue avenue
+  George-V et avenue du Trocadéro devenue avenue du Président-Wilson (1918). Un renommage n'est retenu que si le nom
+  trouvé pour 1937 est le nom actuel que la base de 1900 donne à la voie, ou y mène de dénomination en dénomination :
+  la nomenclature ne situe pas ses anciens noms, et la « rue de Rivoli » de Belleville (devenue rue Julien-Lacroix)
+  n'est pas celle du Louvre. Depuis le 26 novembre 2026, ce nom actuel départage aussi les homonymes (l'avenue de
+  l'Alma d'Auteuil était devenue rue Chanez en 1868), et un tronçon que la nomenclature ne rattache pas (la place
+  Henry-Dunant, prise sur l'avenue George-V) suit ses voisins de même nom de 1900 : 58 tronçons de plus, et deux
+  erreurs d'homonymes corrigées (rue de La Rochefoucauld, rue Puteaux). Une voie
   ouverte depuis 1900 et renommée depuis 1937 reprend son nom d'alors (avenue de la Porte de Gentilly pour l'actuelle
   avenue Pierre-de-Coubertin).
 - **Îlots** : 6 521. 399 îlots de 1900 (dont les 46 du rempart) sont remplacés par 1 015 îlots d'aujourd'hui ; 1 127
@@ -186,10 +191,15 @@ la photographie de 1949, où la rangée de la rue Rambuteau est encore debout (e
 - **Zones refaites depuis** : l'évocation le long des rues y est clairsemée, faute de bâtiments anciens autour (Italie
   13, Flandre…), alors que la photographie de 1949 y montre un faubourg serré ; à régler d'après elle, avec les grands
   disparus à modeler à part (gare des Gobelins, Halle aux vins, entrepôts de Bercy, gare Montparnasse de 1852…).
-- **L'Atlas municipal de 1937** : à reprendre comme contrôle quand le serveur de SoDUCo répondra.
-- **Licences** : couche Édugéo « Paris 1949 » de l'IGN et images de la BHdV, à confirmer avant de diffuser quoi que ce
-  soit qui en dérive (la base `data/paris1937.json` n'en dérive pas : seul le dégagement du plateau Beaubourg s'appuie
-  sur la photographie, avec les sources écrites).
+- **L'Atlas municipal de 1937** : à reprendre comme contrôle quand le serveur de SoDUCo répondra (il ne répondait
+  toujours pas le 26 novembre 2026).
+- **Licences** (vérifié le 26 novembre 2026) : la couche « Photographie – Paris 1949 » de l'IGN est servie sans clé par
+  la Géoplateforme, dont les conditions générales (15 octobre 2024) appliquent par défaut la Licence Ouverte Etalab ;
+  la foire aux questions de « Remonter le temps » dit les cartes et photographies « librement réutilisables selon la
+  licence ouverte version 2.0 ». Rien n'est reproduit de cette photographie : seuls des emplacements et des dimensions
+  en sont relevés, source citée. Les images de la BHdV, elles, ne sont pas sous licence ouverte (leurs notices
+  rappellent qu'une œuvre du domaine public ne rend pas libres les images qui la représentent) : rien n'en est tiré
+  — l'Atlas municipal n'a jamais pu être lu.
 - **Les voies sans riverains** (175 km écartés, dont le boulevard périphérique et les voies des grands ensembles) : des
   liaisons ouvertes avant 1937 peuvent y manquer.
 
