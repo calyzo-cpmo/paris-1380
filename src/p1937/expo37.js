@@ -1,11 +1,21 @@
 // L'Exposition internationale des arts et des techniques appliqués à la vie moderne (25 mai - 25 novembre 1937), des
 // jardins du Trocadéro au Champ-de-Mars, sur les deux rives de la Seine, de l'île aux Cygnes à l'Esplanade des Invalides.
 //
-// La disposition vient du plan général de l'Exposition (Service d'architecture et des promenades, R. Martzloff,
-// J. Gréber ; Wikimedia Commons, « Plan général de l'Exposition universelle de 1937 ») et de la légende numérotée de son
-// encart. Ce plan est une vue cavalière, qui ne se cale pas sur la maquette à mieux que quelques dizaines de mètres : les
-// pavillons sont placés à la main, dans l'ordre et les proportions du plan, dans le repère de l'axe Trocadéro - École
-// militaire (u depuis la tour vers l'École militaire, v vers Grenelle) et le long des berges relevées dans les données.
+// Trois plans à l'échelle fixent les terrains et les grands partis :
+// - le plan directeur de l'Exposition (Services d'architecture et des promenades, R. Martzloff, Ch. Letrosne, J. Gréber,
+//   É. Crevel ; août 1935, au 1:2 000 ; musée Carnavalet, Paris Musées, CC0), posé sur la maquette par tools/plan1935.py
+//   (2 m d'écart médian sur les rues voisines, une dizaine par endroits) : la limite du Champ-de-Mars, ses ailes et ses
+//   galeries, les bandes bâties du quai d'Orsay, le Centre des métiers, l'île aux Cygnes, l'Esplanade, les concessions du
+//   Cours-la-Reine ;
+// - le plan des emplacements concédés (1935, au 1:5 000 ; BnF, GE C-3042, sur Wikimedia Commons), qui confirme les limites ;
+// - le plan du Centre régional (14 avril 1937, au 1:500 ; BnF, GE B-6064, sur Wikimedia Commons) : ses vingt-cinq emprises.
+// Le plan directeur précède l'Exposition de deux ans : les pavillons étrangers, attribués en 1936, n'y sont pas. Leur
+// ordre vient du plan général de l'Exposition (R. Martzloff, J. Gréber ; Wikimedia Commons, « Plan général de
+// l'Exposition universelle de 1937 ») et de la légende numérotée de son encart, une vue cavalière qui ne se cale pas sur
+// la maquette : dans les jardins du Trocadéro et du Champ-de-Mars et sur l'île, ils sont placés à la main, dans le
+// repère de l'axe Trocadéro - École militaire (u depuis la tour vers l'École militaire, v vers Grenelle) et le long
+// des berges relevées dans les données. Les planches de contrôle — un plan redressé sous les emprises de la page — se
+// refont avec tools/emprises1937.mjs et tools/plan1935.py.
 // Les cotes publiées viennent de L'Architecture d'aujourd'hui, août 1937 (numéro de l'Exposition) : pavillon de l'URSS,
 // 160 sur 21 m, statue posée à 33 m ; pavillons de l'URSS et de l'Allemagne bâtis au-dessus des rampes de l'avenue de
 // Tokio, de part et d'autre du tunnel de la place de Varsovie ; tour allemande de 54 m, salle de 21 m de large et 18 m
@@ -13,7 +23,7 @@
 // mât de la porte d'honneur, 100 m, haubané à 41 m ; pavillon de la Publicité, façade de 15 m, plan incliné de 28 m.
 // Le pavillon pontifical (campanile de 75 m, statue de 7 m, dôme à 40 m) d'après la notice de Wikipédia. Le reste —
 // emprises, hauteurs, silhouettes — est une évocation.
-import { box, cyl, cone, gableRoof, rgb } from '../builder.js';
+import { box, cyl, cone, gableRoof, rgb, ccw } from '../builder.js';
 import { repere, boite, pan } from '../p1889/corps.js';
 import { EXPO } from '../p1889/data.js';
 import { poutre, calotte } from '../p1900/outils.js';
@@ -224,20 +234,24 @@ function riveDroiteAmont(app, B) {
 // ---- rive gauche, du Centre régional au pont de l'Alma : les pavillons étrangers sur le quai d'Orsay, bâtis du quai à
 // la berge par-dessus la tranchée du chemin de fer ; de l'ouest à l'est, les États-Unis, la Tchécoslovaquie, la Suède,
 // la Grande-Bretagne, puis, passé le pont d'Iéna, la Belgique, la Suisse et l'Italie, et des pavillons français jusqu'à
-// l'Alma. [nom, v0, v1, profondeur, hauteur, options] ; la façade donne sur la Seine.
+// l'Alma. [nom, v0, v1, profondeur, hauteur, options] ; la façade donne sur la Seine. Les deux bandes bâties sont
+// celles du plan directeur d'août 1935 (tools/plan1935.py) : elles ne commencent qu'à une cinquantaine de mètres de
+// l'axe, passé les têtes arrondies du pont d'Iéna élargi, et vont à l'ouest jusqu'au droit de l'avenue de Suffren, où
+// le plan du Centre régional (14 avril 1937) met le pavillon des États-Unis, à l'est jusqu'aux concessions des grands
+// magasins. La part de chaque pavillon dans sa bande est une évocation.
 const QUAI = [
-  ['États-Unis', 196, 156, 32, 12, { tour: [10, 34] }],
-  ['Tchécoslovaquie', 146, 114, 26, 12, { verre: true, mat: 30 }],
-  ['Suède', 104, 74, 26, 9, { col: C(226, 220, 204) }],
-  ['Grande-Bretagne', 64, 22, 30, 14, { col: BLANC }],
-  ['Belgique', -22, -72, 24, 14, { col: C(214, 186, 150), rotonde: 9 }],
-  ['Suisse', -82, -112, 30, 14, { verre: true }],
-  ['Italie', -122, -200, 50, 12, { italie: true }],
-  ['Élégance et parure', -210, -262, 26, 12, {}],
-  ['Grands Magasins du Louvre', -272, -304, 24, 10, { col: C(232, 222, 200) }],
-  ['Restaurant', -314, -336, 20, 7, {}],
-  ['Bijouterie', -346, -374, 22, 9, {}],
-  ['Ministère de l’Agriculture', -386, -432, 26, 10, { col: C(226, 216, 194) }],
+  ['États-Unis', 270, 215, 34, 12, { tour: [10, 34] }],
+  ['Tchécoslovaquie', 205, 165, 28, 12, { verre: true, mat: 30 }],
+  ['Suède', 155, 120, 28, 9, { col: C(226, 220, 204) }],
+  ['Grande-Bretagne', 112, 70, 32, 14, { col: BLANC }],
+  ['Belgique', -50, -100, 28, 14, { col: C(214, 186, 150), rotonde: 9 }],
+  ['Suisse', -110, -142, 30, 14, { verre: true }],
+  ['Italie', -152, -230, 50, 12, { italie: true }],
+  ['Élégance et parure', -250, -302, 26, 12, {}],
+  ['Grands Magasins du Louvre', -312, -344, 24, 10, { col: C(232, 222, 200) }],
+  ['Restaurant', -354, -376, 20, 7, {}],
+  ['Bijouterie', -386, -414, 22, 9, {}],
+  ['Ministère de l’Agriculture', -426, -472, 26, 10, { col: C(226, 216, 194) }],
 ];
 function quaiOrsay(app, B) {
   const M = app.monuments;
@@ -260,39 +274,61 @@ function quaiOrsay(app, B) {
     if (o.mat) { const p = S.L.P(lu / 2 - 2, lv / 2 - 2); box(B.at('plain', p[0], p[1]), { cx: p[0], cz: p[1], ux: 1, uz: 0, hl: 0.3, hw: 0.3 }, S.yt, S.yb + o.mat, { col: BLANC }); }
     M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 6 };
   }
-  // le Centre des métiers, sur le terrain du quai d'Orsay entre l'avenue de La Bourdonnais et l'avenue Rapp : des halles
-  // autour d'une cour (l'emplacement de l'actuel musée du quai Branly)
-  for (const [u, v, lu, lv, h, o] of [[-108, -310, 22, 200, 12, { a: -8 }], [-58, -232, 40, 70, 14, {}], [-58, -330, 40, 90, 16, { verre: true }], [-48, -412, 34, 50, 12, {}], [-20, -270, 18, 60, 10, {}]])
+  // le Centre des métiers, sur le terrain du quai d'Orsay entre l'avenue de La Bourdonnais et l'avenue Rapp (l'emplacement
+  // de l'actuel musée du quai Branly), d'après le plan directeur d'août 1935 (tools/plan1935.py) : une enceinte de
+  // galeries le long de l'avenue, de la rue de l'Université et du fond du terrain ; au nord une galerie sur les jardins
+  // du quai ; au milieu deux halles aux bouts arrondis et un peigne de trois ailes ; des pavillons au nord-est.
+  // [u, v, longueur selon u, selon v, hauteur, options]
+  for (const [u, v, lu, lv, h, o] of [[-43, -264.5, 98, 11, 9, {}], [-87, -331, 13, 92, 9, {}], [-57, -328, 34, 84, 13, { verre: true }], [-9, -302.5, 37, 10, 8, {}], [-9, -319, 37, 11, 8, {}], [-9, -339, 37, 12, 8, {}],
+    [10.5, -395, 39, 70, 13, { verre: true, a: 20 }], [41, -347.5, 9, 189, 9, { a: 22.5 }], [14, -456, 133, 12, 9, { a: 16.4 }], [-50, -414, 40, 52, 11, {}]])
     bloc(app, B, AXE, u, v, lu, lv, h, { col: C(232, 226, 212), ...o });
   { const c = AXE.P(-60, -320); M.CentreMetiers = { x: c[0], z: c[1], top: app.terrain.height(c[0], c[1]) + 30 }; }
 }
 
-// ---- le Champ-de-Mars : de part et d'autre du grand parterre, les pavillons de la diffusion artistique et technique,
-// puis, au sud du carrefour central, les sections étrangères ; le pavillon de la Publicité sous les platanes de l'allée
-// ouest ; au bout, devant l'École militaire, le palais de la Lumière de Mallet-Stevens, dont le mur courbe ferme la
-// perspective. [nom, u0, u1, côté (1 : ouest, −1 : est), hauteur, options]
+// ---- le Champ-de-Mars. L'Exposition n'en occupe que la moitié nord, de la tour à l'hémicycle de l'avenue
+// Joseph-Bouvard : c'est la limite des terrains concédés (convention du 15 mai 1934, plan des emplacements au 1:5 000)
+// et celle du plan directeur d'août 1935, relevé à l'échelle (tools/plan1935.py). De ce plan viennent : les deux
+// ailes de la « diffusion artistique et technique » (classes 14 à 16 : photographie, cinéma et phonographe, radio,
+// presse), du quai aux piles de la tour ; au-delà, deux galeries basses qui serrent le grand parterre à 29 m de l'axe
+// jusqu'à l'hémicycle — à l'ouest celle de la Publicité, 150 m sous les platanes — ; au bout, sur l'hémicycle, la
+// place du palais de la Lumière de Mallet-Stevens, dont le mur courbe ferme la perspective. Les petits pavillons
+// tiennent dans les jardins à l'anglaise, de part et d'autre : leur ordre vient du plan général, la place de chacun
+// est une évocation.
+// Ailes, de chaque côté de l'axe : [u0, u1, r0, r1 (distance à l'axe), hauteur]. Entre u = −62 et 62, les piles de la tour.
+const AILES = [[-114, -96, 25, 66, 9], [-112, -104, 66, 156, 5], [-96, -66, 25, 55, 9], [66, 98, 25, 34, 7]];
+// Galeries du parterre, côté est : [nom, u0, u1] ; côté ouest, la galerie de la Publicité.
+const GALERIES = [['Stands publicitaires', 100, 158], ['Couleurs et vernis', 164, 214], ['Étalages', 220, 270]];
+// Petits pavillons des jardins : [nom, côté (1 : ouest, −1 : est), longueur, hauteur, options], par six sur deux rangs.
 const CHAMP = [
-  ['Canada', 70, 100, 1, 10, {}], ['Jouets', 106, 130, 1, 8, {}], ['Garderie d’enfants', 136, 160, 1, 7, {}], ['Radio, télévision, presse', 166, 190, 1, 10, {}],
-  ['Restaurant', 70, 96, -1, 8, {}], ['Congo belge', 102, 130, -1, 9, { col: OCRE }], ['Cinéma, photo, phono', 136, 168, -1, 11, {}], ['Poste de police', 172, 186, -1, 7, {}],
-  ['Stands publicitaires', 192, 250, -1, 8, {}], ['Couleurs et vernis', 258, 300, -1, 9, {}], ['Étalages', 308, 350, -1, 9, {}],
-  ['Alimentation', 410, 450, 1, 9, {}], ['Matières plastiques', 458, 490, 1, 9, {}], ['Algérie', 498, 534, 1, 9, { col: BLANC }], ['Haïti', 542, 566, 1, 8, {}], ['Banque transatlantique', 574, 604, 1, 9, {}],
-  ['Bulgarie', 612, 640, 1, 9, {}], ['Pavillon international', 648, 684, 1, 10, {}], ['Pérou', 692, 718, 1, 9, { col: OCRE }], ['Venezuela', 726, 754, 1, 9, {}],
-  ['Grande masse des Beaux-Arts', 410, 446, -1, 9, {}], ['Enseignement', 454, 494, -1, 10, {}], ['Mexique', 502, 530, -1, 9, { col: OCRE }], ['Restaurant', 538, 560, -1, 7, {}],
-  ['Australie', 568, 600, -1, 9, {}], ['Union sud-africaine', 608, 640, -1, 9, {}], ['Irak', 648, 674, -1, 9, {}], ['Brésil', 682, 716, -1, 10, {}], ['Grande masse des arts décoratifs', 724, 754, -1, 9, {}],
+  ['Canada', 1, 26, 10, {}], ['Jouets', 1, 22, 8, {}], ['Garderie d’enfants', 1, 22, 7, {}], ['Alimentation', 1, 26, 9, {}], ['Matières plastiques', 1, 24, 9, {}], ['Algérie', 1, 26, 9, { col: BLANC }],
+  ['Haïti', 1, 20, 8, {}], ['Banque transatlantique', 1, 24, 9, {}], ['Bulgarie', 1, 22, 9, {}], ['Pavillon international', 1, 26, 10, {}], ['Pérou', 1, 22, 9, { col: OCRE }], ['Venezuela', 1, 22, 9, {}],
+  ['Restaurant', -1, 22, 8, {}], ['Congo belge', -1, 24, 9, { col: OCRE }], ['Poste de police', -1, 14, 7, {}], ['Grande masse des Beaux-Arts', -1, 26, 9, {}], ['Enseignement', -1, 26, 10, {}], ['Mexique', -1, 24, 9, { col: OCRE }],
+  ['Restaurant', -1, 20, 7, {}], ['Australie', -1, 24, 9, {}], ['Union sud-africaine', -1, 24, 9, {}], ['Irak', -1, 22, 9, {}], ['Brésil', -1, 26, 10, {}], ['Grande masse des arts décoratifs', -1, 24, 9, {}],
 ];
+export const CHAMP_FIN = 332;                       // l'avenue Joseph-Bouvard : au-delà, le Champ-de-Mars reste un jardin public
 function champDeMars(app, B) {
   const M = app.monuments, V = EXPO.vc;
-  for (const [nom, u0, u1, s, h, o] of CHAMP) { const S = bloc(app, B, AXE, (u0 + u1) / 2, V + s * 72, u1 - u0, 18, h, o); if (!M['Pavillon ' + nom]) M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 6 }; }
-  // la Publicité : galerie de 150 m sous les platanes, façade de 15 m, plan incliné de 28 m au-dessus de l'entrée, trois halls de 17 m
-  { bloc(app, B, AXE, 270, V + 92, 150, 9, 7, { col: BLANC, bandes: 1 });
-    for (const u of [215, 270, 325]) bloc(app, B, AXE, u, V + 122, 44, 40, 17, { col: C(226, 222, 212), bandes: 0 });
-    bloc(app, B, AXE, 270, V + 80, 60, 2, 15, { col: C(70, 120, 170), bandes: 0 });
-    const L = repere(AXE.P(270, V + 76), AXE.d), y = app.terrain.height(...L.P(0, 0)), b = B.at('plain', ...L.P(0, 0)), a1 = P3(L, -12, -6, y + 15), a2 = P3(L, 12, -6, y + 15), a3 = P3(L, 12, 2, y + 28), a4 = P3(L, -12, 2, y + 28);
+  // les ailes de la diffusion artistique et technique : à l'ouest la radio et la presse, à l'est le cinéma, la photographie et le phonographe
+  for (const s of [1, -1]) {
+    let tete = null;
+    for (const [u0, u1, r0, r1, h] of AILES) { const S = bloc(app, B, AXE, (u0 + u1) / 2, V + (s * (r0 + r1)) / 2, u1 - u0, r1 - r0, h, { col: BLANC, bandes: h > 6 ? 1 : 0 }); tete = tete || S; }
+    M[s > 0 ? 'Pavillon Radio, télévision, presse' : 'Pavillon Cinéma, photo, phono'] = { x: tete.c[0], z: tete.c[1], top: tete.yt + 8 };
+  }
+  // les galeries du parterre : côté est, la publicité par l'objet ; côté ouest, le pavillon de la Publicité
+  for (const [nom, u0, u1] of GALERIES) { const S = bloc(app, B, AXE, (u0 + u1) / 2, V - 29, u1 - u0, 8, 7, { col: BLANC, bandes: 1 }); M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 6 }; }
+  // la Publicité : galerie de 150 m sous les platanes, façade de 15 m, plan incliné de 28 m au-dessus de l'entrée, trois halls de 17 m derrière
+  { bloc(app, B, AXE, 195, V + 29, 150, 9, 7, { col: BLANC, bandes: 1 });
+    for (const u of [150, 195, 240]) bloc(app, B, AXE, u, V + 43.5, 40, 17, 9, { col: C(226, 222, 212), bandes: 0 });
+    bloc(app, B, AXE, 195, V + 23.5, 60, 2, 15, { col: C(70, 120, 170), bandes: 0 });
+    const L = repere(AXE.P(195, V + 21), AXE.d), y = app.terrain.height(...L.P(0, 0)), b = B.at('plain', ...L.P(0, 0)), a1 = P3(L, -12, 3, y + 15), a2 = P3(L, 12, 3, y + 15), a3 = P3(L, 12, -4, y + 28), a4 = P3(L, -12, -4, y + 28);
     b.quad(a1[0], a1[1], a1[2], a2[0], a2[1], a2[2], a3[0], a3[1], a3[2], a4[0], a4[1], a4[2], 0, 0, 1, 1, C(220, 80, 60), 0.9, 1); b.quad(a4[0], a4[1], a4[2], a3[0], a3[1], a3[2], a2[0], a2[1], a2[2], a1[0], a1[1], a1[2], 0, 0, 1, 1, C(200, 70, 50), 0.9, 1);
-    for (const s of [-11, -4, 4, 11]) { const p = L.P(s, 0); box(b, { cx: p[0], cz: p[1], ux: L.d[0], uz: L.d[1], hl: 0.3, hw: 0.3 }, y, y + 15 + (13 * 6) / 8, { col: GRIS }); }
+    for (const s of [-11, -4, 4, 11]) { const p = L.P(s, 0); box(b, { cx: p[0], cz: p[1], ux: L.d[0], uz: L.d[1], hl: 0.3, hw: 0.3 }, y, y + 15 + (13 * 3) / 7, { col: GRIS }); }
     M.Publicite = { x: L.P(0, 0)[0], z: L.P(0, 0)[1], top: y + 34 }; }
-  // le palais de la Lumière : la salle de la Fée Électricité de Dufy (60 m sur 10) et le mur courbe tourné vers la tour
-  { const S = bloc(app, B, AXE, 812, V, 34, 74, 14, { col: C(226, 228, 230), bandes: 0 }), L = repere(AXE.P(793, V), AXE.d), R = 70, b = B.at('plain', S.c[0], S.c[1]);
+  // les petits pavillons, dans les jardins : deux rangs de six de chaque côté, de l'avenue Octave-Gréard à l'hémicycle
+  { const rang = { 1: [68, 98], [-1]: [52, 86] }, n = { 1: 0, [-1]: 0 };
+    for (const [nom, s, lg, h, o] of CHAMP) { const k = n[s]++, u = 121 + (k % 6) * 32.6, S = bloc(app, B, AXE, u, V + s * rang[s][Math.floor(k / 6)], lg, 16, h, o); if (!M['Pavillon ' + nom]) M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 6 }; } }
+  // le palais de la Lumière, sur l'hémicycle : la salle de la Fée Électricité de Dufy (60 m sur 10) et le mur courbe tourné vers la tour
+  { const S = bloc(app, B, AXE, 316, V, 28, 74, 14, { col: C(226, 228, 230), bandes: 0 }), L = repere(AXE.P(300, V), AXE.d), R = 70, b = B.at('plain', S.c[0], S.c[1]);
     let prev = null; for (let k = 0; k <= 12; k++) { const t = (-1 + (2 * k) / 12) * 0.56, p = L.P(R * Math.cos(t) - R, R * Math.sin(t));          // concave vers la tour
       if (prev) { const m = [(p[0] + prev[0]) / 2, (p[1] + prev[1]) / 2], l = Math.hypot(p[0] - prev[0], p[1] - prev[1]), ux = (p[0] - prev[0]) / l, uz = (p[1] - prev[1]) / l, y = app.terrain.height(m[0], m[1]);
         box(b, { cx: m[0], cz: m[1], ux, uz, hl: l / 2 + 0.1, hw: 0.8 }, y - 1, y + 18, { col: C(240, 238, 232), s0: 0.9 }); app.foot.push({ ring: [[prev[0] - uz, prev[1] + ux], [p[0] - uz, p[1] + ux], [p[0] + uz, p[1] - ux], [prev[0] + uz, prev[1] - ux]], top: y + 18 }); }
@@ -300,12 +336,28 @@ function champDeMars(app, B) {
     M.Lumiere = { x: S.c[0], z: S.c[1], top: S.yt + 14 }; }
 }
 
-// ---- le Centre régional, sur le quai entre la tour et le pont de Passy : vingt-cinq pavillons des provinces, chacun
-// dans le style de sa région. Leurs silhouettes sont une évocation, par familles : toits bas de tuile et clocheton au
-// Midi, grands débords des chalets de montagne, colombages et combles raides de Normandie, d'Alsace et de Champagne,
-// granit, ardoise et souches de Bretagne et du Massif central, brique des Flandres, combles à croupes d'ardoise du
-// Centre et de l'Île-de-France, tuiles vernissées de Bourgogne, tuile creuse à faible pente de Lorraine et du Poitou.
-const REGIONS = ['Corse', 'Côte d’Azur', 'Provence', 'Pyrénées atlantiques', 'Guyenne et Gascogne', 'Poitou', 'Bretagne', 'Vallée de la Loire', 'Normandie', 'Nivernais et Berry', 'Massif central', 'Artois et Flandre', 'Champagne', 'Limousin et Périgord', 'Alsace', 'Bourgogne et Franche-Comté', 'Dauphiné', 'Savoie', 'Lorraine', 'Île-de-France', 'Lyonnais', 'Forez et Vivarais', 'Pyrénées et Languedoc', 'Roussillon', 'Languedoc'];
+// ---- le Centre régional, entre le quai d'Orsay, l'avenue de Suffren et la « rue nouvelle », et sur le quai jusqu'au
+// pont de Passy : vingt-cinq pavillons des provinces, chacun dans le style de sa région. Leurs emprises sont relevées
+// sur le plan du service d'architecture du Centre régional (« Le Centre régional. Canalisations », 1:500, dressé le
+// 14 avril 1937 ; BnF, GE B-6064, sur Wikimedia Commons), posé sur la maquette par l'axe de l'avenue de Suffren, celui
+// du quai et celui du pont de Passy (2 à 3 m près) : autour d'une grande place, les lots 1 à 16 ; sur le quai, entre la
+// chaussée et la Seine, les lots 2 à 11, avec le fronton de pelote basque et, au bord de l'eau, une tour ronde ; à la
+// pointe de l'île aux Cygnes, le lot 17. Le plan numérote les lots sans nommer les régions : la Bretagne (la tour au
+// bord de l'eau, son phare) et le Pays basque (le fronton) sont placés d'après lui, l'attribution des autres est une
+// évocation. Leurs silhouettes sont une évocation, par familles : toits bas de tuile et clocheton au Midi, grands
+// débords des chalets de montagne, colombages et combles raides de Normandie, d'Alsace et de Champagne, granit,
+// ardoise et souches de Bretagne et du Massif central, brique des Flandres, combles à croupes d'ardoise du Centre et
+// de l'Île-de-France, tuiles vernissées de Bourgogne, tuile creuse à faible pente de Lorraine et du Poitou.
+// [nom, u, v, longueur selon u, selon v, rotation] ; en fin de ligne, le lot du plan.
+const REGIONAL = [
+  ['Alsace', 93, 269, 19, 31, 0], ['Lorraine', 96, 305, 17, 26, 0], ['Champagne', 67, 371, 32, 36, 0], ['Île-de-France', 46, 263, 20, 18, 0],                    // 12, 12', 15, 13'
+  ['Bourgogne et Franche-Comté', 44, 334, 23, 34, 0], ['Savoie', 39, 414, 19, 38, 38], ['Dauphiné', 25, 387, 23, 37, 0], ['Lyonnais', 15, 309, 28, 34, 0],     // 14, 16 bis, 16, 14'
+  ['Nivernais et Berry', 16, 266, 32, 22, 0], ['Côte d’Azur', 18, 443, 26, 27, 38], ['Provence', -18, 394, 32, 38, 0], ['Languedoc', -18, 429, 43, 24, 0],     // 13, 9 bis, 7 et son voisin
+  ['Limousin et Périgord', -22, 267, 24, 24, 0], ['Massif central', -52, 293, 32, 20, 0], ['Forez et Vivarais', -62, 267, 20, 21, 0],                            // 1 bis, 1, 1
+  ['Pyrénées et Languedoc', -46, 349, 26, 34, 0], ['Roussillon', -90, 299, 14, 40, -10],                                                                         // 6, 6 bis
+  ['Normandie', -19, 546, 15, 49, -20], ['Bretagne', -42, 494, 15, 51, -22], ['Pyrénées atlantiques', -84, 430, 14, 36, -24], ['Guyenne et Gascogne', -98, 382, 19, 24, -22],   // 11, 10, 8, 5
+  ['Poitou', -116, 365, 19, 28, -18], ['Vallée de la Loire', -126, 306, 18, 41, -8], ['Artois et Flandre', -150, 291, 18, 43, -6], ['Corse', -144, 524, 15, 17, 0],             // 3, 4, 2, 17
+];
 const LAUZE = C(96, 96, 98), CHAUME = C(122, 100, 72), VERNIS = C(176, 128, 58), COLOMBAGE = C(74, 52, 40);
 const STYLES = {
   midi: { mur: C(240, 228, 206), toit: [2.6, TUILE, { overhang: 0.7 }], clocher: true },
@@ -351,39 +403,44 @@ function galerie(bp, S, lu, lv, col, prof = 2.4) {                     // galeri
 }
 function centreRegional(app, B) {
   const M = app.monuments; let k = 0;
-  for (const [v0, v1, rangs] of [[214, 340, 3], [350, 470, 2]]) {
-    const n = 5;
-    for (let i = 0; i < n && k < REGIONS.length; i++) for (let r = 0; r < rangs && k < REGIONS.length; r++) {
-      const nom = REGIONS[k++], v = v0 + ((v1 - v0) * (i + 0.5)) / n, u = riveG(v) + 14 + r * 30 + ((i + r) % 2) * 4, st = STYLES[STYLE_DE[nom]];
-      const lu = 16 + ((k * 7) % 3) * 4, lv = 11 + ((k * 5) % 3) * 2, h = st.toit[0] > 5.5 ? 5 + (k % 2) : 6 + ((k * 3) % 3);
-      const S = bloc(app, B, AXE, u, v + (r % 2 ? 4 : -2), lu, lv, h, { a: (k % 3) - 1, col: st.mur, toit: st.toit, bandes: 0 }), bp = B.at('plain', S.c[0], S.c[1]);
-      if (st.colomb) colombages(bp, S, lu, lv, st.colomb);
-      if (st.bois) box(bp, { ...lame(S, 0, 0, lu / 2 + 0.08, lv / 2 + 0.08) }, S.ye - 2.2, S.ye, { col: BOIS, top: false });     // étage de planches du chalet
-      if (st.chem) souches(bp, S, lu, S.yt, st.mur);
-      if (st.clocher) clocheton(app, B, S, lu, lv, st.mur, st.toit[1]);
-      if (STYLE_DE[nom] === 'basque' || STYLE_DE[nom] === 'montagne') galerie(bp, S, lu * 0.7, lv, st.bois ? BOIS : C(132, 42, 36), 1.6);
-      M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 5 };
-    }
+  for (const [nom, u, v, lu, lv, a] of REGIONAL) {
+    k++; const st = STYLES[STYLE_DE[nom]], h = st.toit[0] > 5.5 ? 5 + (k % 2) : 6 + ((k * 3) % 3);
+    const S = bloc(app, B, AXE, u, v, lu, lv, h, { a, col: st.mur, toit: st.toit, bandes: 0 }), bp = B.at('plain', S.c[0], S.c[1]);
+    if (st.colomb) colombages(bp, S, lu, lv, st.colomb);
+    if (st.bois) box(bp, { ...lame(S, 0, 0, lu / 2 + 0.08, lv / 2 + 0.08) }, S.ye - 2.2, S.ye, { col: BOIS, top: false });     // étage de planches du chalet
+    if (st.chem) souches(bp, S, lu, S.yt, st.mur);
+    if (st.clocher) clocheton(app, B, S, lu, lv, st.mur, st.toit[1]);
+    if (STYLE_DE[nom] === 'basque' || STYLE_DE[nom] === 'montagne') galerie(bp, S, lu * 0.7, lv, st.bois ? BOIS : C(132, 42, 36), 1.6);
+    M['Pavillon ' + nom] = { x: S.c[0], z: S.c[1], top: S.yt + 5 };
   }
-  { const c = AXE.P(-90, 330); M.CentreRegional = { x: c[0], z: c[1], top: app.terrain.height(c[0], c[1]) + 30 }; }
+  // le phare de la Bretagne, au bord de l'eau (la tour ronde du plan), et le fronton de pelote basque
+  { const c = AXE.P(-59, 474), y = app.terrain.height(c[0], c[1]), b = B.at('plain', c[0], c[1]); cyl(b, c[0], c[1], 2.6, y - 1, y + 16, { col: C(236, 232, 222), seg: 12, r1: 1.9 }); cyl(b, c[0], c[1], 2.3, y + 16, y + 18.5, { col: VERRE, seg: 12 }); cone(b, c[0], c[1], 2.6, y + 18.5, y + 20.5, { col: ARDOISE, seg: 12 });
+    app.foot.push({ ring: repere(c, AXE.d).rect(-2.6, 2.6, -2.6, 2.6), top: y + 20 }); app.landmarks.push({ x: c[0], z: c[1], top: y + 20.5 }); }
+  bloc(app, B, AXE, -72, 452, 1.2, 16, 10, { a: -24, col: C(214, 120, 96), bandes: 0, dalle: 0.1 });
+  { const c = AXE.P(0, 340); M.CentreRegional = { x: c[0], z: c[1], top: app.terrain.height(c[0], c[1]) + 30 }; }
 }
 
-// ---- l'île aux Cygnes : le Centre des colonies, ses pavillons sur des plates-formes au-dessus de l'eau.
+// ---- l'île aux Cygnes : le Centre des colonies. D'après le plan directeur d'août 1935 (tools/plan1935.py), il tient
+// toute l'île, du pont de Passy au pont de Grenelle : l'allée des Cygnes reste libre dans l'axe, les pavillons sont
+// bâtis de part et d'autre, sur des plates-formes au-dessus de l'eau, sauf au passage du viaduc du chemin de fer.
+// L'ordre et la place de chacun sont une évocation.
+// [nom, v, longueur, hauteur, options] ; un pavillon sur deux de chaque côté de l'allée.
 const COLONIES = [
-  ['États du Levant', 620, 26, 9, { col: BLANC, dome: 5 }], ['Maroc', 660, 34, 9, { col: BLANC, toit: [4, C(60, 120, 90)], minaret: 18 }], ['Afrique-Équatoriale française', 710, 30, 8, { col: OCRE, cases: true }],
-  ['Guadeloupe', 752, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }], ['Martinique', 786, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }],
-  ['Indochine', 830, 40, 9, { col: C(196, 84, 60), toit: [7, C(120, 50, 40), { overhang: 1.2 }], etage: true }],
-  ['Indes françaises', 880, 26, 9, { col: C(236, 220, 190), dome: 5 }], ['Madagascar', 922, 28, 7, { col: C(200, 172, 132), toit: [7, C(140, 120, 80), { overhang: 1 }], galerie: true }], ['Réunion', 960, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }],
-  ['Afrique-Occidentale française', 1010, 44, 10, { col: C(186, 132, 88), aof: true }], ['Territoires sous mandat', 1066, 30, 8, {}], ['Algérie', 1116, 40, 9, { col: BLANC, dome: 7 }], ['Tunisie', 1170, 36, 9, { col: BLANC, dome: 6, minaret: 20 }],
+  ['États du Levant', 625, 26, 9, { col: BLANC, dome: 5 }], ['Maroc', 678, 34, 9, { col: BLANC, toit: [4, C(60, 120, 90)], minaret: 18 }], ['Afrique-Équatoriale française', 740, 30, 8, { col: OCRE, cases: true }],
+  ['Guadeloupe', 792, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }], ['Martinique', 836, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }],
+  ['Indochine', 890, 40, 9, { col: C(196, 84, 60), toit: [7, C(120, 50, 40), { overhang: 1.2 }], etage: true }],
+  ['Indes françaises', 948, 26, 9, { col: C(236, 220, 190), dome: 5 }], ['Madagascar', 995, 28, 7, { col: C(200, 172, 132), toit: [7, C(140, 120, 80), { overhang: 1 }], galerie: true }], ['Réunion', 1115, 22, 7, { col: C(236, 226, 206), toit: [4, TUILE, { overhang: 0.8 }], galerie: true }],
+  ['Afrique-Occidentale française', 1160, 44, 10, { col: C(186, 132, 88), aof: true }], ['Territoires sous mandat', 1210, 30, 8, {}], ['Algérie', 1255, 40, 9, { col: BLANC, dome: 7 }], ['Tunisie', 1300, 36, 9, { col: BLANC, dome: 6, minaret: 20 }],
 ];
 function colonies(app, B) {
   const M = app.monuments;
+  let k = 0;
   for (const [nom, v, lv, h, o] of COLONIES) {
-    const a = -Math.atan((ile(v + 20) - ile(v - 20)) / 40) / deg, S = bloc(app, B, AXE, ile(v), v, 30, lv, h, { a, col: o.col, toit: o.toit, bandes: o.toit ? 0 : 1 }), bp = B.at('plain', S.c[0], S.c[1]);
+    const lu = 24, cote = k++ % 2 ? 1 : -1, a = -Math.atan((ile(v + 20) - ile(v - 20)) / 40) / deg, S = bloc(app, B, AXE, ile(v) + cote * (lu / 2 + 4), v, lu, lv, h, { a, col: o.col, toit: o.toit, bandes: o.toit ? 0 : 1 }), bp = B.at('plain', S.c[0], S.c[1]);
     if (o.dome) { cyl(bp, S.c[0], S.c[1], o.dome, S.yt - 0.6, S.yt + 2, { col: o.col, seg: 16 }); calotte(bp, S.c[0], S.c[1], o.dome, S.yt + 2, S.yt + 2 + o.dome, BLANC, 16); }
-    if (o.minaret) { const p = S.L.P(10, lv / 2 - 3); tourCarree(app, B, p, S.d, 1.8, 1.8, S.y0, S.yb + o.minaret, { col: o.col }); }
-    if (o.aof) for (let i = 0; i < 9; i++) { const p = S.L.P(-15.3, -lv / 2 + 3 + ((lv - 6) * i) / 8); cone(bp, p[0], p[1], 1.1, S.yt, S.yt + 4, { col: o.col, seg: 6 }); }
-    if (o.galerie) galerie(bp, S, 30, lv, BOIS, 2.2);                                                            // varangue sur poteaux
+    if (o.minaret) { const p = S.L.P(lu / 2 - 4, lv / 2 - 3); tourCarree(app, B, p, S.d, 1.8, 1.8, S.y0, S.yb + o.minaret, { col: o.col }); }
+    if (o.aof) for (let i = 0; i < 9; i++) { const p = S.L.P(-lu / 2 - 0.3, -lv / 2 + 3 + ((lv - 6) * i) / 8); cone(bp, p[0], p[1], 1.1, S.yt, S.yt + 4, { col: o.col, seg: 6 }); }
+    if (o.galerie) galerie(bp, S, lu, lv, BOIS, 2.2);                                                            // varangue sur poteaux
     if (o.etage) {                                                                                                // second toit, au-dessus du premier et dans le même sens
       const r2 = lv > 30 ? { cx: S.c[0], cz: S.c[1], ux: -S.d[1], uz: S.d[0], hl: lv / 2 - 6, hw: 8 } : lame(S, 0, 0, 9, lv / 2 - 5);
       box(bp, r2, S.ye + 1, S.yt + 2.5, { col: o.col, top: false }); gableRoof(B.at('roof', S.c[0], S.c[1]), bp, r2, S.yt + 2.5, 4, { col: o.toit[1], overhang: 1, gable: { col: o.col } });
@@ -396,17 +453,17 @@ function colonies(app, B) {
 
 // ---- rive droite, du pont des Invalides à l'Alma (repère du Cours-la-Reine de la page de 1900 : u vers l'aval depuis
 // le pont des Invalides, v vers le nord ; le quai haut en v = 0, la berge en dessous) : les concessions scientifiques
-// et d'art ; au débouché du pont Alexandre-III, la porte d'honneur de Jacques Debat-Ponsan et son « signal », un mât
+// et d'art, sur les 470 m que leur donne le plan directeur d'août 1935 — de là au pont de l'Alma, des jardins — ; au débouché du pont Alexandre-III, la porte d'honneur de Jacques Debat-Ponsan et son « signal », un mât
 // d'acier en fuseau de 100 m posé sur une rotule à 5 m, tenu par trois nappes de haubans ancrées à 41 m et attachées à
 // 70 m, qui porte une couronne de 7 m.
 const RD = repere([-2890, -1262], [-0.9995, 0.03]);
 function riveDroiteAval(app, B) {
   const M = app.monuments;
-  for (const [u0, u1, h, o] of [[40, 96, 10, {}], [110, 150, 9, { dome: 8 }], [164, 220, 11, {}], [236, 270, 8, {}], [286, 344, 10, { verre: true }], [360, 400, 9, {}], [414, 470, 12, { dome: 10 }], [486, 530, 9, {}], [546, 600, 10, {}]]) {
+  for (const [u0, u1, h, o] of [[31, 75, 10, {}], [86, 118, 9, { dome: 8 }], [128, 172, 11, {}], [185, 212, 8, {}], [224, 270, 10, { verre: true }], [282, 313, 9, {}], [324, 368, 12, { dome: 10 }], [381, 415, 9, {}], [428, 470, 10, {}]]) {
     const S = bloc(app, B, RD, (u0 + u1) / 2, -6, u1 - u0, 24, h, { col: C(236, 232, 222), verre: o.verre });
     if (o.dome) { const bp = B.at('plain', S.c[0], S.c[1]); cyl(bp, S.c[0], S.c[1], o.dome, S.yt - 0.6, S.yt + 3, { col: BLANC, seg: 18 }); calotte(bp, S.c[0], S.c[1], o.dome, S.yt + 3, S.yt + 3 + o.dome * 0.8, C(170, 190, 200), 18); }
   }
-  { const c = RD.P(320, -6); M.Concessions = { x: c[0], z: c[1], top: app.terrain.height(c[0], c[1]) + 30 }; }
+  { const c = RD.P(250, -6); M.Concessions = { x: c[0], z: c[1], top: app.terrain.height(c[0], c[1]) + 30 }; }
   // le signal de la porte d'honneur
   { const c = RD.P(-236, 36), y = app.terrain.height(c[0], c[1]), b = B.at('plain', c[0], c[1]);
     cone(b, c[0], c[1], 2.6, y - 0.5, y + 5, { col: GRIS, seg: 8 });
@@ -421,17 +478,19 @@ function riveDroiteAval(app, B) {
 
 // ---- l'Esplanade des Invalides : le palais de l'Air (Audoul, Hartwig et Gérodias ; décors de Robert et Sonia Delaunay),
 // 166 m sur 36, sur la plate-forme de la gare des Invalides, sa coupole de rhodoïd et sa lanterne ; le palais des
-// Chemins de fer, en face ; le pavillon de la Navigation ; au sud, le parc d'attractions et le planétarium.
+// Chemins de fer, en face ; le pavillon de la Navigation ; au sud, le parc d'attractions et le planétarium. Les deux
+// palais se font face de part et d'autre de l'axe, à 35 et 40 m, où le plan directeur d'août 1935 met ses deux grands
+// corps de bâtiment (tools/plan1935.py) ; le parc d'attractions tient les pelouses du sud.
 function esplanade(app, B) {
   const M = app.monuments, F = repere([-2678, -995], [0, -1]);          // u vers le nord (la Seine), v vers l'est, depuis le milieu du quartier nord
-  const air = bloc(app, B, F, 0, 30, 166, 36, 20, { col: C(232, 232, 228), bandes: 1 });
-  { const p = F.P(-92, 30), y = app.terrain.height(p[0], p[1]), b = B.at('plain', p[0], p[1]); cyl(b, p[0], p[1], 11, y - 0.5, y + 8, { col: VERRE, seg: 20 }); calotte(b, p[0], p[1], 11, y + 8, y + 19, C(190, 214, 220), 20);
-    const q = F.P(-92, 50); cyl(b, q[0], q[1], 3.5, y - 0.5, y + 30, { col: VERRE, seg: 12 }); cyl(b, q[0], q[1], 4.2, y + 30, y + 31, { col: BLANC, seg: 12 }); app.foot.push({ ring: F.rect(-103, -81, 19, 41), top: y + 19 }); }
+  const air = bloc(app, B, F, 0, 40, 166, 36, 20, { col: C(232, 232, 228), bandes: 1 });
+  { const p = F.P(-92, 40), y = app.terrain.height(p[0], p[1]), b = B.at('plain', p[0], p[1]); cyl(b, p[0], p[1], 11, y - 0.5, y + 8, { col: VERRE, seg: 20 }); calotte(b, p[0], p[1], 11, y + 8, y + 19, C(190, 214, 220), 20);
+    const q = F.P(-92, 60); cyl(b, q[0], q[1], 3.5, y - 0.5, y + 30, { col: VERRE, seg: 12 }); cyl(b, q[0], q[1], 4.2, y + 30, y + 31, { col: BLANC, seg: 12 }); app.foot.push({ ring: F.rect(-103, -81, 29, 51), top: y + 19 }); }
   M.PalaisAir = { x: air.c[0], z: air.c[1], top: air.yt + 10 };
-  const rail = bloc(app, B, F, 0, -88, 150, 40, 20, { col: C(234, 226, 210), bandes: 1 });
+  const rail = bloc(app, B, F, 0, -35, 150, 40, 20, { col: C(234, 226, 210), bandes: 1 });
   for (let i = 0; i < 5; i++) { const p = rail.L.P(-60 + 30 * i, 20.3); box(B.at('plain', p[0], p[1]), { cx: p[0], cz: p[1], ux: rail.d[0], uz: rail.d[1], hl: 12, hw: 0.15 }, rail.yb + 3, rail.yb + 15, { col: [C(220, 70, 50), C(40, 90, 170), C(240, 190, 60), C(60, 140, 90), C(200, 80, 140)][i], top: false }); }
   M.PalaisRail = { x: rail.c[0], z: rail.c[1], top: rail.yt + 10 };
-  bloc(app, B, F, 40, -30, 70, 26, 14, { col: C(226, 232, 236), bandes: 1 });
+  bloc(app, B, F, 40, -96, 70, 26, 14, { col: C(226, 232, 236), bandes: 1 });
   // le parc d'attractions
   const planet = F.P(-250, 40), yp = app.terrain.height(planet[0], planet[1]), b = B.at('plain', planet[0], planet[1]);
   cyl(b, planet[0], planet[1], 12, yp - 0.5, yp + 8, { col: BLANC, seg: 20 }); calotte(b, planet[0], planet[1], 12.4, yp + 8, yp + 20, C(200, 200, 196), 20);
@@ -543,10 +602,14 @@ function porteAlma(app, B) {
   M.PorteAlma = { x: PORTE.o[0], z: PORTE.o[1], top: y0 + 58 };
 }
 
-// Le bâti évoqué qui tombe dans l'Exposition s'efface : terrains de l'Exposition (quais, Centre des métiers, Centre
-// régional, berges), dans le repère de l'axe [u0, u1, v0, v1]. Le bâti réel y reste.
-const TERRAINS = [[-200, 70, 200, 560], [-200, -100, -680, 210], [-140, 20, -470, -180], [-170, -105, 580, 1380]];      // le dernier : l'île aux Cygnes (Centre des colonies)
-export function terrainsExpo() { return TERRAINS.map(([u0, u1, v0, v1]) => AXE.rect(u0, u1, v0, v1)); }
+// Le bâti évoqué qui tombe dans l'Exposition s'efface, et les voitures n'y roulent pas : terrains de l'Exposition, dans
+// le repère de l'axe — un rectangle [u0, u1, v0, v1] ou un polygone [[u, v], …]. Le bâti réel y reste. Leurs limites
+// suivent le plan directeur d'août 1935, le plan des emplacements concédés (1:5 000, 1935) et, pour le Centre régional,
+// son plan de 1937 : le Centre régional et son quai, de l'avenue de Suffren à la « rue nouvelle » et au pont de Passy ;
+// le quai d'Orsay, du pont de Passy à l'Alma ; le Centre des métiers ; l'île aux Cygnes ; la moitié nord du
+// Champ-de-Mars, jusqu'à l'avenue Joseph-Bouvard.
+const TERRAINS = [[[-200, 200], [-112, 200], [-112, 250], [106, 250], [106, 345], [9, 476], [-6, 493], [2, 575], [-200, 575]], [-200, -96, -680, 210], [[-100, -245], [5, -245], [80, -436], [-55, -479], [-100, -490]], [-178, -96, 580, 1400], [-96, CHAMP_FIN + 2, EXPO.vc - 118, EXPO.vc + 118]];
+export function terrainsExpo() { return TERRAINS.map((t) => (Array.isArray(t[0]) ? ccw(t.map(([u, v]) => AXE.P(u, v))) : AXE.rect(...t))); }
 
 export function batirExpo37(app, B) {
   trocadero(app, B); quaiOrsay(app, B); riveDroiteAmont(app, B); champDeMars(app, B); centreRegional(app, B); colonies(app, B); riveDroiteAval(app, B); esplanade(app, B); passerelleAlma(app, B); porteAlma(app, B);

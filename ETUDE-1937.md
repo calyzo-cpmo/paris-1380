@@ -233,3 +233,48 @@ la photographie de 1949, où la rangée de la rue Rambuteau est encore debout (e
 - **Les îlots non bâtis à tort, à côté du Vélodrome d'Hiver** : l'îlot du vélodrome porte en 1949 des garages et des
   ateliers bas le long du boulevard de Grenelle ; sept halles relevées (`tools/disparus_1937.py`, `EMPRISES`).
 - 1889 et 1900 sortent toujours inchangés, à l'octet près.
+
+## 8. Les plans de l'Exposition (26 novembre 2026)
+
+Jusque-là, les pavillons étaient posés à la main d'après deux vues cavalières (plan général, plan officiel de Peltier),
+à quelques dizaines de mètres près. Trois plans à l'échelle ont pu être lus ; ils ne disent pas tout.
+
+- **Le plan directeur** — « Exposition internationale des arts et des techniques appliqués à la vie moderne, Paris
+  1937, plan directeur », Services d'architecture et des promenades de l'Exposition (R. Martzloff, Ch. Letrosne,
+  J. Gréber, É. Crevel), **août 1935**, à 0,0005 par mètre (1:2 000) ; musée Carnavalet, licence CC0 (Paris Musées,
+  œuvre n° 635774 ; image de 3 418 × 2 160 px, un peu plus d'un mètre par pixel). `tools/plan1935.py` le pose sur la
+  maquette par une similitude : dans des cases de 300 px, les bords des îlots de 1937 glissent sur les traits du plan
+  jusqu'à tomber sur l'alignement des façades (un trait, la bordure du trottoir quelques pixels dehors, du blanc
+  dedans — ce qui écarte l'autre trottoir et la rue voisine) ; les cases sûres donnent la similitude. Écart médian de
+  2 m sur ces cases ; 1,027 unité de la maquette par pixel, soit 500 m pour 479 px quand l'échelle graphique du plan en
+  donne 472 (1,5 % : le papier). Contrôlé sur les ponts d'Iéna et de l'Alma et sur le Grand Palais (2 à 4 m). La
+  feuille, pliée, a joué : une dizaine de mètres par endroits (Esplanade des Invalides) ; les îlots de la maquette,
+  tracés sur chaque planche, disent l'écart local.
+- **Ce que ce plan fixe**, et qui a été repris : l'Exposition ne tient que la **moitié nord du Champ-de-Mars**, jusqu'à
+  l'hémicycle de l'avenue Joseph-Bouvard (la page prolongeait ses pavillons jusqu'à l'École militaire, 420 m trop
+  loin) ; les ailes de la « diffusion artistique et technique » autour de la tour et les deux galeries du parterre, à
+  29 m de l'axe (la page mettait ses pavillons à 72 m) ; les **deux bandes bâties du quai d'Orsay**, qui ne commencent
+  qu'à 50 et 70 m de l'axe du pont d'Iéna ; le **Centre des métiers** (enceinte de galeries, deux halles, un peigne) ;
+  l'**île aux Cygnes** bâtie d'un pont à l'autre, de part et d'autre de son allée (la page n'en bâtissait que les deux
+  tiers, dans l'axe) ; les **deux palais de l'Esplanade** face à face ; les concessions du Cours-la-Reine sur 470 m.
+  Les pavillons de l'URSS et de l'Allemagne étaient déjà sur les deux rangées que le plan réserve aux têtes du pont.
+- **Ce qu'il ne dit pas** : il précède l'Exposition de deux ans. Les pavillons étrangers, attribués en 1936, n'y sont
+  que des silhouettes d'attente ; la place de chacun dans les jardins du Trocadéro, sur le quai, au Champ-de-Mars et
+  sur l'île reste une évocation, dans l'ordre du plan général.
+- **Le plan des emplacements** — « Exposition internationale de 1937 », 1:5 000, lith. Monsanglant, dépôt légal 1935
+  (BnF, GE C-3042 ; Wikimedia Commons, domaine public) : emplacements concédés par la convention du 15 mai 1934 et
+  nouveaux emplacements demandés. Il confirme les limites : le Champ-de-Mars jusqu'à l'hémicycle, l'île entière, le
+  terrain du Centre régional, celui du Centre des métiers, les pelouses sud de l'Esplanade.
+- **Le plan du Centre régional** — « Le Centre régional. Canalisations », 1:500, dressé le **14 avril 1937** par son
+  service d'architecture (BnF, GE B-6064 ; Wikimedia Commons, domaine public ; vignette de 1 920 px, 0,26 m par
+  pixel). Posé sur la maquette par l'axe de l'avenue de Suffren, celui du quai et celui du pont de Passy (2 à 3 m).
+  Il donne les emprises des pavillons, lot par lot (1 à 17), la grande place, le fronton de pelote basque, une tour
+  ronde au bord de l'eau, et le pavillon des États-Unis au droit de l'avenue de Suffren. Il numérote les lots sans
+  nommer les régions : la Bretagne (la tour, son phare) et le Pays basque (le fronton) sont placés d'après lui,
+  l'attribution des autres est une évocation.
+- **Les planches de contrôle** : `node tools/emprises1937.mjs` écrit les emprises des pavillons telles que la page les
+  bâtit (sans navigateur) ; `python3 tools/plan1935.py SORTIE.png axe U V [CÔTÉ] [PAS] data/source/1937/emprises1937.json`
+  les trace sur le plan redressé, dans le repère de l'Exposition.
+- **Sources refusées** : Wikimedia Commons a cessé de servir ses images à cet environnement en cours de route (« robot
+  policy ») ; le plan général de 1937 n'a pas pu être relu. Rien n'est reproduit des plans : seuls des emplacements et
+  des dimensions en sont relevés, sources citées.
