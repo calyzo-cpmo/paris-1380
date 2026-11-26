@@ -3,7 +3,7 @@
 // lieux (src/p1937/places.js, src/p1937/expo.js et src/p1937/disparus.js).
 export const PARCOURS = [
   {
-    id: 'paris-1937', titre: 'Paris en 1937', sous: 'L’été de l’Exposition internationale, et le Paris qui a disparu depuis, en vingt étapes.',
+    id: 'paris-1937', titre: 'Paris en 1937', sous: 'L’été de l’Exposition internationale, et le Paris qui a disparu depuis, en vingt et une étapes.',
     etapes: [
       [null, -1400, -900, 6400, -2.6, 0.6, 9.5, 'Paris en 1937 : deux millions huit cent mille habitants, un peu moins qu’en 1921, son maximum. L’Exposition internationale des arts et des techniques dans la vie moderne est ouverte du 25 mai au 25 novembre, des jardins du Trocadéro au Champ-de-Mars et sur les deux rives de la Seine.'],
       ['Tour Eiffel', 0, 0, 950, -2.55, 0.32, 10, 'La tour a quarante-huit ans ; sa couleur est le « jaune brun » choisi en 1907. Elle porte l’émetteur de Radio-Tour-Eiffel et marque le centre de l’Exposition.'],
@@ -17,6 +17,7 @@ export const PARCOURS = [
       ['Grand Palais', 0, 0, 760, -0.4, 0.38, 12, 'Le Grand et le Petit Palais, et le pont Alexandre-III : ce que l’Exposition de 1900 a laissé à Paris.'],
       ['Palais de l’Air', 0, 0, 560, 2.2, 0.4, 12.2, 'Sur l’Esplanade des Invalides, le palais de l’Air, 166 mètres sur 36, et en face celui des Chemins de fer, que Robert et Sonia Delaunay ont couverts de grandes peintures. Au débouché du pont Alexandre-III, le mât de 100 mètres de la porte d’honneur.'],
       ['Gare Montparnasse', 0, 0, 560, -2.4, 0.36, 12.5, 'Face à la rue de Rennes, la gare de 1852 ; les voies arrivent à l’étage. La tour Montparnasse s’élève aujourd’hui à sa place.'],
+      ['Opéra', 0, 0, 330, -0.6, 0.62, 12.8, 'Place de l’Opéra, la circulation de 1937 : conduites intérieures aux ailes noires, taxis rouge et noir de la G7, autobus vert et crème à plate-forme, camions bâchés et dernières voitures à cheval des livreurs. Le dernier tramway de Paris a roulé en mars ; les passants traversent aux passages cloutés, et les phares jaunes deviennent obligatoires sur les voitures neuves.'],
       ['Halles centrales', 0, 0, 640, -1.2, 0.36, 13, 'Le « ventre de Paris » : les pavillons de fonte et de verre de Baltard, reliés par des rues couvertes ; les deux derniers ont été achevés en 1936, du côté de la Bourse de commerce.'],
       ['Halle aux vins', 0, 0, 640, 0.6, 0.38, 13.5, 'Entre le quai Saint-Bernard et la rue Jussieu, les rues intérieures et les magasins de la Halle aux vins. La faculté des sciences de Jussieu la remplacera dans les années 1960.'],
       ['Entrepôts de Bercy', 0, 0, 900, 0.7, 0.4, 14, 'En amont, les entrepôts de Bercy : des chais alignés le long de rues plantées, où roulent les fûts. Le parc de Bercy a pris leur place.'],

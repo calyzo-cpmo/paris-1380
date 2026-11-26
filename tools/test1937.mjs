@@ -1,7 +1,7 @@
 // Test fonctionnel de la page « Paris 1937 » (le test lit l'image : l'avertissement du pilote sur cette lecture est ignoré) : charge la page, vérifie la ville recomposée à
 // l'été 1937 (bâti, Seine, ponts, voirie), les chemins de fer et les gares (gare de l'Est doublée, gare Montparnasse de 1852, gare de la Bastille), la tour en jaune brun, le
 // Champ-de-Mars en jardin, le palais de Chaillot, les grands ensembles disparus depuis (Halle aux vins, entrepôts de Bercy, abattoirs, usines Citroën, gare des Gobelins, usine à
-// gaz, Petite Roquette, Vélodrome d'Hiver et ses abords), les quartiers refaits depuis, la zone, l'Exposition et la passerelle de l'Alma, les passants de 1937, les monuments (Sacré-Cœur et son campanile), le calque, les repères, la visite, la marche à pied, l'heure,
+// gaz, Petite Roquette, Vélodrome d'Hiver et ses abords), les quartiers refaits depuis, la zone, l'Exposition et la passerelle de l'Alma, la circulation (réseau des rues, chaussées, véhicules, conduite à droite, stationnement, passants sur les trottoirs, phares), les passants de 1937, les monuments (Sacré-Cœur et son campanile), le calque, les repères, la visite, la marche à pied, l'heure,
 // la frise, les sources, le téléphone et l'absence d'erreurs. Le moteur est celui de la page « Paris 1889 » (tools/test1889.mjs en vérifie le reste).
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -50,7 +50,7 @@ check('ponts : chacun va d’une rive à l’autre (les deux culées sur la terr
 check('quais : des murs de pierre tout le long de la Seine dans Paris, le sol au niveau du quai jusqu’au bord (plus de berges en pente)', v.quais > 6000 && v.bord > 4, JSON.stringify([v.quais, v.bord]));
 check('voirie : la carte de distance distingue la rue (place de l’Opéra) de l’îlot, du fleuve et de l’Exposition', v.rue.w >= 2048 && v.rue.D === 20 && v.rue.place > 160 && v.rue.ilot < 100 && v.rue.seine < 100 && v.rue.expo < 100, JSON.stringify(v.rue));
 const al = await page.evaluate(() => { const a = window.__app, A = a.v89.alignements, T = a.terrain, E = A.echantillon, M = a.monuments.Arc, L = a.voirie.large, C = a.monde.cadre, larg = (x, z) => L.data[Math.floor(((z - C.z0) / (C.z1 - C.z0)) * L.h) * L.w + Math.floor(((x - C.x0) / (C.x1 - C.x0)) * L.w)];
-  return { n: A.n, tris: Math.round(A.tris), dalles: A.meshes.length, e: E.length, eau: E.filter((p) => T.wetAt(p[0], p[1]) > 0.05).length, bati: E.filter((p) => a.footAt(p[0], p[1])).length, grandes: E.filter((p) => /^(Boulevard|Avenue|Cours|Quai)/.test(a.streetAt(p[0], p[1], 45) || '')).length, arc: Math.round(Math.min(...E.map((p) => Math.hypot(p[0] - M.x, p[1] - M.z)))), vendome: Math.round(Math.min(...A.tous().map((p) => Math.hypot(p[0] - a.monuments.Vendome.x, p[1] - a.monuments.Vendome.z)))), colonne: !!a.footAt(a.monuments.Vendome.x, a.monuments.Vendome.z) && a.foot.filter((f) => f.top > a.monuments.Vendome.top - 12 && Math.hypot(f.ring[0][0] - a.monuments.Vendome.x, f.ring[0][1] - a.monuments.Vendome.z) < 40).length, opera: larg(-1310, -1990), lw: L.w === Math.ceil(a.voirie.w / 4) }; });
+  return { n: A.n, tris: Math.round(A.tris), dalles: A.meshes.length, e: E.length, eau: E.filter((p) => T.wetAt(p[0], p[1]) > 0.05).length, bati: E.filter((p) => a.footAt(p[0], p[1])).length, grandes: E.filter((p) => /^(Boulevard|Avenue|Cours|Quai)/.test(a.streetAt(p[0], p[1], 45) || '')).length, arc: Math.round(Math.min(...E.map((p) => Math.hypot(p[0] - M.x, p[1] - M.z)))), vendome: Math.round(Math.min(...A.tous().map((p) => Math.hypot(p[0] - a.monuments.Vendome.x, p[1] - a.monuments.Vendome.z)))), colonne: !!a.footAt(a.monuments.Vendome.x, a.monuments.Vendome.z) && a.foot.filter((f) => f.top > a.monuments.Vendome.top - 12 && Math.hypot(f.ring[0][0] - a.monuments.Vendome.x, f.ring[0][1] - a.monuments.Vendome.z) < 40).length, opera: larg(-1310, -1990), lw: L.w >= Math.ceil(a.voirie.w / 4) }; });      // en 1937, la carte des demi-largeurs est repeinte rue par rue, deux fois plus fine (src/p1937/circulation.js)
 check('arbres d’alignement : des dizaines de milliers, sur les boulevards, les avenues et les quais ; aucun dans l’eau ni dans un bâtiment, aucun au pied de l’Arc de triomphe', al.n > 20000 && al.n < 60000 && al.e > 400 && al.eau === 0 && al.bati === 0 && al.grandes > 0.5 * al.e && al.arc > 30 && al.tris < 1.8e6, JSON.stringify(al));
 check('place Vendôme : aucun arbre à moins de 90 m de la colonne, et une seule colonne (celle des données est écartée)', al.vendome > 90 && al.colonne === 1, JSON.stringify([al.vendome, al.colonne]));
 check('trottoirs : leur largeur suit celle de la voie (carte des demi-largeurs, large devant l’Opéra)', al.lw && al.opera > 200, JSON.stringify([al.lw, al.opera]));
@@ -114,12 +114,66 @@ const fi = await page.evaluate(() => { const a = window.__app, S = a.statuts, M 
   let zone = 0; for (let x = 4480; x <= 4740; x += 5) for (let z = -700; z <= 400; z += 5) if (S.lire(x, z) === 4) zone++;          // la zone, au-delà des HBM de la porte de Montreuil
   const U = [0.71538, 0.69873], O = [-4039.4, -604.3], N = [-U[1], U[0]]; let ile = 0;                                          // l'île aux Cygnes : aucun bâtiment évoqué
   for (let v = 600; v <= 1360; v += 4) { const u = -144 + ((v - 600) * 15) / 760; for (const t of [-6, 0, 6]) { const x = O[0] + U[0] * (u + t) + N[0] * v, z = O[1] + U[1] * (u + t) + N[1] * v; if (S.lire(x, z) === 4) ile++; } }
-  const pa = M.PasserelleAlma, r = () => 0.5, garde = P.outfit(r, 'man', 'guard').col, cav = P.pools.find((p) => p.kind === 'rider'), char = P.pools.find((p) => p.kind === 'cart');
+  const pa = M.PasserelleAlma, r = () => 0.5, garde = P.outfit(r, 'man', 'guard').col;
   return { zone, ile, velhiv: [[-4405, -40], [-4370, 12], [-4400, 35]].filter(([x, z]) => S.lire(x, z) === 3).length,
     passerelle: !!(pa && a.footAt(pa.x, pa.z) && a.footAt(pa.x, pa.z - 60) && a.footAt(pa.x, pa.z + 60) && !a.footAt(pa.x, pa.z + 75)), haut: pa ? Math.round(pa.top - T.height(pa.x, pa.z - 66)) : -1,
-    fiche: a.ui.places.some((p) => p.name === 'Passerelle de l’Alma'), garde, attelages: [cav.n, char.n] }; });
-check('finitions de 1937 : baraques évoquées dans la zone, rien sur l’île aux Cygnes, garages et ateliers relevés autour du Vélodrome d’Hiver, passerelle de l’Alma (133 m), passants des années 1930 et peu d’attelages',
-  fi.zone > 20 && fi.ile === 0 && fi.velhiv === 3 && fi.passerelle && fi.haut >= 14 && fi.fiche && fi.garde.join() === '120,112,72' && fi.attelages[0] < 60 && fi.attelages[1] < 40, JSON.stringify(fi));
+    fiche: a.ui.places.some((p) => p.name === 'Passerelle de l’Alma'), garde, attelages: P.pools.filter((p) => p.kind === 'rider' || p.kind === 'cart').length }; });
+check('finitions de 1937 : baraques évoquées dans la zone, rien sur l’île aux Cygnes, garages et ateliers relevés autour du Vélodrome d’Hiver, passerelle de l’Alma (133 m), passants des années 1930, plus de cavaliers ni d’attelages parmi eux (les voitures à cheval roulent avec les automobiles)',
+  fi.zone > 20 && fi.ile === 0 && fi.velhiv === 3 && fi.passerelle && fi.haut >= 14 && fi.fiche && fi.garde.join() === '120,112,72' && fi.attelages === 0, JSON.stringify(fi));
+
+// ---------- la circulation : automobiles sur la chaussée, passants sur les trottoirs
+const re = await page.evaluate(() => { const a = window.__app, G = a.v89.reseau, E = G.E, N = G.N, roule = E.filter((e) => e.ok);
+  const sortie = (K, e) => e.sens === 0 || (e.sens > 0 ? N[e.a] === K : N[e.b] === K);
+  return { B: G.bilan, iena: E.filter((e) => /^Pont d.I.na/.test(e.nom) && e.ok).length, pietonnes: roule.filter((e) => /^(Passage|Impasse|Port|Villa|Cité|Galerie)\b/.test(e.nom)).length,
+    bosquet: (() => { const L = E.filter((e) => e.nom === 'Avenue Bosquet'); return L.length > 5 && L.every((e) => e.ok && e.sens === 0 && e.nl >= 2 && e.gare === 2); })(),
+    uniques: roule.filter((e) => e.sens && e.w >= 2.35).length, doubles: roule.filter((e) => !e.sens && e.w < 2.35).length, etroites: roule.filter((e) => e.w < 1.15).length,
+    impasses: N.filter((K) => K.e.filter((k) => E[k].ok).length === 1).length, puits: N.filter((K) => { const L = K.e.filter((k) => E[k].ok); return L.length && !L.some((k) => sortie(K, E[k])); }).length,
+    ponts: roule.filter((e) => e.surPont != null).length, alma: roule.filter((e) => /^Pont de l.Alma/.test(e.nom)).length, large: a.voirie.large.w, voirie: a.voirie.w }; });
+check('circulation, le réseau : plus de 700 km de rues où l’on roule et plus de 4 000 carrefours ; ni passages, ni impasses, ni ports, ni terrains de l’Exposition (pont d’Iéna) ; aucune voie sans issue, aucun carrefour dont on ne sort pas',
+  re.B.roulables > 9000 && re.B.km > 700 && re.B.km < 1100 && re.B.carrefours > 4000 && re.B.expo > 10 && re.iena === 0 && re.pietonnes === 0 && re.etroites === 0 && re.impasses === 0 && re.puits === 0, JSON.stringify(re));
+check('circulation, les chaussées : sens unique sous 4,7 m, double sens au-delà ; l’avenue Bosquet à plusieurs files et stationnement des deux côtés ; les ponts de la Seine, dont celui de l’Alma ; la carte des largeurs repeinte rue par rue',
+  re.B.sensUniques > 1500 && re.uniques === 0 && re.doubles === 0 && re.bosquet && re.ponts > 30 && re.alma >= 1 && re.large >= re.voirie / 2, JSON.stringify([re.B.sensUniques, re.uniques, re.doubles, re.bosquet, re.ponts, re.alma, re.large]));
+const ci = await page.evaluate(() => { const a = window.__app, T = a.terrain; a.setHour(10.5);
+  a.rig.goal = { x: -3393, z: -650, dist: 420, az: 0, el: 1 }; a.rig.cur = { ...a.rig.goal }; a.rig.target.x = -3393; a.rig.target.z = -650;
+  const tic = (n) => { for (let i = 0; i < n; i++) { a.rig.update(0.1); a.time += 0.1; a.emit('frame', 0.1); } }; tic(200);
+  const c = a.circulation, G = c.G, trot = (H) => Math.max(1.4, Math.min(8, 0.44 * H - 0.2)), pt = {};
+  const o = { n: 0, veut: c.veut, modeles: {}, hors: 0, eau: 0, bati: 0, ilot: 0, trottoir: 0, deuxSens: 0, gauche: 0, arret: 0, v: 0, gares: c.gares, gBati: 0, gTrottoir: 0 }, p0 = [];
+  for (let i = 0; i < c.veut; i++) { p0.push(c.e[i] < 0 ? null : [c.x[i], c.z[i]]); if (c.e[i] < 0) continue;
+    const e = G.E[c.e[i]], m = c.M[c.mod[i]], x = c.x[i], z = c.z[i], d = G.dist(x, z); o.n++; o.modeles[m.nom] = (o.modeles[m.nom] || 0) + 1; o.v += c.v[i]; if (c.v[i] < 0.3) o.arret++;
+    if (!e.ok) o.hors++; if (T.wetAt(x, z) > 0.5 && !a.deck.has(a.deckKey(x, z))) o.eau++; if (a.footAt(x, z)) o.bati++;
+    if (c.etat[i] || e.eau) continue;
+    if (d < 0.2) o.ilot++; else if (d < trot(G.demi(x, z)) + m.l - 0.3) o.trottoir++;
+    // on roule à droite : la file d'en face est à main gauche
+    if (!e.sens) { o.deuxSens++; c.surFile(e, -c.dir[i], c.file[i], e.len - c.s[i], pt); const h = c.h[i]; if ((pt.x - x) * -Math.cos(h) + (pt.z - z) * Math.sin(h) > 0) o.gauche++; } }
+  for (const m of c.M) { if (!m.g) continue; const A = m.g.im.instanceMatrix.array; for (let k = 0; k < m.g.im.count; k++) { const x = A[k * 16 + 12], z = A[k * 16 + 14]; if (a.footAt(x, z)) o.gBati++; if (G.dist(x, z) < trot(G.demi(x, z)) + 0.4) o.gTrottoir++; } }
+  tic(50); let dep = 0, nd = 0; for (let i = 0; i < c.veut; i++) if (p0[i] && c.e[i] >= 0) { const d = Math.hypot(c.x[i] - p0[i][0], c.z[i] - p0[i][1]); if (d < 120) { dep += d; nd++; } }
+  o.v = +(o.v / o.n).toFixed(2); o.deplacement = +(dep / nd).toFixed(1);
+  // les passants : sur les trottoirs, sauf ceux qui traversent
+  // (hors trottoir, on distingue la voie sans voitures, la traversée d'un carrefour et la pleine chaussée d'une rue où l'on roule)
+  const proche = (x, z) => { let best = null, bd = 1e9; for (const e of G.E) { if (Math.abs(e.cx - x) > 150 || Math.abs(e.cz - z) > 150) continue; for (let i = 0; i < e.P.length; i++) { const d = Math.hypot(e.P[i][0] - x, e.P[i][1] - z); if (d < bd) { bd = d; best = { e, i }; } } } return best; };
+  const P = a.people; let np = 0, hors = 0, pleine = 0; for (const p of P.pools) for (let i = 0; i < Math.min(p.active, p.n); i++) { if (!p.ok[i]) continue; np++; if (!G.chaussee(p.x[i], p.z[i])) continue; hors++;
+    const q = proche(p.x[i], p.z[i]); if (q && q.e.ok && Math.min(q.e.S[q.i], q.e.len - q.e.S[q.i]) > Math.max(q.e.ra, q.e.rb) + 6) pleine++; }
+  o.passants = np; o.horsTrottoir = hors; o.surChaussee = pleine; o.trame = a.pavage && a.nav.data !== a.pavage && a.nav.data.length === a.pavage.length;
+  a.setHour(23); tic(3); o.nuit = { phares: c.M.filter((m) => m.faisceauIm && m.faisceauIm.visible).length, veut: c.veut }; a.setHour(10.5); tic(3); o.jour = { phares: c.M.filter((m) => m.faisceauIm && m.faisceauIm.visible).length, veut: c.veut };
+  return o; });
+check('circulation, les véhicules (avenue Bosquet) : berlines, taxis, camionnettes, camions, autobus et voitures à cheval, tous sur le réseau ; aucun dans l’eau ni dans un bâtiment, presque aucun sur un trottoir',
+  ci.n > 60 && ci.n === ci.veut && ['berline', 'taxi', 'camionnette', 'camion', 'autobus', 'attelage'].every((m) => ci.modeles[m] > 0) && ci.modeles.berline > ci.n * 0.4 && ci.hors === 0 && ci.eau === 0 && ci.bati <= 1 && ci.ilot === 0 && ci.trottoir < 0.06 * ci.n, JSON.stringify(ci));
+check('circulation, la conduite : on roule à droite, on avance (plus de 10 m en 5 s en moyenne), moins de la moitié des véhicules attend à un carrefour',
+  ci.deuxSens > 30 && ci.gauche === 0 && ci.v > 2.5 && ci.deplacement > 10 && ci.arret < 0.5 * ci.n, JSON.stringify([ci.deuxSens, ci.gauche, ci.v, ci.deplacement, ci.arret]));
+check('circulation, le stationnement : des voitures garées le long des trottoirs, aucune dans un bâtiment, presque aucune sur un trottoir', ci.gares > 30 && ci.gBati === 0 && ci.gTrottoir < 0.08 * ci.gares, JSON.stringify([ci.gares, ci.gBati, ci.gTrottoir]));
+check('circulation, les passants : ils tiennent les trottoirs, traversent aux carrefours et gardent les voies sans voitures (moins de 2 % en pleine chaussée) ; le pavé garde la trame des rues', ci.passants > 200 && ci.surChaussee < 0.02 * ci.passants && ci.horsTrottoir > ci.surChaussee && ci.trame, JSON.stringify([ci.passants, ci.horsTrottoir, ci.surChaussee, ci.trame]));
+const pv = await page.evaluate(() => { const a = window.__app, T = a.terrain, P = a.people, G = a.v89.reseau, R = a.navRect;
+  a.rig.goal = { x: -1310, z: -1990, dist: 420, az: 0, el: 1 }; a.rig.cur = { ...a.rig.goal }; a.rig.target.x = -1310; a.rig.target.z = -1990;
+  for (let i = 0; i < 150; i++) { a.rig.update(0.1); a.time += 0.1; a.emit('frame', 0.1); }
+  const proche = (x, z) => { let best = null, bd = 1e9; for (const e of G.E) { if (Math.abs(e.cx - x) > 150 || Math.abs(e.cz - z) > 150) continue; for (let i = 0; i < e.P.length; i++) { const d = Math.hypot(e.P[i][0] - x, e.P[i][1] - z); if (d < bd) { bd = d; best = { e, i }; } } } return best; };
+  const o = { n: 0, dansTrame: 0, bati: 0, eau: 0, ilot: 0, pleine: 0, marche: 0, autos: a.circulation.actifs };
+  for (const p of P.pools) for (let i = 0; i < Math.min(p.active, p.n); i++) { if (!p.ok[i]) continue; const x = p.x[i], z = p.z[i]; o.n++;
+    if (x > R.x && x < R.x + R.w && z > R.z && z < R.z + R.h) o.dansTrame++; if (a.footAt(x, z)) o.bati++; if (T.wetAt(x, z) > 0.5) o.eau++; if (G.dist(x, z) < 0) o.ilot++; if (p.st[i] <= 0) o.marche++;
+    if (G.chaussee(x, z)) { const q = proche(x, z); if (q && q.e.ok && Math.min(q.e.S[q.i], q.e.len - q.e.S[q.i]) > Math.max(q.e.ra, q.e.rb) + 6) o.pleine++; } }
+  return o; });
+check('passants, hors du quartier de l’Exposition (place de l’Opéra) : la foule est là aussi, sur les trottoirs et aux traversées, ni dans les îlots, ni dans les bâtiments, ni en pleine chaussée, parmi les automobiles',
+  pv.n > 300 && pv.dansTrame === 0 && pv.bati === 0 && pv.eau === 0 && pv.ilot === 0 && pv.pleine < 0.03 * pv.n && pv.marche > 0.6 * pv.n && pv.autos > 60, JSON.stringify(pv));
+check('circulation, la nuit : les phares s’allument et la circulation se raréfie ; le jour, ils s’éteignent', ci.nuit.phares === 5 && ci.jour.phares === 0 && ci.nuit.veut < 0.5 * ci.jour.veut, JSON.stringify([ci.nuit, ci.jour]));
 
 // ---------- silhouettes des monuments
 const mo = await page.evaluate(() => { const a = window.__app, M = a.monuments, T = a.terrain, h = (m) => (m ? +(m.top - T.height(m.x, m.z)).toFixed(1) : -1), fl = a.landmarks.find((l) => l.nom === 'fleche');
@@ -168,7 +222,7 @@ const vi = await page.evaluate(async () => { const a = window.__app, V = a.ui.vi
   for (let i = 0; i < 1500 && V.etat().k === e1.k; i++) tic(1); const e2 = V.etat();
   $('tour-stop').click(); const fin = { actif: V.etat().actif, panneau: !$('tour').hidden, survol: $('mode-fly').getAttribute('aria-pressed') };
   return { t0, e1, pres, fiche, e2, fin, manquants: V.manquants }; });
-check('parcours commenté « Paris en 1937 » : 20 étapes, chaque lieu existe, la vue s’y rend, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1937' && vi.t0.compte === '1 / 20' && vi.t0.points === 20 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
+check('parcours commenté « Paris en 1937 » : 21 étapes, chaque lieu existe, la vue s’y rend, l’étape suivante vient seule, « Terminer » rend le survol', vi.t0.panneau && vi.t0.mode === 'true' && vi.t0.titre === 'Paris en 1937' && vi.t0.compte === '1 / 21' && vi.t0.points === 21 && vi.t0.texte > 80 && vi.e1.k === 1 && vi.pres >= 0 && vi.pres < 30 && vi.fiche && vi.e2.k === 2 && !vi.fin.actif && !vi.fin.panneau && vi.fin.survol === 'true' && vi.manquants.length === 0, JSON.stringify(vi));
 
 // ---------- heure, marche, frise
 const nuit = await page.evaluate(() => { const a = window.__app; a.setHour(22); const n = a.materials.facade.emissiveIntensity; a.setHour(10.5); return [n, a.materials.facade.emissiveIntensity]; });
@@ -186,8 +240,10 @@ await page.click('#frise [data-close="frise"]');
 { const ctx = await browser.newContext({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
   const p2 = await ctx.newPage(); watch(p2); p2.setDefaultTimeout(120000);
   await p2.goto(URL + '#shot'); await p2.waitForFunction(() => window.__ready === true || window.__failed, null, { timeout: 300000 });
-  const m = await p2.evaluate(() => { const a = window.__app; return { rate: window.__failed || '', mobile: a.mobile, tris: a.stats.tris, bati: a.stats.bati }; });
-  check('téléphone : la page démarre en version allégée (toits plats)', !m.rate && m.mobile && m.bati > 100000 && m.tris < v.tris * 0.8, JSON.stringify(m));
+  const m = await p2.evaluate(() => { const a = window.__app; a.rig.goal = { x: -3393, z: -650, dist: 420, az: 0, el: 1 }; a.rig.cur = { ...a.rig.goal }; a.rig.target.x = -3393; a.rig.target.z = -650;
+    for (let i = 0; i < 60; i++) { a.rig.update(0.1); a.emit('frame', 0.1); } const c = a.circulation;
+    return { rate: window.__failed || '', mobile: a.mobile, tris: a.stats.tris, bati: a.stats.bati, autos: c ? [c.max, c.actifs, c.gares] : null }; });
+  check('téléphone : la page démarre en version allégée (toits plats, circulation réduite)', !m.rate && m.mobile && m.bati > 100000 && m.tris < v.tris * 0.8 && m.autos && m.autos[0] <= 200 && m.autos[1] > 10 && m.autos[1] <= m.autos[0], JSON.stringify(m));
   await ctx.close(); }
 
 // ---------- adresse courte et lien vers une autre maquette

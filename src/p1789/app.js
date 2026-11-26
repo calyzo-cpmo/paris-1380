@@ -105,7 +105,7 @@ export class App89 {
     const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); blank.needsUpdate = true;
     this.pave = { value: blank };
     let voirie = null;
-    if (monde.voirie) { const v = monde.voirie(this, Math.min(gl, mobile ? 2048 : 4096)), t = new THREE.DataTexture(v.data, v.w, v.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; const l = new THREE.DataTexture(v.large.data, v.large.w, v.large.h, THREE.RedFormat); l.minFilter = l.magFilter = THREE.LinearFilter; l.unpackAlignment = 1; l.needsUpdate = true; voirie = { tex: t, large: l, cadre: CADRE, D: v.D }; this.voirie = v; }
+    if (monde.voirie) { const v = monde.voirie(this, Math.min(gl, mobile ? 2048 : 4096)), t = new THREE.DataTexture(v.data, v.w, v.h, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.unpackAlignment = 1; t.needsUpdate = true; const l = new THREE.DataTexture(v.large.data, v.large.w, v.large.h, THREE.RedFormat); l.minFilter = l.magFilter = THREE.LinearFilter; l.unpackAlignment = 1; l.needsUpdate = true; voirie = { tex: t, large: l, cadre: CADRE, D: v.D }; this.voirie = v; this.voirieTex = voirie; }
     this.log('sol peint (plan d’ensemble et toile fine), voirie');
     this.groundMat = makeGround89(wideTex, centreTex, detail, makeCobbleTexture(), this.pave, CENTRE_RECT, voirie);
     const coreMesh = new THREE.Mesh(core, this.groundMat), outerMesh = new THREE.Mesh(outer, makeGroundMaterial(fields, detail));
