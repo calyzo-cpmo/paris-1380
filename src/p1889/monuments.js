@@ -128,8 +128,10 @@ function sacreCoeur(app, B) {
   app.monuments.SacreCoeur = { x, z, top: y0 + 52 };
 }
 
-// Halles centrales de Baltard : dix pavillons de fonte, de brique et de verre en 1889 (les deux derniers ne seront
-// bâtis qu'en 1936). Chacun occupe son îlot de la base de 1900 ; deux groupes, de part et d'autre de la rue Baltard,
+// Halles centrales de Baltard : dix pavillons de fonte, de brique et de verre en 1889 comme en 1900 et en 1937 (les
+// pavillons 1 et 2, du côté de la Bourse de commerce, ne sont mis en chantier qu'en 1935 ; L'Architecture d'aujourd'hui,
+// n° 3-4 de 1940, les dit encore en construction ; sur la photographie de 1949, leur emplacement ne montre aucun comble
+// comparable à ceux de Baltard). Chacun occupe son îlot de la base de 1900 ; deux groupes, de part et d'autre de la rue Baltard,
 // réunis par des rues couvertes. Emprises réelles ; l'élévation — arcades, comble à lanterneau — est une évocation.
 function halles(app, B) {
   const V = app.v89, T = app.terrain, FONTE = rgb(168, 180, 176), BRIQUE = rgb(178, 106, 84), ZINC = rgb(150, 158, 164), VERRE = rgb(176, 196, 202), pav = [];

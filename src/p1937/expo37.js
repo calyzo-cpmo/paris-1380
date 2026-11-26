@@ -14,7 +14,7 @@
 // Le pavillon pontifical (campanile de 75 m, statue de 7 m, dôme à 40 m) d'après la notice de Wikipédia. Le reste —
 // emprises, hauteurs, silhouettes — est une évocation.
 import { box, cyl, cone, gableRoof, rgb } from '../builder.js';
-import { repere, boite } from '../p1889/corps.js';
+import { repere, boite, pan } from '../p1889/corps.js';
 import { EXPO } from '../p1889/data.js';
 import { poutre, calotte } from '../p1900/outils.js';
 
@@ -444,14 +444,14 @@ function esplanade(app, B) {
 
 // ---- la passerelle de l'Alma (Léon-Henry Bloch, architecte ; établissements Daydé, constructeurs), parallèle au pont de
 // l'Alma, réservée au public de l'Exposition et démontée après elle. Cotes de L'Architecture d'aujourd'hui, août 1937,
-// p. 56-57 (plan, coupe et élévation d'après Le Génie civil) : trois travées de 38,10, 46,40 et 40 m, 133,26 m d'une rive
-// à l'autre ; une poutre échelle de type Vierendeel, en caisson de 6 m de large et 6,80 m de haut, où sont logées des
+// p. 56-59 (plan, coupe et élévation d'après Le Génie civil) : trois travées de 42,75 (rive droite), 46,40 et 40 m,
+// 133,26 m d'une rive à l'autre ; une poutre échelle de type Vierendeel, en caisson de 6 m de large et 6,80 m de haut, où sont logées des
 // boutiques ; au-dessus, le passage supérieur, élargi de 6 m en encorbellement vers l'amont ; au pied, le passage
 // inférieur, élargi de 6,25 m vers l'aval ; 88 pieux en Seine, 700 tonnes d'acier ; des moulures d'aluminium rouge
-// enferment les rampes d'éclairage. Elle part de la porte monumentale de la place de l'Alma (septembre 1937, p. 35-38),
-// qui n'est pas figurée. Sa place en aval du pont est déduite : elle menait à la moitié ouest de l'Exposition, et
-// Achille Duchêne en photographie le chantier depuis la rue Gaston-de-Saint-Paul. Ses piles sont alignées sur celles du
-// pont (les deux franchissent la Seine d'un quai à l'autre sur 133 m), son axe à 30 m du sien.
+// enferment les rampes d'éclairage. Elle part de la porte monumentale de la place de l'Alma (porteAlma, plus bas).
+// Sa place est publiée (août 1937, p. 59) : les trois travées prennent appui sur des palées de béton armé « placées
+// dans le prolongement aval et à une distance d'environ 15 m des piles et culées du pont de l'Alma » — son axe est
+// donc à une trentaine de mètres de celui du pont, ses palées en face des piles.
 const ALMA = { n: [-3524, -1222], s: [-3519, -1089], ecart: 30 }, ROUGE_ALU = C(176, 62, 54);
 function passerelleAlma(app, B) {
   const T = app.terrain, dx = ALMA.s[0] - ALMA.n[0], dz = ALMA.s[1] - ALMA.n[1], lg = Math.hypot(dx, dz), d = [dx / lg, dz / lg];
@@ -469,10 +469,78 @@ function passerelleAlma(app, B) {
     box(bp, R(0, t, hl, 0.12), y, y + 1.05, { col: ACIER, top: false });
     box(bp, R(0, t + (t < 0 ? -0.1 : 0.1), hl, 0.1), y - 0.55, y - 0.2, { col: ROUGE_ALU, top: false });
   }
-  for (const s of [-hl + 38.1 + 1.7, -hl + 38.1 + 3.4 + 46.4 + 1.7]) box(bp, R(s, 0, 1.7, 4.5), yq - 12, yi - 0.9, { col: GRIS });   // palées en Seine
+  for (const s of [-hl + 42.75 + 1.03, -hl + 42.75 + 2.06 + 46.4 + 1.03]) box(bp, R(s, 0, 1.03, 4.5), yq - 12, yi - 0.9, { col: GRIS });   // palées en Seine (133,26 m : 42,75 + 46,40 + 40 m et deux palées)
   for (const s of [-hl + 2, hl - 2]) box(bp, R(s, 1, 2, 5.5), yq - 8, yi - 0.9, { col: GRIS });  // culées, sur les berges
   app.foot.push({ ring: L.rect(-hl, hl, -9, 9.25), top: yt + 1.05 });
   app.monuments.PasserelleAlma = { x: m[0], z: m[1], top: yt + 10 };
+}
+
+// Porte monumentale en bois de la place de l'Alma — M. et L. Solotareff et H. Bard, architectes ; Moles, constructeur
+// (L'Architecture d'aujourd'hui, septembre 1937, p. 35-38 : texte, coupe suivant l'axe, plan des fondations et plan
+// d'ensemble, d'après Le Génie civil). La place et le pont restent ouverts aux voitures ; au-dessus d'elles, une
+// plate-forme à 6 m du terre-plein central, entre deux pylônes de charpente de 50 m (26 poteaux de madriers cloués,
+// de moins en moins nombreux vers le haut), chacun portant sur sa face sud un mât de 44 m d'un seul arbre. On y monte
+// par un escalier d'honneur depuis le pied du monument à Mickiewicz, ou par deux passerelles droites de 44 m de portée
+// (quatre poutres-caissons de 2 m, 6,50 m de plancher) venues des trottoirs des deux angles de l'avenue George-V. De la
+// plate-forme, une passerelle arquée à gradins de 12 m de large rejoint le sommet du grand arc parallèle à la Seine
+// (65 m de portée, 9,20 m de flèche), qui relie les deux moitiés de l'Exposition — vers l'aval la passerelle de l'Alma,
+// vers l'amont celle du quai de la Conférence — ; deux passerelles courbes de 34 m de portée descendent aux deux bouts
+// de l'arc. Cotes publiées : hauteurs, portées, largeurs, 29,20 m entre l'arc (large de 8 m) et les pylônes. Relevé sur
+// les plans de la revue : la section des pylônes (4,3 × 8,6 m, le long de l'axe), leur entraxe (21 m), l'ouverture des
+// passerelles droites. L'emplacement est celui du terre-plein central de la place dans les données ; la teinte du bois
+// et le détail des charpentes sont une évocation.
+const PORTE = { o: [-3528, -1283], entraxe: 21, arc: 37.7, coins: [[-3551, -1326], [-3499, -1326]] };
+// Tablier : un ruban de largeur w et d'épaisseur ep le long d'une suite de points [x, y, z] (y : dessus du plancher),
+// avec ses garde-corps.
+function tablier(bp, pts, w, ep, col, garde = 1.05) {
+  const n = pts.length, N = pts.map((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dz = b[2] - a[2], l = Math.hypot(dx, dz) || 1; return [(-dz / l) * (w / 2), (dx / l) * (w / 2)]; });
+  for (let i = 0; i + 1 < n; i++) {
+    const p = pts[i], q = pts[i + 1], a = N[i], b = N[i + 1];
+    const A = [p[0] + a[0], p[1], p[2] + a[1]], Bq = [q[0] + b[0], q[1], q[2] + b[1]], Cq = [q[0] - b[0], q[1], q[2] - b[1]], Dp = [p[0] - a[0], p[1], p[2] - a[1]], bas = (P) => [P[0], P[1] - ep, P[2]], haut = (P) => [P[0], P[1] + garde, P[2]];
+    pan(bp, [A, Bq, Cq, Dp], col, 1, false); pan(bp, [bas(A), bas(Bq), bas(Cq), bas(Dp)], col, 0.7, true);
+    for (const [P, Q] of [[A, Bq], [Dp, Cq]]) { pan(bp, [P, Q, bas(Q), bas(P)], col, 0.82, true); if (garde) pan(bp, [P, Q, haut(Q), haut(P)], col, 0.92, true); }
+  }
+}
+function porteAlma(app, B) {
+  const T = app.terrain, M = app.monuments, dx = ALMA.n[0] - ALMA.s[0], dz = ALMA.n[1] - ALMA.s[1], lg = Math.hypot(dx, dz), L = repere(PORTE.o, [dx / lg, dz / lg]), d = L.d;      // u vers le nord (l'avenue George-V), v vers l'est (l'amont)
+  const bp = B.at('plain', PORTE.o[0], PORTE.o[1]), BOIS_C = C(202, 172, 128), BOIS_F = C(164, 130, 92), y0 = T.height(PORTE.o[0], PORTE.o[1]), yp = y0 + 6, e = PORTE.entraxe / 2;
+  const R = (u, v, hl, hw) => { const p = L.P(u, v); return { cx: p[0], cz: p[1], ux: d[0], uz: d[1], hl, hw }; }, P3 = (u, v, y) => { const p = L.P(u, v); return [p[0], y, p[1]]; };
+  const emprise = (u0, u1, v0, v1, top) => { const ring = L.rect(u0, u1, v0, v1); app.foot.push({ ring, top }); app.v89.reserves.push(boite(ring)); };
+  // les deux pylônes : une lame de charpente nervurée, le mât sur la face sud
+  for (const s of [-1, 1]) {
+    box(bp, R(0, s * e, 4.3, 2.15), y0 - 1, y0 + 50, { col: BOIS_C, s0: 0.8 });
+    for (let k = 0; k < 8; k++) for (const c of [-1, 1]) box(bp, R(-3.85 + k * 1.1, s * e + c * 2.2, 0.2, 0.14), y0 + 6.5, y0 + 50.3, { col: BOIS_F, top: false });       // nervures des grandes faces
+    for (let k = 0; k < 4; k++) for (const c of [-1, 1]) box(bp, R(c * 4.36, s * e - 1.65 + k * 1.1, 0.14, 0.2), y0 + 6.5, y0 + 50.3, { col: BOIS_F, top: false });
+    box(bp, R(0, s * e, 4.6, 2.45), y0 - 1, y0 + 6.5, { col: BOIS_F });                                                       // la base, où sont les bas-reliefs de chêne
+    const m = L.P(-5.1, s * e), f = L.P(-4.3, s * e); cyl(bp, m[0], m[1], 0.345, y0 + 6.5, y0 + 50.5, { col: BOIS_F, r1: 0.14, seg: 8 });   // le mât de 44 m, d'un seul arbre
+    for (const y of [20, 34, 46]) poutre(bp, [m[0], y0 + y, m[1]], [f[0], y0 + y, f[1]], 0.08, BOIS_F);
+    emprise(-4.8, 4.6, s * e - 2.45, s * e + 2.45, y0 + 50);
+    app.landmarks.push({ x: L.P(0, s * e)[0], z: L.P(0, s * e)[1], top: y0 + 50 });
+  }
+  // la plate-forme, entre les pylônes, et l'escalier d'honneur qui y monte depuis le pied du monument à Mickiewicz
+  box(bp, R(0, 0, 6, e - 2.15), yp - 0.9, yp, { col: BOIS_C });
+  for (const c of [-1, 1]) box(bp, R(c * 5.9, 0, 0.1, e - 2.15), yp, yp + 1.05, { col: BOIS_F, top: false });
+  for (const u of [-5.4, 5.4]) for (const v of [-e + 3, 0, e - 3]) box(bp, R(u, v, 0.3, 0.3), y0 - 1, yp - 0.9, { col: BOIS_F, top: false });
+  { const n = 12; for (let k = 0; k < n; k++) box(bp, R(6 + (k + 0.5) * (13 / n), 0, 6.5 / n, 6), y0 - 1, yp - ((k + 1) * 6) / (n + 1), { col: BOIS_C }); emprise(6, 19, -6, 6, yp); }
+  // le grand arc, parallèle à la Seine : 65 m de portée, 9,20 m de flèche, 8 m de large ; ses culées
+  const ua = -PORTE.arc, ys = y0 + 1.5, fl = 9.2, ya = (v) => ys + fl * (1 - (v / 32.5) * (v / 32.5));
+  { const pts = []; for (let k = -12; k <= 12; k++) { const v = (k / 12) * 32.5; pts.push(P3(ua, v, ya(v))); } tablier(bp, pts, 8, 1.3, BOIS_C);
+    for (const s of [-1, 1]) { box(bp, R(ua, s * 35.5, 4.6, 3.2), y0 - 1, ys + 0.2, { col: BOIS_F }); emprise(ua - 4.6, ua + 4.6, s * 35.5 - 3.2, s * 35.5 + 3.2, ys); } }
+  // la passerelle arquée à gradins, de la plate-forme au sommet de l'arc
+  { const pts = [], n = 6, u0 = -6, u1 = ua + 4; for (let k = 0; k <= n; k++) { const t = k / n; pts.push(P3(u0 + (u1 - u0) * t, 0, yp + (ya(0) - yp) * t + 1.1 * Math.sin(Math.PI * t))); } tablier(bp, pts, 12, 1.1, BOIS_C); }
+  // les deux passerelles courbes, de la plate-forme aux bouts de l'arc ; les deux passerelles droites, vers les angles de l'avenue
+  for (const s of [-1, 1]) {
+    const c = [[-5, e - 1.5, yp], [-9.5, e + 6.5, yp - 0.3], [-17, e + 14, yp - 1.3], [-26, e + 18.5, yp - 2.6], [ua + 4, 31.5, ya(31.5) + 0.2]];
+    tablier(bp, c.map(([u, v, y]) => P3(u, s * v, y)), 5, 2, BOIS_C);
+    const a = P3(5, s * (e - 2), yp), q = PORTE.coins[s < 0 ? 0 : 1], b = [q[0], yp, q[1]];
+    tablier(bp, [a, [(a[0] + b[0]) / 2, yp + 0.25, (a[2] + b[2]) / 2], b], 6.5, 2, BOIS_C);
+    // au bout, sur le trottoir, l'escalier à double révolution
+    const yq = T.height(q[0], q[1]), ax = b[0] - a[0], az = b[2] - a[2], l = Math.hypot(ax, az), r = { cx: q[0] + (ax / l) * 3, cz: q[1] + (az / l) * 3, ux: ax / l, uz: az / l, hl: 3.6, hw: 4.2 };
+    box(bp, r, yq - 1, yp - 2, { col: BOIS_F }); box(bp, { ...r, hl: 3.2, hw: 3.8 }, yp - 2, yp, { col: BOIS_C });
+    const K = (a2, b2) => [r.cx + r.ux * a2 - r.uz * b2, r.cz + r.uz * a2 + r.ux * b2];
+    app.foot.push({ ring: [K(3.6, 4.2), K(-3.6, 4.2), K(-3.6, -4.2), K(3.6, -4.2)], top: yp });
+  }
+  M.PorteAlma = { x: PORTE.o[0], z: PORTE.o[1], top: y0 + 58 };
 }
 
 // Le bâti évoqué qui tombe dans l'Exposition s'efface : terrains de l'Exposition (quais, Centre des métiers, Centre
@@ -481,5 +549,5 @@ const TERRAINS = [[-200, 70, 200, 560], [-200, -100, -680, 210], [-140, 20, -470
 export function terrainsExpo() { return TERRAINS.map(([u0, u1, v0, v1]) => AXE.rect(u0, u1, v0, v1)); }
 
 export function batirExpo37(app, B) {
-  trocadero(app, B); quaiOrsay(app, B); riveDroiteAmont(app, B); champDeMars(app, B); centreRegional(app, B); colonies(app, B); riveDroiteAval(app, B); esplanade(app, B); passerelleAlma(app, B);
+  trocadero(app, B); quaiOrsay(app, B); riveDroiteAmont(app, B); champDeMars(app, B); centreRegional(app, B); colonies(app, B); riveDroiteAval(app, B); esplanade(app, B); passerelleAlma(app, B); porteAlma(app, B);
 }

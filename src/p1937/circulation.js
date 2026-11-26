@@ -29,6 +29,7 @@ const DENSITE = 11;            // véhicules par kilomètre de file, en plein jo
 
 // ---------------------------------------------------------------- le réseau
 export function reseau(app) {
+  const t0 = performance.now();
   const v = app.voirie, C = app.monde.cadre, T = app.terrain, V = app.v89, D = v.D;
   const kx = v.w / (C.x1 - C.x0), kz = v.h / (C.z1 - C.z0), vd = v.data, vw = v.w, vh = v.h;
   // distance au bord de la rue (m, positive dans la rue, bornée à ±D), lue dans la carte de voirie
@@ -71,9 +72,9 @@ export function reseau(app) {
 
   // --- recentrage : l'axe de la base n'est pas toujours au milieu de la rue (deux mètres d'écart une fois sur quatre)
   const mouille = (x, z) => T.wetAt(x, z) > 0.5;
-  const ecart = (x, z, nx, nz) => {
-    const d0 = dist(x, z); if (d0 < 0.4) return 0;
-    const pas = 0.75, M = 12, val = new Float32Array(2 * M + 1); let k0 = 0, k1 = 0, m = d0; val[M] = d0;
+  const val = new Float32Array(25);
+  const ecart = (x, z, nx, nz, d0) => {
+    const pas = 0.75, M = 12; let k0 = 0, k1 = 0, m = d0; val[M] = d0;
     for (let k = 1; k <= M; k++) { const d = dist(x + nx * k * pas, z + nz * k * pas); if (d < 0.3) break; val[M + k] = d; k1 = k; if (d > m) m = d; }
     for (let k = 1; k <= M; k++) { const d = dist(x - nx * k * pas, z - nz * k * pas); if (d < 0.3) break; val[M - k] = d; k0 = -k; if (d > m) m = d; }
     if (m - d0 < 0.25) return 0;
@@ -84,7 +85,8 @@ export function reseau(app) {
   };
   for (const e of E) {
     const P = e.P, n = P.length, o = new Float32Array(n); e.eau = false;
-    for (let i = 0; i < n; i++) { if (mouille(P[i][0], P[i][1])) { e.eau = true; continue; } o[i] = ecart(P[i][0], P[i][1], e.Q[i * 2], e.Q[i * 2 + 1]); }
+    // (hors de la rue, on ne recentre rien ; l'eau n'est cherchée que là : un pont, un quai qui mord sur le fleuve)
+    for (let i = 0; i < n; i++) { const d0 = dist(P[i][0], P[i][1]); if (d0 < 0.4) { if (mouille(P[i][0], P[i][1])) e.eau = true; continue; } o[i] = ecart(P[i][0], P[i][1], e.Q[i * 2], e.Q[i * 2 + 1], d0); }
     for (let passe = 0; passe < 2; passe++) { let p = o[0]; for (let i = 1; i < n - 1; i++) { const c = o[i]; o[i] = (p + 2 * c + o[i + 1]) / 4; p = c; } }
     e.o = o;
     // chaque bout dit à son nœud où il voudrait le voir : moindres carrés sur les normales des rues qui s'y rejoignent
@@ -147,6 +149,12 @@ export function reseau(app) {
   const dansExpo = (x, z) => expo.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && pointInPoly(x, z, b.r));
   const marge = 60, dedans = (x, z) => x > C.x0 + marge && x < C.x1 - marge && z > C.z0 + marge && z < C.z1 - marge;
   const bilan = { aretes: E.length, noeuds: N.length, pietonnes: 0, etroites: 0, expo: 0, eau: 0, bati: 0, hors: 0, sansIssue: 0 };
+  // édifices posés sur la voie publique (monuments, kiosques, pavillons de l'Exposition) : presque toutes les emprises
+  // sont dans leur îlot, on ne cherche un mur que dans les cases de 48 m où l'une d'elles déborde sur la rue
+  const CF = 48, surVoie = new Set(), cf = (i, k) => (i + 2048) * 4096 + k + 2048;
+  for (const f of app.foot) { if (f.absent || f.x0 == null) continue; let dehors = false; for (let i = 0; i < f.ring.length && !dehors; i += 2) dehors = dist(f.ring[i][0], f.ring[i][1]) > 1.5; if (!dehors) continue;
+    for (let i = Math.floor(f.x0 / CF); i <= Math.floor(f.x1 / CF); i++) for (let k = Math.floor(f.z0 / CF); k <= Math.floor(f.z1 / CF); k++) surVoie.add(cf(i, k)); }
+  const batiEn = (x, z) => surVoie.has(cf(Math.floor(x / CF), Math.floor(z / CF))) && !!app.footAt(x, z);
   for (const e of E) {
     if (!e.ok) continue;
     const non = (pourquoi) => { e.ok = false; e.motif = pourquoi; bilan[pourquoi]++; };
@@ -158,7 +166,7 @@ export function reseau(app) {
     let dur = 0, noye = 0, bati = 0; const n = e.P.length;
     const bord = e.w < DEUX_SENS ? 0 : Math.max(0, e.w - 1.2);                    // jusqu'où vont les voitures, de part et d'autre de l'axe
     for (let i = 0; i < n; i++) { const [x, z] = e.P[i], qx = e.Q[i * 2] * bord, qz = e.Q[i * 2 + 1] * bord; if (e.H[i] < 1.1) dur++; if (mouille(x, z) && !app.deck.has(app.deckKey(x, z))) noye++;
-      if (i % 2 === 0 && Math.min(e.S[i], e.len - e.S[i]) > 3 && (app.footAt(x, z) || (bord && (app.footAt(x + qx, z + qz) || app.footAt(x - qx, z - qz))))) bati++; }
+      if (i % 2 === 0 && Math.min(e.S[i], e.len - e.S[i]) > 3 && (batiEn(x, z) || (bord && (batiEn(x + qx, z + qz) || batiEn(x - qx, z - qz))))) bati++; }
     if (noye > 0) { non('eau'); continue; }
     if (bati > 0 || dur > Math.max(1, 0.2 * n)) { non('bati'); continue; }
   }
@@ -206,16 +214,17 @@ export function reseau(app) {
   // demi-largeur de la voie (carte repeinte) et test « sur la chaussée, hors de portée des trottoirs »
   const Lg = v.large, demi = (x, z) => { const i = clamp(Math.floor(((x - C.x0) / (C.x1 - C.x0)) * Lg.w), 0, Lg.w - 1), j = clamp(Math.floor(((z - C.z0) / (C.z1 - C.z0)) * Lg.h), 0, Lg.h - 1); return (Lg.data[j * Lg.w + i] / 255 - 0.5) * 2 * D; };
   // traversées des carrefours, pour les passants : une bande en travers de chaque rue où l'on roule, au ras du
-  // carrefour ([x, z, direction de la rue, demi-longueur]), rangées par cases de 80 m
+  // carrefour ([x, z, direction de la rue, demi-longueur d'une façade à l'autre, demi-largeur de la chaussée]), rangées
+  // par cases de 80 m
   const traversees = [], GR = 80, grille = new Map(), pt = {};
   for (const e of E) { if (!e.ok || e.len < 14) continue;
     for (const [K, sc] of [[N[e.a], e.ra + 1.2], [N[e.b], e.len - e.rb - 1.2]]) { if (K.deg < 3) continue; point(e, sc, 0, pt);
-      const t = [pt.x, pt.z, pt.tx, pt.tz, e.h + 1.5], c = (Math.floor(pt.x / GR) + 512) * 1024 + Math.floor(pt.z / GR) + 512; traversees.push(t); let l = grille.get(c); if (!l) grille.set(c, (l = [])); l.push(t); } }
+      const t = [pt.x, pt.z, pt.tx, pt.tz, e.h + 1.5, e.w + 0.3], c = (Math.floor(pt.x / GR) + 512) * 1024 + Math.floor(pt.z / GR) + 512; traversees.push(t); let l = grille.get(c); if (!l) grille.set(c, (l = [])); l.push(t); } }
   const traversee = (x, z) => { const i0 = Math.floor(x / GR) + 512, k0 = Math.floor(z / GR) + 512;
     for (let i = i0 - 1; i <= i0 + 1; i++) for (let k = k0 - 1; k <= k0 + 1; k++) { const l = grille.get(i * 1024 + k); if (!l) continue; for (const t of l) { const dx = x - t[0], dz = z - t[1]; if (Math.abs(dx * t[2] + dz * t[3]) < 1.9 && Math.abs(dz * t[2] - dx * t[3]) < t[4]) return true; } }
     return false; };
-  bilan.traversees = traversees.length;
-  const G = { E, N, cases, CASE, dist, demi, bilan, surPonts, ponts, traversees, traversee, bande: 2.2 };
+  bilan.traversees = traversees.length; bilan.ms = Math.round(performance.now() - t0);
+  const G = { E, N, cases, CASE, dist, demi, batiEn, bilan, surPonts, ponts, traversees, traversee, bande: 2.2 };
   G.chaussee = (x, z) => { const d = dist(x, z); return d > Math.max(trottoir(demi(x, z)), G.bande) + 0.7; };
   return G;
 }
@@ -279,6 +288,13 @@ function faisceauTexture() {
   for (let j = 0; j < 64; j++) for (let i = 0; i < 32; i++) { const u = (i + 0.5) / 32 - 0.5, t = 1 - (j + 0.5) / 64, a = Math.max(0, 1 - 4 * u * u) * Math.pow(1 - t, 1.6) * Math.min(1, t * 9 + 0.25), k = (j * 32 + i) * 4; im.data[k] = im.data[k + 1] = im.data[k + 2] = 255 * a; im.data[k + 3] = 255; }
   c.putImageData(im, 0, 0); return new THREE.CanvasTexture(cv);
 }
+// Les passages cloutés : deux rangées de clous d'acier à tête ronde en travers de la chaussée (un mètre de motif).
+function clousTexture() {
+  const cv = document.createElement('canvas'); cv.width = 32; cv.height = 128; const c = cv.getContext('2d');
+  c.clearRect(0, 0, 32, 128); c.fillStyle = 'rgba(232,232,226,0.95)';
+  for (const y of [9, 119]) for (const x of [8, 24]) { c.beginPath(); c.arc(x, y, 4.2, 0, 7); c.fill(); }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
 const lin = (v) => Math.pow(v / 255, 2.2);
 const angle = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
 // Matrice d'un véhicule : cap h, pente p (l'avant monte), recul oz le long de son axe.
@@ -312,6 +328,11 @@ class Circulation {
       if (m.feux) { m.feuxIm = jumeau(m.feux, m.s.im, this.feuxMat, 0); m.faisceauIm = jumeau(faisceauGeo(m.av - 0.2, 15, 2.6), m.s.im, this.faisceauMat, 2); m.feuxIm.visible = m.faisceauIm.visible = false; this.group.add(m.feuxIm, m.faisceauIm); }
       if (m.gare > 0) { m.capG = Math.ceil(garesMax * m.gare) + 4; m.g = instancie(m.geo, m.capG); m.ombreG = jumeau(ombreGeo(m.ombre[0], m.ombre[1]), m.g.im, ombreMat, 1); this.group.add(m.g.im, m.ombreG); }
     }
+    // les passages cloutés des carrefours proches : une nappe refaite quand le point de vue se déplace
+    { const n = (this.clousMax = mobile ? 120 : 420), g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 18), 3)); g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n * 12), 2));
+      const nor = new Float32Array(n * 18); for (let i = 1; i < nor.length; i += 3) nor[i] = 1; g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setDrawRange(0, 0);
+      this.clous = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: clousTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+      this.clous.frustumCulled = false; this.clous.receiveShadow = true; this.clous.renderOrder = 1; this.group.add(this.clous); }
     // chaque véhicule a son modèle une fois pour toutes : la suite est bien mêlée, quel que soit le nombre en service
     const cumul = []; { let s = 0; for (const m of M) { s += m.part; cumul.push(s); } for (let k = 0; k < cumul.length; k++) cumul[k] /= s; }
     const F = (n) => new Float32Array(n), I = (n) => new Int32Array(n);
@@ -339,6 +360,19 @@ class Circulation {
       for (const q of l) { const e = E[q], dx = e.cx - cx, dz = e.cz - cz; if (dx * dx + dz * dz > R2 || e.len - e.ra - e.rb < 5) continue; const nf = e.sens ? 1 : 2 * e.nl; poids += e.len * nf * (0.4 + e.w / 4); km += e.len * nf; sel.push(q); cumul.push(poids); } }
     this.poids = poids; this.kmFiles = km / 1000; this.selX = cx; this.selZ = cz; this.selR = R;
     this.garer(cx, cz, Math.min(R, this.app.mobile ? 300 : 560));
+    this.clouter(cx, cz, Math.min(R, 360));
+  }
+
+  // Passages cloutés à portée : un quadrilatère par traversée, posé sur le sol à ses quatre coins.
+  clouter(cx, cz, R) {
+    const app = this.app, g = this.clous.geometry, P = g.attributes.position.array, U = g.attributes.uv.array, R2 = R * R; let n = 0;
+    for (const t of this.G.traversees) {
+      const dx = t[0] - cx, dz = t[1] - cz; if (dx * dx + dz * dz > R2) continue; if (n >= this.clousMax) break;
+      const l = t[5], nx = -t[3], nz = t[2], ax = t[2] * 1.9, az = t[3] * 1.9, C = [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]];
+      for (let k = 0; k < 6; k++) { const [a, b] = C[k], x = t[0] + nx * l * a + ax * b, z = t[1] + nz * l * a + az * b, o = n * 18 + k * 3; P[o] = x; P[o + 1] = app.heightAt(x, z) + 0.05; P[o + 2] = z; U[n * 12 + k * 2] = (a + 1) * l; U[n * 12 + k * 2 + 1] = (b + 1) / 2; }
+      n++;
+    }
+    g.setDrawRange(0, n * 6); g.attributes.position.needsUpdate = true; g.attributes.uv.needsUpdate = true; this.passages = n;
   }
 
   // Voitures en stationnement d'une arête : tirées une fois, toujours les mêmes ([x, z, cap, y, pente, modèle, teinte] × n).
@@ -350,7 +384,7 @@ class Circulation {
       while (s < fin) {
         let u = r() * tot, m = gm[0]; for (const q of gm) { if (u < q.gare) { m = q; break; } u -= q.gare; }
         point(e, s, cote * (e.w - 0.98), pt);
-        if (!app.footAt(pt.x, pt.z)) {
+        if (!this.G.batiEn(pt.x, pt.z)) {
           const tx = pt.tx * cote, tz = pt.tz * cote, y0 = app.heightAt(pt.x + tx * 1.3, pt.z + tz * 1.3), y1 = app.heightAt(pt.x - tx * 1.3, pt.z - tz * 1.3);
           out.push(pt.x, pt.z, Math.atan2(tx, tz), (y0 + y1) / 2, Math.atan2(y0 - y1, 2.6), M.indexOf(m), m.teintes ? (r() * m.teintes.length) | 0 : -1);
         }

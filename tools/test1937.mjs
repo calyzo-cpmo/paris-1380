@@ -114,12 +114,16 @@ const fi = await page.evaluate(() => { const a = window.__app, S = a.statuts, M 
   let zone = 0; for (let x = 4480; x <= 4740; x += 5) for (let z = -700; z <= 400; z += 5) if (S.lire(x, z) === 4) zone++;          // la zone, au-delà des HBM de la porte de Montreuil
   const U = [0.71538, 0.69873], O = [-4039.4, -604.3], N = [-U[1], U[0]]; let ile = 0;                                          // l'île aux Cygnes : aucun bâtiment évoqué
   for (let v = 600; v <= 1360; v += 4) { const u = -144 + ((v - 600) * 15) / 760; for (const t of [-6, 0, 6]) { const x = O[0] + U[0] * (u + t) + N[0] * v, z = O[1] + U[1] * (u + t) + N[1] * v; if (S.lire(x, z) === 4) ile++; } }
-  const pa = M.PasserelleAlma, r = () => 0.5, garde = P.outfit(r, 'man', 'guard').col;
+  const pa = M.PasserelleAlma, po = M.PorteAlma, r = () => 0.5, garde = P.outfit(r, 'man', 'guard').col;
   return { zone, ile, velhiv: [[-4405, -40], [-4370, 12], [-4400, 35]].filter(([x, z]) => S.lire(x, z) === 3).length,
     passerelle: !!(pa && a.footAt(pa.x, pa.z) && a.footAt(pa.x, pa.z - 60) && a.footAt(pa.x, pa.z + 60) && !a.footAt(pa.x, pa.z + 75)), haut: pa ? Math.round(pa.top - T.height(pa.x, pa.z - 66)) : -1,
-    fiche: a.ui.places.some((p) => p.name === 'Passerelle de l’Alma'), garde, attelages: P.pools.filter((p) => p.kind === 'rider' || p.kind === 'cart').length }; });
+    fiche: a.ui.places.some((p) => p.name === 'Passerelle de l’Alma'), garde,
+    // la porte monumentale de l'Alma : deux pylônes de 50 m à 21 m d'entraxe, la plate-forme entre eux, les passerelles droites jusqu'aux angles de l'avenue George-V
+    porte: po ? { pylones: a.landmarks.filter((l) => Math.hypot(l.x - po.x, l.z - po.z) < 13 && Math.abs(l.top - T.height(po.x, po.z) - 50) < 0.6).length, entraxe: (() => { const L = a.landmarks.filter((l) => Math.hypot(l.x - po.x, l.z - po.z) < 13); return L.length === 2 ? +Math.hypot(L[0].x - L[1].x, L[0].z - L[1].z).toFixed(1) : -1; })(),
+      pieds: [[-3551, -1326], [-3499, -1326]].filter(([x, z]) => a.footAt(x, z)).length, fiche: a.ui.places.some((p) => p.name === 'Porte de l’Alma'), pont: a.v89.reseau.E.filter((e) => /^Pont de l.Alma/.test(e.nom) && e.ok).length } : null, attelages: P.pools.filter((p) => p.kind === 'rider' || p.kind === 'cart').length }; });
 check('finitions de 1937 : baraques évoquées dans la zone, rien sur l’île aux Cygnes, garages et ateliers relevés autour du Vélodrome d’Hiver, passerelle de l’Alma (133 m), passants des années 1930, plus de cavaliers ni d’attelages parmi eux (les voitures à cheval roulent avec les automobiles)',
   fi.zone > 20 && fi.ile === 0 && fi.velhiv === 3 && fi.passerelle && fi.haut >= 14 && fi.fiche && fi.garde.join() === '120,112,72' && fi.attelages === 0, JSON.stringify(fi));
+check('porte monumentale de la place de l’Alma : deux pylônes de 50 m, 21 m d’entraxe, les escaliers des deux angles de l’avenue George-V, sa fiche ; le pont de l’Alma reste ouvert aux voitures', fi.porte && fi.porte.pylones === 2 && Math.abs(fi.porte.entraxe - 21) < 0.3 && fi.porte.pieds === 2 && fi.porte.fiche && fi.porte.pont >= 2, JSON.stringify(fi.porte));
 
 // ---------- la circulation : automobiles sur la chaussée, passants sur les trottoirs
 const re = await page.evaluate(() => { const a = window.__app, G = a.v89.reseau, E = G.E, N = G.N, roule = E.filter((e) => e.ok);
@@ -180,7 +184,7 @@ const mo = await page.evaluate(() => { const a = window.__app, M = a.monuments, 
   const campanile = a.landmarks.filter((l) => Math.hypot(l.x - M.SacreCoeur.x, l.z - (M.SacreCoeur.z - 62)) < 2).map((l) => +(l.top - T.height(l.x, l.z)).toFixed(1));
   return { invalides: h(M.Invalides), pantheon: h(M.Pantheon), nd: h(M.NotreDame), fleche: fl ? +(fl.top - T.height(fl.x, fl.z)).toFixed(1) : -1, opera: h(M.Opera), arc: h(M.Arc), sc: h(M.SacreCoeur), campanile, halles: (M.Halles || {}).pavillons, hd: h(M.HotelDieu), industrie: !!M.Industrie }; });
 check('monuments : Invalides (107 m), Panthéon (83 m), Notre-Dame (69 et 96 m), l’Opéra, l’Arc ; ni palais de l’Industrie', mo.invalides === 107 && mo.pantheon === 83 && Math.abs(mo.nd - 69) < 1 && mo.fleche === 96 && mo.opera === 56 && mo.arc > 55 && mo.arc < 60 && !mo.industrie, JSON.stringify(mo));
-check('Sacré-Cœur : le grand dôme (83 m) et le campanile achevé en 1912 (84 m) ; Halles : les dix pavillons de la photographie de 1949', Math.abs(mo.sc - 83) < 0.5 && mo.campanile.some((t) => Math.abs(t - 84) < 0.6) && mo.halles === 10 && mo.hd > 25, JSON.stringify([mo.sc, mo.campanile, mo.halles]));
+check('Sacré-Cœur : le grand dôme (83 m) et le campanile achevé en 1912 (84 m) ; Halles : les dix pavillons en service en 1937 (les deux derniers sont en chantier)', Math.abs(mo.sc - 83) < 0.5 && mo.campanile.some((t) => Math.abs(t - 84) < 0.6) && mo.halles === 10 && mo.hd > 25, JSON.stringify([mo.sc, mo.campanile, mo.halles]));
 
 // ---------- la vie : trains, bateaux
 const vie = await page.evaluate(() => { const a = window.__app, V = a.v89, T = a.terrain, F = V.fer;
@@ -197,7 +201,7 @@ check('calque « origine du bâti » : réelle (datée de 1937 ou d’avant), pr
 
 // ---------- repères, fiche, sources
 const lx = await page.evaluate(() => { const a = window.__app, P = a.ui.places; return { n: P.length, noms: P.map((p) => p.name), cats: [...new Set(P.map((p) => p.cat))].length, hors: P.filter((p) => p.x < a.monde.cadre.x0 || p.x > a.monde.cadre.x1 || p.z < a.monde.cadre.z0 || p.z > a.monde.cadre.z1).length }; });
-const attendus = ['Tour Eiffel', 'Champ-de-Mars', 'Palais de Chaillot', 'Grand Palais', 'Petit Palais', 'Pont Alexandre-III', 'Halles centrales', 'Halle aux vins', 'Entrepôts de Bercy', 'Abattoirs de la Villette', 'Marché aux bestiaux de la Villette', 'Abattoirs de Vaugirard', 'Usines Citroën', 'Gare des Gobelins', 'Usine à gaz de La Villette', 'Petite Roquette', 'Vélodrome d’Hiver',
+const attendus = ['Tour Eiffel', 'Champ-de-Mars', 'Palais de Chaillot', 'Grand Palais', 'Petit Palais', 'Pont Alexandre-III', 'Porte de l’Alma', 'Passerelle de l’Alma', 'Halles centrales', 'Halle aux vins', 'Entrepôts de Bercy', 'Abattoirs de la Villette', 'Marché aux bestiaux de la Villette', 'Abattoirs de Vaugirard', 'Usines Citroën', 'Gare des Gobelins', 'Usine à gaz de La Villette', 'Petite Roquette', 'Vélodrome d’Hiver',
   'Gare Montparnasse', 'Gare de la Bastille', 'Gare de l’Est', 'Gare de Lyon', 'Gare d’Orsay', 'Gare d’Austerlitz', 'Petite Ceinture', 'Ceinture des HBM', 'Notre-Dame', 'Dôme des Invalides', 'Arc de triomphe', 'Sacré-Cœur', 'Opéra', 'Place de la Bastille'];
 check('repères : la tour, Chaillot, les grands ensembles disparus, les gares, les monuments, la ceinture', lx.n >= 55 && lx.hors === 0 && lx.cats >= 5 && attendus.every((n) => lx.noms.includes(n)), `${lx.n} lieux ; manquent : ${attendus.filter((n) => !lx.noms.includes(n)).join(', ')}`);
 await page.click('#btn-places');
@@ -210,7 +214,7 @@ check('fiche : la tour, en jaune brun depuis 1907', fiche.vu && /Tour Eiffel/.te
 await page.evaluate(() => window.__app.ui.select(null));
 await page.click('#btn-sources');
 const src = await page.evaluate(() => { const d = document.getElementById('sources'); return { vu: !d.hidden, n: d.querySelectorAll('#sources-list li').length, t: d.textContent }; });
-check('sources : APUR, base « Paris 1900 » corrigée, plan général de l’Exposition, nomenclature des voies, IGN (relief, photographie de 1949), voies ferrées ; ce qui est réel, disparu, évoqué', src.vu && src.n === 7 && /Exposition de 1937/.test(src.t) && /Voies ferrées/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /1949/.test(src.t) && /IGN/.test(src.t) && /Disparu/.test(src.t) && /Évoqué/.test(src.t) && /Non figuré/.test(src.t) && !/Pas encore modelé/.test(src.t) && !/Vasserot/.test(src.t) && !/1900 ou d’avant/.test(src.t), `${src.n} sources`);
+check('sources : APUR, base « Paris 1900 » corrigée, plan général de l’Exposition, nomenclature des voies, IGN (relief, photographie de 1949), voies ferrées ; ce qui est réel, disparu, évoqué', src.vu && src.n === 7 && /Exposition de 1937/.test(src.t) && /Voies ferrées/.test(src.t) && /Atelier parisien d’urbanisme/.test(src.t) && /1949/.test(src.t) && /IGN/.test(src.t) && /Disparu/.test(src.t) && /Évoqué/.test(src.t) && /Non figuré/.test(src.t) && /Licence Ouverte/.test(src.t) && /Peltier/.test(src.t) && /porte monumentale/.test(src.t) && !/automobiles\./.test(src.t) && !/Pas encore modelé/.test(src.t) && !/Vasserot/.test(src.t) && !/1900 ou d’avant/.test(src.t), `${src.n} sources`);
 await page.click('#sources [data-close="sources"]');
 { const og = await page.evaluate(() => (document.querySelector('meta[property="og:image"]') || {}).content || ''), { existsSync } = await import('node:fs');
   check('partage : l’image de la maquette (og:image, adresse absolue) est dans dist/og/', /^https:\/\/.+\/dist\/og\/1937\.jpg$/.test(og) && existsSync(join(root, 'dist/og/1937.jpg')), og); }
