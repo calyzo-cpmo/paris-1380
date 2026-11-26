@@ -31,13 +31,14 @@ le Paris disparu depuis, relevé sur la photographie aérienne de 1949 de l'IGN 
 Bercy, les abattoirs de la Villette et de Vaugirard, le marché aux bestiaux, les usines Citroën de Javel, la gare des
 Gobelins, les gazomètres de La Villette, la Petite Roquette, le Vélodrome d'Hiver, avec les Halles, la gare Montparnasse
 de 1852 et la gare de la Bastille ; la « zone » au-delà des logements de brique, ses baraques et ses terrains vagues ;
-les passants en tenues des années 1930, sur les trottoirs, et la **circulation** de 1937 sur la chaussée : conduites
+les passants en tenues des années 1930, sur les trottoirs de toute la ville, et la **circulation** de 1937 sur la chaussée : conduites
 intérieures, taxis rouge et noir, camionnettes, camions bâchés, autobus vert et crème à plate-forme et dernières
-voitures à cheval roulent à droite sur les 800 kilomètres de rues où l'on peut rouler, se garent le long des trottoirs
-et allument leurs phares jaunes la nuit. Et l'**Exposition internationale de 1937**, une centaine de pavillons, de l'île
+voitures à cheval roulent à droite sur les 860 kilomètres de rues où l'on peut rouler, s'arrêtent aux passages cloutés,
+se garent le long des trottoirs et allument leurs phares jaunes la nuit. Et l'**Exposition internationale de 1937**, une centaine de pavillons, de l'île
 aux Cygnes à l'Esplanade des Invalides : l'URSS et l'Allemagne face à face au Trocadéro, le pavillon pontifical, les
 pavillons étrangers du quai d'Orsay, le Centre régional et ses vingt-cinq provinces, le Centre des colonies, le palais
-de l'Air, la porte d'honneur et son mât de 100 mètres, la passerelle de l'Alma.
+de l'Air, la porte d'honneur et son mât de 100 mètres, la passerelle de l'Alma et la porte monumentale de la place de
+l'Alma, deux pylônes de bois de 50 mètres au-dessus de la circulation.
 
 Les cinq dernières ont chacune leur visite guidée (quinze étapes en 1789, douze pour Lutèce, quatorze en 1889,
 seize en 1900, vingt et une en 1937).
@@ -412,7 +413,7 @@ tools/photo1975.py          planche de comparaison : photographie aérienne de P
 tools/fer_1889.py            voies ferrées de 1889 et de 1900 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
 tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
 tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), entrées du métro, montage de 1897 à 1900 et son curseur, monuments, calque, visite, frise, téléphone
-tools/test1937.mjs           test fonctionnel de la page Paris 1937 : ville, ponts, voies et gares de 1937 (gare de l'Est doublée), tour en jaune brun, grands ensembles disparus, quartiers refaits, zone, Exposition et passerelle de l'Alma, circulation (réseau, chaussées, véhicules, conduite à droite, stationnement, passants sur les trottoirs, phares), passants de 1937, monuments, calque, repères, visite, frise, téléphone
+tools/test1937.mjs           test fonctionnel de la page Paris 1937 : ville, ponts, voies et gares de 1937 (gare de l'Est doublée), tour en jaune brun, grands ensembles disparus, quartiers refaits, zone, Exposition et passerelle de l'Alma, circulation (réseau, chaussées, véhicules, conduite à droite, stationnement, passants sur les trottoirs et dans toute la ville, phares), porte de l'Alma, noms des rues à la date, passants de 1937, monuments, calque, repères, visite, frise, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html, 1900.html, 1937.html) ; la page de 1900 reprend src/p1889/ par surcouche
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
