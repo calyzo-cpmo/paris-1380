@@ -497,9 +497,9 @@ export class People {
       new Pool(this, 'man', Math.round(2400 * q), { scale: [0.94, 1.08], kids: 0.07, speed: [1.1, 1.6], probe: 1.7, side: 1.3, stride: 4.6, amp: 0.55, idle: 0.1, blob: [0.36, 0.3], share: 0.5, hiCap: 500 }),
       new Pool(this, 'robe', Math.round(1700 * q), { scale: [0.9, 1.03], kids: 0.05, speed: [0.85, 1.25], probe: 1.7, side: 1.3, stride: 5.0, amp: 0.5, idle: 0.14, blob: [0.38, 0.34], share: 0.36, hiCap: 400 }),
       new Pool(this, 'sheep', Math.round(420 * q), { palette: PIGS, scale: [0.62, 0.95], speed: [0.5, 1.1], probe: 1.4, side: 1.0, stride: 9, amp: 0.5, idle: 0.3, blob: [0.3, 0.5], share: 0.07 }),
-      new Pool(this, 'rider', Math.round(190 * qa), { scale: [0.96, 1.06], speed: [1.7, 2.6], probe: 4.2, side: 2.2, stride: 2.6, amp: 0.5, idle: 0.04, wide: true, turn: 1.6, blob: [0.5, 1.2], share: 0.04, hiCap: 60 }),
-      new Pool(this, 'cart', Math.round(130 * qa), { scale: [0.95, 1.05], speed: [1.0, 1.5], probe: 5.5, side: 2.4, stride: 2.8, amp: 0.45, idle: 0.08, wide: true, turn: 0.9, blob: [1.0, 2.6], share: 0.03, hiCap: 40 }),
-    ].filter((p) => !(opts.noBeasts && p.kind === 'sheep'));
+      qa > 0 && new Pool(this, 'rider', Math.round(190 * qa), { scale: [0.96, 1.06], speed: [1.7, 2.6], probe: 4.2, side: 2.2, stride: 2.6, amp: 0.5, idle: 0.04, wide: true, turn: 1.6, blob: [0.5, 1.2], share: 0.04, hiCap: 60 }),
+      qa > 0 && new Pool(this, 'cart', Math.round(130 * qa), { scale: [0.95, 1.05], speed: [1.0, 1.5], probe: 5.5, side: 2.4, stride: 2.8, amp: 0.45, idle: 0.08, wide: true, turn: 0.9, blob: [1.0, 2.6], share: 0.03, hiCap: 40 }),
+    ].filter((p) => p && !(opts.noBeasts && p.kind === 'sheep'));
     this.statics = [];
     this.total = this.pools.reduce((s, p) => s + p.n, 0);
     this.count = 0; this.near = 0; this.lastX = 1e9; this.lastZ = 1e9;
@@ -554,4 +554,4 @@ export class People {
   }
 }
 
-export { CLOTH, DRESS, WOOL, CATTLE, HABITS, RICH };
+export { CLOTH, DRESS, WOOL, CATTLE, HABITS, RICH, cartGeo };

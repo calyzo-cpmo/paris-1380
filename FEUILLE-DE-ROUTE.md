@@ -10,7 +10,29 @@ son calque « Origine du bâti », ses tests et son image de partage.
 engagé. Ce qui reste ouvert ne dépend plus que de sources qu'on n'a pas pu lire d'ici (voir « Ce qui reste ouvert », en
 fin de document) ; ce document dit comment reprendre si l'on y revient.
 
-## Où on en est (24 novembre 2026)
+**Repris le 26 novembre 2026**, pour Paris 1937 seulement : les **automobiles**, demandées, et les points laissés
+ouverts (porte de l'Alma, Halles, noms des rues, licences, plan officiel), puis, l'accès à Paris Musées accordé,
+**l'Exposition recalée sur ses plans** (plan directeur de 1935, plan du Centre régional de 1937). C'est fait, et
+fusionné dans `main` le 27 novembre 2026 (pull request n° 25) : le site en ligne le reçoit.
+
+## Où on en est (27 novembre 2026)
+
+**Le lot du 26 novembre, fusionné dans `main` le 27 (pull request n° 25)** — Paris 1937 :
+- **la circulation** : conduites intérieures, taxis rouge et noir, camionnettes, camions bâchés, autobus vert et crème
+  à plate-forme et dernières voitures à cheval roulent à droite sur 860 km de rues, autour du point de vue ; sens
+  uniques dans les rues étroites, une à trois files ailleurs, stationnement le long des trottoirs, priorité aux
+  carrefours et aux piétons, phares jaunes la nuit, passages cloutés ;
+- **les passants** tiennent les trottoirs et traversent aux carrefours, **dans toute la ville** (ils n'existaient
+  qu'autour de l'Exposition) ;
+- **la porte monumentale de la place de l'Alma**, modelée d'après ses plans publiés ; la passerelle de l'Alma à sa
+  place publiée ;
+- **les noms des rues** de 1937 (avenue George-V, avenue du Président-Wilson…), les Halles (dix pavillons, deux en
+  chantier), les licences, le plan officiel de Peltier (qui n'est pas à l'échelle) : voir le point 3 bis ;
+- **l'Exposition recalée sur ses plans** : le Champ-de-Mars n'est occupé que jusqu'à l'avenue Joseph-Bouvard, où se
+  tient le palais de la Lumière (il était 420 m trop loin, devant l'École militaire) ; ailes et galeries du parterre,
+  bandes bâties du quai d'Orsay, Centre des métiers, île aux Cygnes d'un pont à l'autre, palais de l'Esplanade d'après
+  le plan directeur d'août 1935 ; les vingt-cinq pavillons du Centre régional d'après son plan du 14 avril 1937 : voir
+  le point 3 ter.
 
 **En ligne** : six maquettes — Lutèce, 1380, 1789, 1889, 1900, **1937** — et l'**écran d'accueil** : sans adresse, le site
 montre les six époques en cartes au-dessus d'une maquette « en vitrine » qui tourne lentement ; le nom du site, en tête
@@ -24,8 +46,8 @@ jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le
 Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
 roulant et les entrées du métro. Un curseur montre le montage de l'Exposition, du 1er janvier 1897 au 19 juillet 1900.
 Le déploiement Docker (`Dockerfile`, `DEPLOIEMENT.md`) sert les six maquettes, `1937.html` compris (il manquait
-jusqu'au 24 novembre). **Rien n'est en cours** : tout est fusionné dans `main` (pull request n° 24, le 24 novembre 2026) et le site en
-ligne est à jour.
+jusqu'au 24 novembre). Tout cela est fusionné dans `main` (pull requests n° 24, le 24 novembre 2026, et n° 25, le
+27 novembre) et en ligne : rien n'attend plus sur une branche.
 
 **Ce qui a été fait, maquette par maquette, et ce qui reste ouvert**
 1. **Paris 1900, finitions** — *faites le 22 novembre*, sauf la dernière :
@@ -137,13 +159,89 @@ ligne est à jour.
        Duchêne en photographie le chantier depuis la rue Gaston-de-Saint-Paul) ;
      - le texte « Sources » de la page (le paragraphe « Pas encore modelé » annonçait encore l'Exposition) ; le test
        (`tools/test1937.mjs`, 46 vérifications) ; le README ; le déploiement Docker ;
-   - *Ouvert* (sources non lisibles d'ici) : le plan officiel à l'échelle de G. Peltier (3 mars 1937, BnF, Gallica
-     « btv1b531927012 », domaine public), qui permettrait de recaler les pavillons — Gallica oppose une protection
-     Cloudflare, il faudrait le récupérer à la main ; le guide officiel et le *Catalogue général* ; la porte monumentale
-     de la place de l'Alma (deux pylônes de 50 m, non cotés en plan), pas figurée ; l'Atlas municipal de 1937, dont le
-     serveur d'images (SoDUCo) ne répond pas ; les licences de la photo de 1949 (Édugéo) et des images de la BHdV —
-     aucune image n'est diffusée, seuls des emplacements et des dimensions relevés, sources citées ; les hauteurs des
-     gazomètres et des halles disparues (conventions).
+   - *Ouvert le 24 novembre, traité le 26* : voir le point 3 bis.
+3 bis. **Paris 1937, la circulation et les points ouverts** — *fait le 26 novembre* (pull request n° 25) :
+   - *la circulation* (`src/p1937/circulation.js`, `src/p1937/autos.js`) : les 18 600 tronçons de voie deviennent un
+     graphe ; l'axe de chaque rue est ramené au milieu de la chaussée que le sol dessine (carte de distance de la
+     voirie), qui donne aussi sa largeur. Sens unique sous 4,7 m de chaussée, une à trois files par sens au-delà ;
+     passages, impasses, ports, allées, terrains de l'Exposition et voies sans issue restent aux piétons : 12 350
+     tronçons roulables, 860 km, 4 700 carrefours. Six modèles (berline, taxi, camionnette, camion, autobus, voiture à
+     cheval), environ 11 véhicules par kilomètre de file en plein jour, moins la nuit ; chacun garde ses distances,
+     ralentit selon le rayon du virage, attend son tour au carrefour (une rue à la fois, les deux sens d'une même rue
+     ensemble) et cède le passage aux piétons engagés. Stationnement d'un côté (chaussée de 7 m et plus) ou des deux
+     (9 m et plus). La nuit, phares et faisceaux jaunes. Coût : moins d'une milliseconde par image ; 0,9 s au
+     chargement pour bâtir le réseau ;
+   - *les trottoirs* : la carte des demi-largeurs de voie est repeinte rue par rue à partir du réseau (celle du moteur
+     reporte la plus grande largeur du voisinage : près d'une avenue, les trottoirs des petites rues gonflaient) ; le
+     sol, les arbres d'alignement, les voitures et les passants lisent la même bordure. La trame des passants passe à
+     1 m (1,5 m sur téléphone) ; hors du quartier de l'Exposition, où il n'y avait personne, la même règle est lue
+     directement dans la carte de voirie (`etendrePassants`), par dalles de 64 m gardées en mémoire ;
+   - *le moteur partagé* n'a reçu qu'un point d'accroche (`src/p1889/circulation.js`, vide en 1889 et en 1900) ; les
+     attelages de 1937 ne sont plus des passants (`ATTELAGES = 0`) ;
+   - *la porte monumentale de l'Alma* (`porteAlma`, `src/p1937/expo37.js`) : M. et L. Solotareff et H. Bard,
+     *L'Architecture d'aujourd'hui*, septembre 1937, p. 35-38 (coupe, plan des fondations, plan d'ensemble) — deux
+     pylônes de bois de 50 m, plate-forme à 6 m sur le terre-plein central, escalier d'honneur, deux passerelles
+     droites de 44 m vers les angles de l'avenue George-V, grand arc de 65 m parallèle à la Seine, passerelle à gradins
+     et passerelles courbes. Publié : hauteurs, portées, largeurs, 29,20 m de l'arc aux pylônes ; relevé sur les plans :
+     section et entraxe des pylônes ; évoqué : la teinte du bois. La **passerelle de l'Alma** prend ses travées
+     publiées (42,75, 46,40 et 40 m) et sa place n'est plus déduite : « palées à 15 m environ en aval des piles du
+     pont » (août 1937, p. 59) ;
+   - *les Halles* : la contradiction est levée. Dix pavillons de 1854 à 1874 ; les pavillons 1 et 2, du côté de la
+     Bourse de commerce, sont mis en chantier en 1935 (« construit en 1935-1936 » pour les Archives de Paris, « entre
+     1935 et 1948 » ailleurs) et *L'Architecture d'aujourd'hui* (n° 3-4 de 1940) les dit encore en construction : dix
+     pavillons en service en 1937, comme en 1889 et en 1900 — les trois maquettes sont justes. Sur la photographie de
+     1949, leur emplacement ne montre aucun comble comparable à ceux de Baltard. Le chantier n'est pas figuré ;
+   - *les noms des rues* (`tools/ville_1937.py`, classe `Noms`) : le nom d'aujourd'hui que la base de 1900 donne à
+     chaque voie départage les homonymes de la nomenclature et arrête la chaîne des dénominations à temps ; un tronçon
+     isolé suit ses voisins de même nom de 1900. 472 tronçons renommés au lieu de 414 : avenue George-V et avenue du
+     Président-Wilson (1918), rue Gutenberg (1904), rue Jean-Ferrandi (1935)… et deux erreurs d'homonymes corrigées (rue
+     de La Rochefoucauld, rue Puteaux). Seuls `rues.noms` et `rues.i` changent dans `data/paris1937.json` ;
+   - *le plan officiel de G. Peltier* (3 mars 1937) a été lu sur Wikimedia Commons (1 920 px ; les tailles
+     supérieures sont refusées à cet environnement) : ce n'est **pas** un plan à l'échelle mais une vue à vol
+     d'oiseau, où la Seine est dessinée une fois et demie trop large (pont d'Iéna : 90 px pour 158 m, quand l'axe
+     Trocadéro – École militaire donne 2,6 m par pixel). Il ne permet pas de recaler les pavillons ; il confirme leur
+     ordre ;
+   - *les licences* : la photographie de 1949 (IGN, Géoplateforme) relève de la Licence Ouverte 2.0 ; rien n'est tiré
+     des images de la BHdV, qui ne sont pas sous licence ouverte (`ETUDE-1937.md`, « Points ouverts ») ;
+   - *les hauteurs* des disparus : aucune cote publiée n'a été trouvée pour les gazomètres (les ombres de la
+     photographie, lues sans étalonnage sûr, donnent de 25 à 55 m pour le plus grand : la convention est gardée) ; le
+     mur de la Petite Roquette est ramené à 4,5 m ;
+   - *vérifié* : `node tools/test1937.mjs`, 55 vérifications (dont dix nouvelles : réseau, chaussées, véhicules,
+     conduite à droite, stationnement, passants sur les trottoirs et hors de l'Exposition, phares, porte de l'Alma,
+     noms des rues) ; `npm test` pour les autres maquettes ;
+   - *reste ouvert* : voir « Ce qui reste ouvert », en fin de document.
+3 ter. **Paris 1937, l'Exposition recalée sur ses plans** — *fait le 26 novembre* (pull request n° 25) :
+   - *l'accès* : les hôtes `apicollections.parismusees.paris.fr` et `www.parismuseescollections.paris.fr` ont été
+     ajoutés au réseau de l'environnement « DESIGN - Paris médiéval » (demandé et accordé le 26 novembre) ;
+   - *le plan du musée Carnavalet* est le **plan directeur** de l'Exposition, à 0,0005 par mètre (1:2 000), signé du
+     service d'architecture (Martzloff, Letrosne, Gréber, Crevel) et daté d'**août 1935** — deux ans avant l'ouverture.
+     C'est un vrai plan : `tools/plan1935.py` le pose sur la maquette par une similitude (3 m d'écart médian sur les
+     rues voisines, neuf cases sur dix sous 5,5 m ; une dizaine de mètres par endroits, la feuille pliée ayant joué). Il fixe les terrains et les
+     grands partis, pas les pavillons étrangers, attribués en 1936 ;
+   - *deux autres plans à l'échelle*, trouvés sur Wikimedia Commons (BnF, domaine public) : le plan des emplacements
+     concédés (1935, 1:5 000), qui confirme les limites, et le **plan du Centre régional** (« Canalisations », 1:500,
+     14 avril 1937), l'état réalisé, posé sur la maquette à 2-3 m près ;
+   - *recalé* (`src/p1937/expo37.js`) : le **Champ-de-Mars** s'arrête à l'hémicycle de l'avenue Joseph-Bouvard
+     (`CHAMP_FIN`), le palais de la Lumière y ferme la perspective (il était devant l'École militaire) ; les ailes de
+     la diffusion artistique et technique du quai aux piles de la tour (`AILES`), les galeries du parterre à 29 m de
+     l'axe (`GALERIES`, et la Publicité à l'ouest) au lieu de pavillons à 72 m, les petits pavillons sur deux rangs
+     dans les jardins (`CHAMP`) ; les **bandes du quai d'Orsay** commencent à 50 et 70 m de l'axe du pont d'Iéna, les
+     États-Unis au droit de l'avenue de Suffren (`QUAI`) ; le **Centre régional** tient son enclos et son quai, ses
+     vingt-cinq emprises relevées lot par lot, avec le phare et le fronton de pelote basque (`REGIONAL`) ; le **Centre
+     des métiers** suit le plan (enceinte de galeries, deux halles, un peigne) ; le **Centre des colonies** tient
+     toute l'île aux Cygnes, de part et d'autre de l'allée, en laissant le viaduc et les ponts ; les **deux palais de
+     l'Esplanade** se font face à 35 et 40 m de l'axe ; les concessions du Cours-la-Reine sur 470 m ; les **terrains**
+     (`TERRAINS`, rectangles ou polygones : bâti évoqué effacé, pas de voitures) suivent ces limites, Champ-de-Mars
+     compris. L'URSS et l'Allemagne étaient déjà sur les rangées que le plan réserve aux têtes du pont ;
+   - *ce qui reste une évocation* : la place de chaque pavillon étranger (jardins du Trocadéro, quai, Champ-de-Mars,
+     île) ; l'attribution des régions aux lots du Centre régional, hors la Bretagne et le Pays basque (le plan
+     numérote les lots sans les nommer) ; les volumes ;
+   - *textes* : fiches (Champ-de-Mars, palais de la Lumière, Publicité, Centre régional, Centre des métiers, Centre des
+     colonies, Italie, palais de l'Air), panneau « Sources », étape de la visite, `ETUDE-1937.md` (§ 8), README ;
+   - *vérifié* : `node tools/test1937.mjs`, 56 vérifications (une de plus : le recalage) ; les autres maquettes
+     passent aussi (Paris 1380 : 117, 1789 : 56, Lutèce : 41, 1889 : 56, 1900 : 69) ; les sept suites de
+     l'intégration continue, accueil compris, sont vertes sur la pull request n° 25 (commit 01d0fac) ; planches de
+     contrôle (plan redressé sous les emprises de la page) et vues de la page.
 4. **Paris 1975** — *abandonné le 24 novembre*, après l'étude des données (`ETUDE-1975.md`, gardée pour mémoire) :
    - *décidé* : la ville à l'**été 1975, sans curseur** de chantier ;
    - *ce que dit l'étude* : 76 % de l'emprise bâtie d'aujourd'hui est réelle en 1975 (61 % de 1937 ou d'avant, 15 % de
@@ -225,6 +323,33 @@ ligne est à jour.
   bassin de la fontaine de Varsovie est peint dans `peindreExpo`. Les fiches sont dans `batirExpo` (`L.unshift`).
   Planches de relevé : le plan général (Commons) et l'encart ; la maquette dans le repère de l'axe se dessine avec un
   petit script Python sur `data/paris1937.json` (fonctions `uv`/`xz` : origine à la tour, u = (0,71538 ; 0,69873)).
+- *Paris 1937, la circulation* : `src/p1937/circulation.js` remplace `src/p1889/circulation.js` à l'assemblage et
+  s'accroche en quatre points de `src/p1889/ville.js` : `preparerCirculation` (après `indexFoot`, avant les arbres :
+  bâtit le réseau `app.v89.reseau` et repeint `app.voirie.large`), `MAILLE` et `trottoirs` (trame des passants),
+  `lancerCirculation` (à la première image : `etendrePassants`, puis `app.circulation`). Réglages en tête du module :
+  `UNE_FILE`, `DEUX_SENS`, `FILE`, `GARE`, `GARE_1`, `PLACE` (demi-largeurs de chaussée, en mètres), `DENSITE`
+  (véhicules par kilomètre de file), `PIETONNES` (types de voie sans voitures). Le bilan du réseau est dans
+  `app.v89.reseau.bilan` (tronçons écartés par motif, kilomètres, temps de construction). Les modèles et leur part dans
+  le trafic : `modeles()` de `src/p1937/autos.js` (géométries en `Mesh3` de `src/people.js`, dont ils partagent la
+  matière : la teinte d'une voiture ne colore que sa caisse). Une rue où l'on ne roule pas alors qu'on le voudrait :
+  lire `e.motif` de son arête (`pietonnes`, `etroites`, `expo`, `eau`, `bati`, `sansIssue`). Mise au point : les
+  mesures du test (`tools/test1937.mjs`, bloc « la circulation ») disent la part des véhicules sur un trottoir, dans
+  un bâtiment ou à l'arrêt.
+- *Paris 1937, la porte de l'Alma* : `PORTE` (centre, entraxe des pylônes, distance de l'arc, angles de l'avenue) et
+  `porteAlma` dans `src/p1937/expo37.js` ; `tablier()` pose un plancher le long d'une suite de points. Les pylônes et
+  les escaliers ont une emprise (les voitures les évitent), pas les passerelles.
+- *Paris 1937, les plans de l'Exposition* : `python3 tools/plan1935.py caler` refait le calage du plan directeur
+  (image téléchargée de Paris Musées dans `data/source/1937/plan_directeur_1935.jpg`, non versionné ; coefficients
+  dans `CALAGE`) ; `node tools/emprises1937.mjs` écrit les emprises des pavillons de la page (sans navigateur :
+  `src/p1937/expo37.js` assemblé pour Node, maquette factice) dans `data/source/1937/emprises1937.json` ; `python3
+  tools/plan1935.py SORTIE.png axe U V [CÔTÉ] [PAS] data/source/1937/emprises1937.json` trace la planche — plan
+  redressé, îlots en rouge, Seine en bleu, emprises en bleu foncé — dans le repère de l'Exposition (u vers le bas, v
+  vers la gauche, comme la feuille) ; sans `axe`, dans celui de la maquette. Une correction se fait en trois temps :
+  lire la planche, changer les tables de `expo37.js` (`AILES`, `GALERIES`, `CHAMP`, `QUAI`, `REGIONAL`, `COLONIES`,
+  `TERRAINS`…), refaire emprises et planche. Le plan du Centre régional et celui des emplacements sont gardés dans
+  `data/source/1937/` (`centre_regional_1937.jpg`, `emplacements_1935.jpg`, non versionnés) ; Wikimedia Commons ne
+  les sert plus à cet environnement (voir « Ce qui reste ouvert »). Calage du plan du Centre régional (maquette →
+  pixels de la vignette de 1 920 px) : `[[-2.666472, 2.864662, -9778.629225], [-2.864662, -2.666472, -12552.295177]]`.
 - *Paris 1937, données* : `python3 tools/fetch_1889.py 1937` télécharge dans `data/source/1937/` les tronçons, voies,
   îlots et arrondissements de l'APUR et la nomenclature des voies de la Ville de Paris ; `python3 tools/extract_1889.py
   1937` écrit `data/paris1937.json`, en passant par `tools/ville_1937.py` (voies ouvertes de 1901 à 1937, îlots
@@ -300,8 +425,8 @@ de date (pour le montage de l'Exposition 1900, comme pour la tour en 1889).
   la Cité internationale universitaire, les terrains de sport de la « zone ».
 - L'Exposition internationale de 1937 : le palais de Chaillot à la place du Trocadéro de 1878, le palais de Tokyo, le
   palais d'Iéna ; les pavillons soviétique et allemand face à face au pont d'Iéna.
-- Les Halles : douze pavillons selon les sources, les deux derniers bâtis en 1936 ; la photographie de 1949 en montre dix
-  (voir « Ce qui reste ouvert »).
+- Les Halles : dix pavillons en service ; les deux derniers du projet de Baltard, du côté de la Bourse de commerce, sont
+  en chantier depuis 1935 (point 3 bis, en tête du document).
 - La Petite Ceinture sans voyageurs depuis 1934 ; la ligne d'Auteuil toujours en service ; le métro étendu.
 
 **Données** : étudiées le 23 novembre 2026, voir `ETUDE-1937.md` — sources, chiffres, zones refaites depuis,
@@ -309,7 +434,10 @@ méthode proposée et points ouverts.
 
 **Fait (24 novembre 2026)** : la page, les grands ensembles disparus et les zones refaites, l'Exposition de 1937, puis
 les finitions de clôture (passants, zone, abords du Vélodrome d'Hiver, petits pavillons, passerelle de l'Alma) — voir
-point 3 en tête du document. **Reste** : recaler l'Exposition sur le plan officiel à l'échelle (Gallica) si on l'obtient.
+point 3 en tête du document ; puis, le 26 novembre, la circulation, les passants dans toute la ville, la porte de
+l'Alma et les noms des rues (point 3 bis), et l'Exposition recalée sur le plan directeur de 1935 et sur le plan du
+Centre régional de 1937 (point 3 ter). **Reste** : la place de chaque pavillon étranger, si l'on trouve un plan à
+l'échelle de l'état réalisé (voir « Ce qui reste ouvert »).
 
 ## 3. Paris 1975 — abandonné le 24 novembre 2026
 
@@ -326,17 +454,32 @@ proposée. **Décidé** : l'été 1975, sans curseur ; puis la maquette a été 
 
 ## Ce qui reste ouvert
 
-Le projet étant arrêté, ce sont des limites connues, toutes documentées dans le panneau « Sources » des pages ; aucune
-ne bloque. Elles dépendent de sources qu'on n'a pas pu lire d'ici (archive.org, Gallica et le Cnum sont refusés par le
-réseau de l'environnement de travail ; le serveur de SoDUCo ne répond pas).
-- **1889 et 1900** : les Halles — dix pavillons d'après la photographie de 1949, douze selon les sources (deux achevés
-  en 1936) ; les maquettes de 1889 et de 1900 en montrent peut-être deux de trop (plans de 1900 à consulter).
+Ce sont des limites connues, documentées dans le panneau « Sources » des pages ; aucune ne bloque. Presque toutes
+dépendent de sources qu'on ne peut pas lire d'ici : archive.org, Gallica, le Cnum et fr.wikipedia.org sont refusés par
+le réseau de l'environnement de travail (ou par leur propre protection) ; le serveur d'images de SoDUCo ne répond pas ;
+Wikimedia Commons ne servait que des vignettes de 1 920 px au plus, et refuse depuis le 26 novembre les téléchargements
+automatiques. Les collections de Paris Musées, elles, sont ouvertes depuis le 26 novembre (point 3 ter).
+- **1889 et 1900** : rien sur les Halles — leurs dix pavillons sont justes (point 3 bis).
 - **1900** : les hauteurs des pavillons de la rue des Nations, évoquées faute de plans (Picard, *Revue technique*,
   cartes postales) ; quelques dates du montage, de convention (rue des Nations, colonies, Globe, Optique, Vieux
   Paris), à chercher dans les t. IV et V de Picard et le guide Hachette ; quelques jours d'adjudication mal lus par
   l'OCR.
-- **1937** : le recalage de l'Exposition sur le plan officiel de Peltier (Gallica) ; la porte monumentale de l'Alma ;
-  l'Atlas municipal de 1937 comme contrôle des rues ; les hauteurs des gazomètres et des halles disparues ; les
-  licences de la photographie de 1949 (Édugéo) et des images de la BHdV, à confirmer avant de diffuser quoi que ce
-  soit qui en dérive (rien ne l'est : seuls des emplacements et des dimensions relevés).
-- **Toutes** : les passants ne circulent qu'autour du point de vue ; les automobiles de 1937 ne sont pas figurées.
+- **1937, l'Exposition** : le plan directeur (août 1935) et le plan du Centre régional (avril 1937) sont lus et la
+  maquette recalée (point 3 ter). Restent une évocation, faute d'un plan à l'échelle de l'état réalisé : la place de
+  chaque pavillon étranger dans les jardins du Trocadéro, sur le quai, au Champ-de-Mars et sur l'île ; l'attribution
+  des régions aux lots du Centre régional (la légende est peut-être sur les deux planches « Les régions » de la BnF,
+  sur Wikimedia Commons, non lues). Une photographie du musée Carnavalet range les pavillons de l'Irak et du Brésil
+  dans le 16e arrondissement, quand le plan général les met au Champ-de-Mars : à vérifier. Wikimedia Commons refuse
+  depuis le 26 novembre les téléchargements de cet environnement (« robot policy » : il demande un agent identifié
+  par une adresse de contact) ; le plan général de 1937 n'a pas pu être relu. Le plan directeur n'est servi qu'en
+  3 418 px (1 m par pixel) : le détail des petits pavillons n'y est pas lisible.
+- **1937, le reste** : le chantier des pavillons 1 et 2 des Halles (état en 1937 inconnu) et les entrées du métro ne
+  sont pas figurés ; l'Atlas municipal de 1937 n'a pas servi de contrôle des rues (SoDUCo) ; les hauteurs des
+  gazomètres et des halles disparues restent de convention ; la teinte de la porte de l'Alma est évoquée.
+- **1937, la circulation** : une évocation — pas de feux ni d'agents, pas de dépassement (on suit la voiture à cheval
+  jusqu'au carrefour), les deux chaussées d'un boulevard à terre-plein sont chacune à double sens, les passages
+  souterrains des quais de l'Exposition ne sont pas figurés, et hors du quartier de l'Exposition les passants ne
+  franchissent pas les ponts.
+- **Toutes** : passants et véhicules n'existent qu'autour du point de vue (c'est voulu : quelques milliers d'acteurs,
+  renouvelés quand on se déplace) ; en 1889 et en 1900, les passants ne sont figurés que dans le quartier de
+  l'Exposition.

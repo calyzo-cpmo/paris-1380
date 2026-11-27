@@ -95,9 +95,9 @@ function costume(P, r, X, Y, row, v) {
 }
 
 export const makeFigureAtlas1889 = (scale = 1) => makeAtlas(scale, HOMMES, FEMMES, costume, 1937);
-// En 1937, l'automobile a remplacé la plupart des chevaux : il reste quelques voitures de livraison et quelques
-// cavaliers, un quart de ceux de 1889 (les automobiles ne sont pas figurées).
-export const ATTELAGES = 0.25;
+// En 1937, l'automobile a remplacé la plupart des chevaux : les dernières voitures de livraison à cheval roulent sur la
+// chaussée, parmi les automobiles (src/p1937/circulation.js) ; il n'y a plus de cavaliers ni d'attelages parmi les passants.
+export const ATTELAGES = 0;
 
 const pick = (r, a) => a[(r() * a.length) | 0];
 const BLEUS = [[60, 84, 132], [72, 96, 146], [54, 74, 116], [86, 104, 140]];                                      // toile bleue, plus ou moins délavée

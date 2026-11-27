@@ -15,6 +15,7 @@ import { Statuts } from './statuts.js';
 import { Souches } from './souches.js';
 import { trains } from './trains.js';
 import { bateaux } from './bateaux.js';
+import { preparerCirculation, trottoirs, lancerCirculation, MAILLE } from './circulation.js';
 
 const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), DALLE_PORT = hex(0xb8b1a1), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
@@ -194,6 +195,7 @@ export async function construire(app, step) {
     if (app.souches) { app.batiMeshes.push(...app.souches.finir()); app.stats.souches = app.souches.n; app.souches.montrer(app.camera.position); } }
   app.stats.tris = Math.round(B.tris);
   indexFoot(app);
+  preparerCirculation(app);                          // Paris 1937 : le réseau des automobiles, et la largeur des trottoirs rue par rue
 
   await step('Jardins, squares et bois…', 0.82);
   // les jardins de la ville d'abord, les bois ensuite : le nombre d'arbres est compté
@@ -215,7 +217,7 @@ export async function construire(app, step) {
 
   // trame des passants, autour de l'Exposition : rues, promenades, jardins, ponts ; ni l'eau ni les bâtiments
   await step(`Les Parisiens de ${ANNEE}…`, 0.93);
-  { const cell = app.mobile ? 2.5 : 1.5, w = Math.round(R.w / cell), h = Math.round(R.h / cell), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  { const cell = MAILLE ? MAILLE[app.mobile ? 1 : 0] : app.mobile ? 2.5 : 1.5, w = Math.round(R.w / cell), h = Math.round(R.h / cell), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const x = cv.getContext('2d', { willReadFrequently: true }), TT = { s: 1 / cell, x: (v) => (v - R.x) / cell, y: (v) => (v - R.z) / cell };
     x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
     for (const r of rues()) { if (r.pts.some((p) => pres(p[0], p[1]))) lines(x, TT, [r.pts], '#fff', Math.max(4, (r.l || 8) - 1.5) / cell); }
@@ -226,5 +228,9 @@ export async function construire(app, step) {
     // une emprise absente (pas encore bâtie, ou déjà démolie, à la date du curseur de 1900) laisse passer les passants
     x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; for (const f of app.foot) { if (f.absent || !pres(f.ring[0][0], f.ring[0][1])) continue; x.beginPath(); ring(x, TT, f.ring); x.fill(); x.stroke(); }
     const im = x.getImageData(0, 0, w, h).data, data = new Uint8Array(w * h); for (let i = 0; i < data.length; i++) data[i] = im[i * 4] > 200 ? 1 : 0;
-    app.nav = { data, w, h, x0: R.x, z0: R.z, cell }; }
+    app.nav = { data, w, h, x0: R.x, z0: R.z, cell };
+    // Paris 1937 : la chaussée est aux automobiles, les passants tiennent les trottoirs (src/p1937/circulation.js) ;
+    // le pavé garde la trame des rues entières
+    if (trottoirs) { app.pavage = data; app.nav.data = trottoirs(app, { x, TT, w, h, cell, R, classique: data }); } }
+  lancerCirculation(app);
 }

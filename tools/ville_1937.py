@@ -63,15 +63,30 @@ class Noms:
         for r in act:
             if r.get('typo_min'): self.actuel[norme(r['typo_min'])] = (r['typo_min'], (r.get('date_arret') or '')[:10])
 
-    def a_la_date(self, nom, an):
-        """Un nom, suivi de dénomination en dénomination tant que l'arrêté est de l'année `an` ou d'avant."""
+    def mene(self, nom, auj):
+        """Vrai si, de dénomination en dénomination (toutes dates), `nom` passe par le nom d'aujourd'hui `auj` (normalisé)."""
+        a_voir, vus = [nom], set()
+        while a_voir and len(vus) < 24:
+            k = norme(a_voir.pop())
+            if k in vus: continue
+            vus.add(k)
+            if k == auj: return True
+            a_voir += [t for d, t in self.vers.get(k, [])]
+        return False
+
+    def a_la_date(self, nom, an, auj=None):
+        """Un nom, suivi de dénomination en dénomination tant que l'arrêté est de l'année `an` ou d'avant. `auj` : le nom
+        d'aujourd'hui de la voie (normalisé), s'il est connu : on ne suit alors que les dénominations qui y mènent, ce qui
+        départage les homonymes (l'avenue de l'Alma devenue avenue George-V en 1918, et celle d'Auteuil devenue rue Chanez
+        en 1868) et arrête la chaîne à temps (l'avenue du Trocadéro devenue avenue du Président-Wilson en 1918)."""
         fin = '%d-12-31' % an; vus = set()
         for _ in range(8):
             k = norme(nom); vus.add(k)
             c = {norme(t): t for d, t in self.vers.get(k, []) if d <= fin}
+            if auj: c = {q: t for q, t in c.items() if self.mene(t, auj)}      # on ne suit que ce qui mène au nom d'aujourd'hui
             if len(c) != 1: break                                         # aucune, ou homonymes : on garde le nom
             t = next(iter(c.values()))
-            if norme(t) in vus: break
+            if norme(t) in vus: nom = t[:1].upper() + t[1:]; break         # la voie a repris un nom déjà porté : c'est le sien à la date
             nom = t[:1].upper() + t[1:]
         return nom
 
@@ -123,18 +138,31 @@ def corriger(an, SRC, SRC37, T, X, G, ilots, lignes, idx, noms, larg, n2021, pol
     « Paris 1900 »), ou None."""
     dans, dans_poly, boite, aire_signee, Grille = G['dans'], G['dans_poly'], G['boite'], G['aire_signee'], G['Grille']
     nm = Noms(SRC37)
-    # ---- noms de 1900 à la date. La nomenclature ne situe pas ses anciens noms : un renommage n'est retenu que si la
-    # chaîne des dénominations aboutit au nom que la base de 1900 donne à la voie aujourd'hui, ou, à défaut de ce nom,
-    # si l'ancien nom n'est plus porté par aucune voie (sinon c'est peut-être un homonyme d'un autre quartier).
-    neufs, place, renommes = list(noms), {n: k for k, n in enumerate(noms)}, 0
+    # ---- noms de 1900 à la date. La nomenclature ne situe pas ses anciens noms : un renommage n'est retenu que si le
+    # nom trouvé pour la date est celui que la base de 1900 donne à la voie aujourd'hui, ou y mène de dénomination en
+    # dénomination (la « rue de Rivoli » de Belleville, devenue rue Julien-Lacroix, n'est pas celle du Louvre) ; à
+    # défaut de nom d'aujourd'hui, si l'ancien nom n'est plus porté par aucune voie.
+    neufs, place, renommes, idx0 = list(noms), {n: k for k, n in enumerate(noms)}, 0, list(idx)
     for k in range(len(idx)):
         if idx[k] < 0: continue
-        n = noms[idx[k]]; m = nm.a_la_date(n, an)
+        auj = norme2021(n2021[k]) if n2021[k] else None
+        n = noms[idx[k]]; m = nm.a_la_date(n, an, auj)
         if m == n: continue
-        fin = nm.a_la_date(n, 9999)
-        if (n2021[k] and norme(fin) != norme2021(n2021[k])) or (not n2021[k] and norme(n) in nm.actuel): continue
+        if (auj and not nm.mene(m, auj)) or (not auj and norme(n) in nm.actuel): continue      # le nom de la date doit mener à celui d'aujourd'hui
         if m not in place: place[m] = len(neufs); neufs.append(m)
         idx[k] = place[m]; renommes += 1
+    # Un tronçon dont la voie a encore changé depuis (la place Henry-Dunant, prise en 1968 sur l'avenue George-V) n'est
+    # pas rattaché par la nomenclature : il suit ses voisins qui portaient le même nom en 1900, s'ils s'accordent.
+    bouts = {}
+    for k, l in enumerate(lignes):
+        for p in (l[0], l[-1]): bouts.setdefault((round(p[0]), round(p[1])), []).append(k)
+    for _ in range(3):
+        suivis = 0
+        for k in range(len(idx0)):
+            if idx[k] < 0 or idx[k] != idx0[k] or not n2021[k] or norme(noms[idx0[k]]) == norme2021(n2021[k]): continue
+            vois = {idx[j] for p in (lignes[k][0], lignes[k][-1]) for j in bouts[(round(p[0]), round(p[1]))] if j != k and j < len(idx0) and idx0[j] == idx0[k] and idx[j] != idx0[j]}
+            if len(vois) == 1: idx[k] = vois.pop(); suivis += 1; renommes += 1
+        if not suivis: break
     noms = neufs
     print('  tronçons de 1900 dont la voie a été renommée avant la fin de %d : %d' % (an, renommes))
 

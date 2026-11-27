@@ -17,7 +17,9 @@ const boite = (ring) => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (con
 const cercle = (x, z, r, n = 12) => Array.from({ length: n }, (_, k) => [x + r * Math.cos((2 * Math.PI * k) / n), z + r * Math.sin((2 * Math.PI * k) / n)]);
 
 // Usine à gaz de La Villette : les cuves des gazomètres, relevées sur la photographie (centre, diamètre en mètres). La
-// cloche monte et descend avec le gaz stocké : la hauteur est de convention, un peu moins que le diamètre.
+// cloche monte et descend avec le gaz stocké : la hauteur est de convention, un peu moins que le diamètre (aucune cote
+// publiée n'a été trouvée ; les ombres de la photographie, lues sans étalonnage sûr, donnent de 25 à 55 m pour le plus
+// grand).
 const GAZOMETRES = [[1270, -4755, 73], [1316, -4815, 39], [1363, -4833, 42], [1400, -4796, 36], [1363, -4778, 36], [1327, -4763, 31], [1389, -4724, 31], [1353, -4705, 29], [1426, -4737, 31],
   [1478, -4695, 39], [1431, -4677, 39], [1379, -4661, 36], [1332, -4643, 36], [1288, -4625, 36], [1275, -4672, 34], [1233, -4656, 36], [1192, -4666, 42], [1181, -4609, 57], [1218, -4713, 36]];
 function gazometres(app, B) {
@@ -52,7 +54,7 @@ function petiteRoquette(app, B) {
   for (let k = 0; k < 6; k++) {
     corps(sommet(R, k), sommet(R, k + 1), E / 2, y0 - 1, y0 + H, PIERRE);                       // bâtiments cellulaires
     corps(sommet(10, k), sommet(R - 4, k), E / 2, y0 - 1, y0 + H, PIERRE);                       // ailes rayonnantes
-    corps(sommet(RE, k), sommet(RE, k + 1), 0.5, y0 - 1, y0 + 6, PIERRE, false);                // mur d'enceinte
+    corps(sommet(RE, k), sommet(RE, k + 1), 0.5, y0 - 1, y0 + 4.5, PIERRE, false);              // mur d'enceinte, de 4,5 m
     const t = sommet(R, k); cyl(bs, t[0], t[1], 5, y0 - 1, y0 + H + 4, { col: PIERRE, seg: 12, s0: 0.84 }); cone(bp, t[0], t[1], 5.4, y0 + H + 4, y0 + H + 9, { col: ARDOISE, seg: 12 });
   }
   cyl(bs, x, z, 11, y0 - 1, y0 + H + 3, { col: PIERRE, seg: 18, s0: 0.84 }); cone(bp, x, z, 11.5, y0 + H + 3, y0 + H + 11, { col: ARDOISE, seg: 18 });       // rotonde et chapelle
