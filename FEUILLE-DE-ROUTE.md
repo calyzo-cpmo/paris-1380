@@ -12,12 +12,12 @@ fin de document) ; ce document dit comment reprendre si l'on y revient.
 
 **Repris le 26 novembre 2026**, pour Paris 1937 seulement : les **automobiles**, demandées, et les points laissés
 ouverts (porte de l'Alma, Halles, noms des rues, licences, plan officiel), puis, l'accès à Paris Musées accordé,
-**l'Exposition recalée sur ses plans** (plan directeur de 1935, plan du Centre régional de 1937). C'est fait ; le lot
-est dans la pull request n° 25 (brouillon), à relire et à fusionner pour que le site en ligne le reçoive.
+**l'Exposition recalée sur ses plans** (plan directeur de 1935, plan du Centre régional de 1937). C'est fait, et
+fusionné dans `main` le 27 novembre 2026 (pull request n° 25) : le site en ligne le reçoit.
 
-## Où on en est (26 novembre 2026)
+## Où on en est (27 novembre 2026)
 
-**Le lot du 26 novembre, en attente de fusion (pull request n° 25)** — Paris 1937 :
+**Le lot du 26 novembre, fusionné dans `main` le 27 (pull request n° 25)** — Paris 1937 :
 - **la circulation** : conduites intérieures, taxis rouge et noir, camionnettes, camions bâchés, autobus vert et crème
   à plate-forme et dernières voitures à cheval roulent à droite sur 860 km de rues, autour du point de vue ; sens
   uniques dans les rues étroites, une à trois files ailleurs, stationnement le long des trottoirs, priorité aux
@@ -46,8 +46,8 @@ jardins du Cours-la-Reine, la rive droite et la rue de Paris, le Vieux Paris, le
 Debilly, l'Esplanade des Invalides, les colonies du Trocadéro, le palais de l'Optique, le Globe céleste, le trottoir
 roulant et les entrées du métro. Un curseur montre le montage de l'Exposition, du 1er janvier 1897 au 19 juillet 1900.
 Le déploiement Docker (`Dockerfile`, `DEPLOIEMENT.md`) sert les six maquettes, `1937.html` compris (il manquait
-jusqu'au 24 novembre). Tout cela est fusionné dans `main` (pull request n° 24, le 24 novembre 2026) et en ligne ; le
-lot du 26 novembre, ci-dessus, attend sa fusion.
+jusqu'au 24 novembre). Tout cela est fusionné dans `main` (pull requests n° 24, le 24 novembre 2026, et n° 25, le
+27 novembre) et en ligne : rien n'attend plus sur une branche.
 
 **Ce qui a été fait, maquette par maquette, et ce qui reste ouvert**
 1. **Paris 1900, finitions** — *faites le 22 novembre*, sauf la dernière :
