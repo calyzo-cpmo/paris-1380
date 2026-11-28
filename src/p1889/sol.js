@@ -101,6 +101,17 @@ export function voirie(app, taille) {
   return { data, w, h, D, large: { data: L, w: lw, h: lh } };
 }
 
+// Lecture de la carte de voirie : distance au bord de la rue (m, positive dans la rue, bornée à ±D), en un point.
+export function distanceVoirie(app) {
+  const v = app.voirie, C = app.monde.cadre, D = v.D, kx = v.w / (C.x1 - C.x0), kz = v.h / (C.z1 - C.z0), vd = v.data, vw = v.w, vh = v.h;
+  return (x, z) => {
+    const fx = (x - C.x0) * kx - 0.5, fz = (z - C.z0) * kz - 0.5, i = Math.floor(fx), j = Math.floor(fz);
+    if (i < 0 || j < 0 || i >= vw - 1 || j >= vh - 1) return -D;
+    const a = fx - i, b = fz - j, k = j * vw + i;
+    return (((vd[k] * (1 - a) + vd[k + 1] * a) * (1 - b) + (vd[k + vw] * (1 - a) + vd[k + vw + 1] * a) * b) / 255 - 0.5) * 2 * D;
+  };
+}
+
 // Largeur de convention d'un trottoir (m) pour une voie de demi-largeur H : un cinquième de la voie environ, de 1,4 m
 // dans une ruelle à 8 m sur un grand boulevard. La même règle est écrite dans le shader du sol (src/p1789/app.js).
 export const trottoir = (H) => Math.max(1.4, Math.min(8, 0.44 * H - 0.2));

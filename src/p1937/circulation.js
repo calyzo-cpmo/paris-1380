@@ -14,7 +14,7 @@
 // 3. Les passants (trottoirs) : ils quittent la chaussée pour les trottoirs et traversent aux carrefours.
 import * as THREE from 'three';
 import { rues } from '../p1889/data.js';
-import { trottoir } from '../p1889/sol.js';
+import { trottoir, distanceVoirie } from '../p1889/sol.js';
 import { lines, ring } from '../p1789/outils.js';
 import { pointInPoly, mulberry32, clamp, smoothstep } from '../geom.js';
 import { terrainsExpo } from './expo37.js';
@@ -31,14 +31,7 @@ const DENSITE = 11;            // véhicules par kilomètre de file, en plein jo
 export function reseau(app) {
   const t0 = performance.now();
   const v = app.voirie, C = app.monde.cadre, T = app.terrain, V = app.v89, D = v.D;
-  const kx = v.w / (C.x1 - C.x0), kz = v.h / (C.z1 - C.z0), vd = v.data, vw = v.w, vh = v.h;
-  // distance au bord de la rue (m, positive dans la rue, bornée à ±D), lue dans la carte de voirie
-  const dist = (x, z) => {
-    const fx = (x - C.x0) * kx - 0.5, fz = (z - C.z0) * kz - 0.5, i = Math.floor(fx), j = Math.floor(fz);
-    if (i < 0 || j < 0 || i >= vw - 1 || j >= vh - 1) return -D;
-    const a = fx - i, b = fz - j, k = j * vw + i;
-    return (((vd[k] * (1 - a) + vd[k + 1] * a) * (1 - b) + (vd[k + vw] * (1 - a) + vd[k + vw + 1] * a) * b) / 255 - 0.5) * 2 * D;
-  };
+  const dist = distanceVoirie(app);                  // distance au bord de la rue (m, positive dans la rue, bornée à ±D)
   const R = rues(), cle = (p) => (Math.round(p[0]) + 16384) * 32768 + Math.round(p[1]) + 16384;
   const bouts = new Set(); for (const r of R) { bouts.add(cle(r.pts[0])); bouts.add(cle(r.pts[r.pts.length - 1])); }
   const N = [], idN = new Map(), E = [];
@@ -571,31 +564,21 @@ class Circulation {
 }
 
 // Les passants dans toute la ville. La trame fine ne couvre que le quartier de l'Exposition (app.navRect) ; au-delà,
-// où les autres maquettes n'ont personne, la même règle est lue directement dans la carte de voirie : on marche sur le
-// trottoir et aux traversées des carrefours. La hauteur du sol y est gardée par cases de 3 m.
-function etendrePassants(app, G) {
-  const P = app.people, nav0 = P.nav.bind(P), sol0 = P.groundY.bind(P), x0 = P.x0, z0 = P.z0, x1 = x0 + P.nw * P.nc, z1 = z0 + P.nh * P.nc, C = app.monde.cadre, m = 60, cache = new Map();
-  const dedans = (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1;
-  const libre = (x, z) => {
+// la règle est lue point par point dans la carte de voirie (src/people.js, etendre) : on marche sur le trottoir et aux
+// traversées des carrefours, dans les jardins comme en 1889 (src/p1889/ville.js, qui passe ici leur règle), et sur
+// les ponts de la Seine — sur leurs trottoirs quand on y roule, sur tout le tablier sinon, comme dans la trame fine.
+export function horsTrame(app, jardin) {
+  const G = (app.v89.reseau ||= reseau(app)), C = app.monde.cadre, m = 60;
+  const ponts = G.ponts.map((p) => ({ ...p, roule: G.surPonts.has(p.k) && G.E.some((e) => e.ok && e.surPont === p.k) }));
+  const pont = (x, z) => {
+    if (!app.deck.has(app.deckKey(x, z))) return 0;
+    for (const p of ponts) { const t = (x - p.a[0]) * p.ux + (z - p.a[1]) * p.uz; if (t < 0 || t > p.l) continue; const lat = Math.abs(-(x - p.a[0]) * p.uz + (z - p.a[1]) * p.ux); if (lat < p.w - 0.4) return !p.roule || lat > Math.max(p.w - 3.6, p.w * 0.55) ? 1 : 0; }
+    return 0;
+  };
+  return (x, z) => {
     if (x < C.x0 + m || x > C.x1 - m || z < C.z0 + m || z > C.z1 - m) return 0;
-    const d = G.dist(x, z); if (d < 0.5) return 0;
-    return (d < Math.max(trottoir(G.demi(x, z)), 2.4) || G.traversee(x, z)) && !app.footAt(x, z) ? 1 : 0;      // ni dans un édifice posé sur la voie publique
-  };
-  // la réponse est gardée par dalles de 64 m, au mètre : 0 inconnu, 1 non, 2 oui
-  const DALLE = 64, dalles = new Map();
-  P.nav = (x, z) => {
-    if (dedans(x, z)) return nav0(x, z);
-    const i = Math.floor(x), j = Math.floor(z), k = (Math.floor(i / DALLE) + 512) * 1024 + Math.floor(j / DALLE) + 512; let d = dalles.get(k);
-    if (!d) { if (dalles.size > 1200) dalles.clear(); dalles.set(k, (d = new Uint8Array(DALLE * DALLE))); }
-    const q = (((j % DALLE) + DALLE) % DALLE) * DALLE + (((i % DALLE) + DALLE) % DALLE); let v = d[q];
-    if (!v) v = d[q] = libre(i + 0.5, j + 0.5) ? 2 : 1;
-    return v === 2 ? 1 : 0;
-  };
-  P.groundY = (x, z) => {
-    if (dedans(x, z)) return sol0(x, z);
-    const i = Math.floor(x / 3), j = Math.floor(z / 3), k = (i + 4096) * 8192 + j + 4096; let v = cache.get(k);
-    if (v === undefined) { if (cache.size > 250000) cache.clear(); v = Math.max(0.2, app.heightAt(i * 3 + 1.5, j * 3 + 1.5)); cache.set(k, v); }
-    return v;
+    const d = G.dist(x, z), g = d < 0.5 ? (pont(x, z) ? 1 : jardin(x, z) ? 3 : 0) : d < Math.max(trottoir(G.demi(x, z)), 2.4) || G.traversee(x, z) ? 1 : 0;      // 3 : jardin
+    return g && !app.footAt(x, z) ? g : 0;             // ni dans un édifice posé sur la voie publique
   };
 }
 
@@ -604,5 +587,5 @@ function etendrePassants(app, G) {
 export function preparerCirculation(app) { app.v89.reseau = reseau(app); }
 export function lancerCirculation(app) {
   const V = app.v89; V.reseau ||= reseau(app);
-  app.on('frame', (dt) => { if (!app.circulation) { if (!app.people || !app.bati) return; etendrePassants(app, V.reseau); app.circulation = new Circulation(app, V.reseau); } app.circulation.update(dt); });
+  app.on('frame', (dt) => { if (!app.circulation) { if (!app.people || !app.bati) return; app.circulation = new Circulation(app, V.reseau); } app.circulation.update(dt); });
 }

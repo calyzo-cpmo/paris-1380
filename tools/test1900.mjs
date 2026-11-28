@@ -187,6 +187,23 @@ const vie = await page.evaluate(() => { const a = window.__app, V = a.v89, T = a
 check('la vie : dix-huit trains roulent sur les voies, des péniches sont amarrées aux ports bas, des vapeurs remontent et descendent la Seine', vie.trains >= 12 && vie.bouge === vie.trains && vie.surVoie === vie.trains && vie.sousSol === 0 && vie.peniches > 60 && vie.vapeurs >= 6 && vie.vapeursBougent === vie.vapeurs && vie.dansLeau === vie.vapeurs, JSON.stringify(vie));
 check('souches de cheminée : sur les combles brisés, montrées près de la caméra seulement', vie.souches > 40000 && vie.pres > 0 && vie.loin === 0, JSON.stringify([vie.souches, vie.pres, vie.loin]));
 
+// ---------- les passants, dans toute la ville : hors du quartier de l'Exposition, la trame est lue à la demande
+const pp = await page.evaluate(() => { const a = window.__app, T = a.terrain, P = a.people, R = a.navRect;
+  const voir = (x, z, dist) => { a.rig.goal = { x, z, dist, az: 0, el: 1 }; a.rig.cur = { ...a.rig.goal }; a.rig.target.x = x; a.rig.target.z = z;
+    for (let i = 0; i < 80; i++) { a.rig.update(0.1); a.time += 0.1; a.emit('frame', 0.1); }
+    const o = { n: 0, dansTrame: 0, bati: 0, eau: 0, pont: 0, horsVoie: 0, marche: 0, attelages: 0, jardin: 0, attelesAuJardin: 0, chemin: 0 };
+    for (const p of P.pools) for (let i = 0; i < Math.min(p.active, p.n); i++) { if (!p.ok[i]) continue; const px = p.x[i], pz = p.z[i], roule = p.kind === 'rider' || p.kind === 'cart', g = P.genre(px, pz); o.n++;
+      if (px > R.x && px < R.x + R.w && pz > R.z && pz < R.z + R.h) o.dansTrame++; if (a.footAt(px, pz)) o.bati++; if (!g) o.horsVoie++; if (g === 2) o.chemin++;
+      if (T.wetAt(px, pz) > 0.5) { if (a.deck.has(a.deckKey(px, pz))) o.pont++; else if (T.wetAt(px, pz) > 0.6) o.eau++; }
+      if (p.st[i] <= 0) o.marche++; if (roule) o.attelages++; if (g === 3) { o.jardin++; if (roule) o.attelesAuJardin++; } }
+    return o; };
+  const o = { opera: voir(-1310, -1990, 420), belleville: voir(3300, -2300, 420), pontNeuf: voir(-560, -330, 300), tuileries: voir(-1705, -1185, 330) };
+  a.setView([0, 4000, 4000], [0, 0, 0]); a.rig.cur = { ...a.rig.goal }; a.rig.update(0);
+  return o; });
+check('passants, hors du quartier de l’Exposition (place de l’Opéra, Belleville) : la foule est là aussi, avec ses cavaliers et ses voitures à cheval, dans la rue ; ni dans les bâtiments, ni dans l’eau',
+  [pp.opera, pp.belleville].every((o) => o.n > 300 && o.dansTrame === 0 && o.bati === 0 && o.eau === 0 && o.horsVoie === 0 && o.marche > 0.6 * o.n && o.attelages > 5), JSON.stringify([pp.opera, pp.belleville]));
+check('passants : ils franchissent le Pont-Neuf ; au jardin des Tuileries, des promeneurs, mais ni cavaliers ni voitures', pp.pontNeuf.n > 300 && pp.pontNeuf.pont > 3 && pp.pontNeuf.eau === 0 && pp.pontNeuf.bati === 0 && pp.tuileries.jardin > 100 && pp.tuileries.attelesAuJardin === 0 && pp.tuileries.attelages > 3 && pp.tuileries.eau === 0, JSON.stringify([pp.pontNeuf, pp.tuileries]));
+
 
 // ---------- calque « origine du bâti »
 const ca = await page.evaluate(() => { const a = window.__app, b = document.getElementById('btn-calque'), S = a.statuts, $ = (id) => document.getElementById(id);

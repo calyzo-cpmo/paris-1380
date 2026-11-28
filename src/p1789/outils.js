@@ -28,6 +28,40 @@ export function indexFoot(app) {
   }
   // f.absent : un ouvrage que le curseur de la page « Paris 1900 » n'a pas encore bâti, ou a déjà démoli
   app.footAt = (x, z) => { const l = cells.get((Math.floor(x / CELL) + 2048) * 4096 + Math.floor(z / CELL) + 2048); if (l) for (const f of l) if (!f.absent && x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && pointInPoly(x, z, f.ring)) return f; return null; };
+  // une emprise couvre le point ou passe à moins de m mètres : de quoi tenir les passants à l'écart des murs
+  app.footPres = (x, z, m = 0.7) => app.footAt(x, z) || app.footAt(x + m, z) || app.footAt(x - m, z) || app.footAt(x, z + m) || app.footAt(x, z - m);
+}
+
+// Index de polygones (chacun : un contour, puis ses trous) et index de lignes, rangés par cases : de quoi répondre vite,
+// point par point, aux questions de la trame des passants hors du cœur de la maquette (src/people.js, etendre).
+// dans(x, z) rend le rang du premier polygone qui couvre le point, ou -1.
+export function indexPolys(polys, C = 64) {
+  const cases = new Map(), B = [];
+  polys.forEach((rings, n) => {
+    let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const p of rings[0]) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1]; }
+    B.push([x0, z0, x1, z1]);
+    for (let i = Math.floor(x0 / C); i <= Math.floor(x1 / C); i++) for (let k = Math.floor(z0 / C); k <= Math.floor(z1 / C); k++) { const key = (i + 2048) * 4096 + k + 2048; let l = cases.get(key); if (!l) cases.set(key, (l = [])); l.push(n); }
+  });
+  const dans = (x, z) => {
+    const l = cases.get((Math.floor(x / C) + 2048) * 4096 + Math.floor(z / C) + 2048); if (!l) return -1;
+    suivant: for (const n of l) { const b = B[n]; if (x < b[0] || x > b[2] || z < b[1] || z > b[3]) continue; const r = polys[n]; if (!pointInPoly(x, z, r[0])) continue; for (let h = 1; h < r.length; h++) if (pointInPoly(x, z, r[h])) continue suivant; return n; }
+    return -1;
+  };
+  return { dans };
+}
+// pres(x, z, d) dit si le point est à moins de d mètres d'une des lignes (d ≤ marge) ; fermees : contours de polygones.
+export function indexLignes(lignes, marge = 8, fermees = false, C = 64) {
+  const cases = new Map();
+  for (const l of lignes) for (let i = 0, n = l.length; i < (fermees ? n : n - 1); i++) {
+    const a = l[i], b = l[(i + 1) % n], s = [a[0], a[1], b[0], b[1]];
+    for (let u = Math.floor((Math.min(a[0], b[0]) - marge) / C); u <= Math.floor((Math.max(a[0], b[0]) + marge) / C); u++) for (let v = Math.floor((Math.min(a[1], b[1]) - marge) / C); v <= Math.floor((Math.max(a[1], b[1]) + marge) / C); v++) { const key = (u + 2048) * 4096 + v + 2048; let c = cases.get(key); if (!c) cases.set(key, (c = [])); c.push(s); }
+  }
+  const pres = (x, z, d) => {
+    const c = cases.get((Math.floor(x / C) + 2048) * 4096 + Math.floor(z / C) + 2048); if (!c) return false; const d2 = d * d;
+    for (const s of c) { const dx = s[2] - s[0], dz = s[3] - s[1], t = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / (dx * dx + dz * dz || 1))), ex = s[0] + dx * t - x, ez = s[1] + dz * t - z; if (ex * ex + ez * ez < d2) return true; }
+    return false;
+  };
+  return { pres };
 }
 
 // Arbres des jardins : une seule géométrie (tronc et houppier), instanciée. app.gardens : [{ ring, dens, ok }] —

@@ -171,7 +171,9 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
     coordonnées et orientés sur la rue la plus proche, et leur fiche le dit ;
   - hors du mur, une douzaine de moulins à vent couronnent la butte Montmartre ; le nivellement de Girard ne couvrant
     pas la butte, ils sont posés à plat autour de son sommet, en nombre et à des places de convention ;
-  - les habitants sont une évocation ; ils ne circulent que dans la ville dense (5 × 4,2 km autour du centre) ;
+  - les habitants sont une évocation ; ils circulent dans toute la ville, jusqu'au mur des Fermiers généraux (les
+    rues, les places, les promenades), et, bien moins nombreux, sur les chemins des faubourgs et de la campagne : là
+    où les rues se font rares, la foule suit leur surface au lieu de s'y entasser ;
   - il n'y a pas encore d'intérieurs ;
   - les repères nommés sont placés par leurs coordonnées géographiques, à quelques dizaines de mètres près.
 
@@ -183,7 +185,8 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   le cardo, qui descend la colline et franchit les deux bras du fleuve par deux ponts de bois ; l'île, basse et peu
   bâtie ; un fleuve large de trois cents à sept cents mètres, ses sept îles et ses grèves ; la Bièvre ; les bras morts
   et les prés inondables de la rive droite ; environ 1 700 maisons le long des rues, leurs jardins, les bois ; des
-  habitants en costume gallo-romain ; quinze repères avec leur notice.
+  habitants en costume gallo-romain, dans les rues de la ville, et quelques voyageurs sur les voies qui y mènent ;
+  quinze repères avec leur notice.
 - **D'où viennent les données** : rues, rivages et emprise des cinq monuments sont la restitution de Théodore Vacquer,
   numérisée par le projet ALPAGE (© ALPAGE : M. Fernandez ; monuments © ALPAGE : P. Rouet, licence ODbL 1.0) — les
   mêmes couches que la date « Lutèce » de la frise. Le relief est celui du nivellement de Girard (1805-1807).
@@ -242,7 +245,9 @@ Raccourcis : `/` recherche d'un lieu, `N` nord en haut, `O` vue d'ensemble, `M` 
   les voies raccordées bout à bout (de un à deux kilomètres et demi : les faisceaux et les aiguillages les arrêtent) ;
   près de deux cents péniches sont amarrées le long des ports bas, huit vapeurs remontent et descendent la Seine. Sur
   ordinateur, les combles brisés portent leurs souches de cheminée à mitres de terre cuite (plus de quatre-vingt mille),
-  montrées près de la caméra seulement. Les passants ne circulent qu'autour de l'Exposition. Trains et bateaux sont une
+  montrées près de la caméra seulement. Passants, cavaliers et voitures à cheval circulent dans **toute la ville**,
+  autour du point de vue : dans les rues et sur les places, sur les ponts de la Seine, et — les piétons seuls — dans
+  les jardins et les squares (Tuileries, Luxembourg, Buttes-Chaumont, parc Monceau…). Trains et bateaux sont une
   évocation : ni horaires ni lignes de navigation ne sont figurés.
 - **Ports bas** : une quinzaine de kilomètres de ports, deux mètres au-dessus de l'eau, au pied du mur du quai haut.
   Ils sont tirés de la base de 1900, qui nomme leurs voies (« Port Saint-Nicolas », « Port de la Tournelle »…) : là où
@@ -416,17 +421,18 @@ tools/photo1949.py          planche de comparaison : photographie aérienne de P
 tools/etude_1975.py          étude des données de Paris 1975, maquette abandonnée (ETUDE-1975.md) : bâti de l'APUR classé à la date de 1975, tours, zones refaites depuis, voies ouvertes ou supprimées avant et après 1975, noms ; résultats dans data/source/1975/ (non versionné)
 tools/photo1975.py          planche de comparaison : photographie aérienne de Paris en 1965, carte de 1979 (IGN) et photographie d'aujourd'hui, autour d'un point
 tools/fer_1889.py            voies ferrées de 1889 et de 1900 : voies d'aujourd'hui sur les emprises d'alors, lignes déposées restituées ou évoquées (tracés à la main, souterrains)
-tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, tour et chantier, curseur, repères, étiquettes, téléphone
-tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), entrées du métro, montage de 1897 à 1900 et son curseur, monuments, calque, visite, frise, téléphone
+tools/test1889.mjs           test fonctionnel de la page Paris 1889 : ville, Seine, ponts, ports bas, chemins de fer et gares, édifices publics, calque « origine du bâti », visite guidée, trains, bateaux et souches, passants dans toute la ville (rues, ponts, jardins), tour et chantier, curseur, repères, étiquettes, téléphone
+tools/test1900.mjs           test fonctionnel de la page Paris 1900 : ville, ponts, voies et gares de 1900, tour repeinte, Exposition (Champ-de-Mars, Électricité, Grande Roue, Grand et Petit Palais, pont Alexandre-III, porte monumentale, rive droite et rue de Paris, Globe céleste, Optique), entrées du métro, montage de 1897 à 1900 et son curseur, monuments, passants dans toute la ville (rues, ponts, jardins), calque, visite, frise, téléphone
 tools/test1937.mjs           test fonctionnel de la page Paris 1937 : ville, ponts, voies et gares de 1937 (gare de l'Est doublée), tour en jaune brun, grands ensembles disparus, quartiers refaits, zone, Exposition et passerelle de l'Alma, circulation (réseau, chaussées, véhicules, conduite à droite, stationnement, passants sur les trottoirs et dans toute la ville, phares), porte de l'Alma, noms des rues à la date, passants de 1937, monuments, calque, repères, visite, frise, téléphone
 tools/build.mjs              assemble les pages autonomes de dist/ : la page d'accueil (index.html) et les maquettes (1380.html, 1789.html, lutece.html, 1889.html, 1900.html, 1937.html) ; la page de 1900 reprend src/p1889/ par surcouche
 tools/shot.mjs               captures d'écran de contrôle (Playwright)
 tools/test.mjs               test fonctionnel : abords, foule, étiquettes, liste et carnet, heure, parcours, marche à pied, intérieurs, repères, certitude, lien partageable, accueil, calque des époques (frise, sept dates, recalage, marche, lecture), téléphone, console sans erreur
-tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants, relief et Seine, recalage, repères, établissements évoqués et moulins, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
-tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, visite guidée, marche à pied, heure, frise, sources, téléphone
+tools/test1789.mjs           test fonctionnel de la page Paris 1789 : ville construite, monuments, habitants (ville dense, faubourgs, chemins), relief et Seine, recalage, repères, établissements évoqués et moulins, étiquettes sans chevauchement, visite guidée, marche à pied, heure, mini-plan, lien, sources, téléphone
+tools/test_lutece.mjs        test fonctionnel de la page Lutèce : plan déduit des données (fleuve, îles, ponts), terrain, ville évoquée, monuments, ponts praticables, repères, habitants (la ville et les voies qui y mènent), visite guidée, marche à pied, heure, frise, sources, téléphone
 tools/test_accueil.mjs       test de la page d'accueil : écran d'accueil (vitrine, choix, retour par le nom du site), hébergement des maquettes, passage d'une époque à l'autre (même vue, même heure, ville enfoncée puis dressée), annulation, retour, date de la frise, lien direct, téléphone
 tools/test_toits.mjs         contrôle géométrique des toits de 1789, sans navigateur : l'aire de chaque toit égale celle de son emprise, cours déduites
 tools/tourshots.mjs          planches-contact des parcours commentés (contrôle des cadrages)
+tools/passants.mjs           contrôle des passants, maquette par maquette (npm run passants) : une grille de points sur toute la carte, le compte des passants à chacun, et les quartiers bâtis où il n'y a personne
 tools/og.mjs                 images de partage (og:image) de chaque maquette, 1200 × 630, dans dist/og/
 .github/workflows/tests.yml  intégration continue : construction, pages de dist/ à jour, tests des six maquettes en parallèle
 tools/multishot.mjs          plusieurs captures de contrôle en un seul chargement
@@ -442,7 +448,7 @@ src/cathedral.js             Notre-Dame sur son emprise (avec ou sans la flèche
 src/special.js               couvents, hôtels, collèges, halles, enclos de 1380
 src/walls.js, monuments.js   enceintes, portes, Bastille, Louvre, Notre-Dame, Palais, ponts…
 src/landscape.js             arbres, haies, bosquets, vergers, croix de chemin, bateaux à quai, fumées, moulins à vent
-src/people.js                personnages articulés instanciés : foule mobile, cavaliers, charrettes, bêtes, figurants ; deux niveaux de détail (commun aux deux pages)
+src/people.js                personnages articulés instanciés : foule mobile, cavaliers, charrettes, bêtes, figurants ; deux niveaux de détail ; la foule au-delà de la trame fine (règle lue à la demande, par dalles : rues, chemins, jardins) et sa densité là où les rues sont rares (commun à toutes les pages)
 src/figures.js               atlas peint des visages et des costumes
 src/interiors.js             générateurs d'intérieurs (nef, grande salle, tour) et conduite de la visite
 src/interior_kit.js          matières, vitraux, voûtes d'ogives, arcades et mobilier des intérieurs
@@ -471,29 +477,29 @@ src/p1789/textures.js        façades de la fin du XVIIIe siècle, brisis à luc
 src/p1789/blocks.js          teintes, façades à travées, corps de bâtiment, combles (brisés, en bâtière, à croupes), souches
 src/p1789/eglises.js         Notre-Dame, églises gothiques et clochers, bâtis avec src/cathedral.js et src/stonework.js
 src/p1789/quais.js           murs de quai, parapets, flancs de pont à arches, dallage jusqu'au mur
-src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots évoqués, mur, arbres, collisions, rues
+src/p1789/city.js            sol peint, bâti de Vasserot en volumes, îlots évoqués, mur, arbres, collisions, rues ; trame des passants (fine au centre, règle des faubourgs et des chemins au-delà)
 src/p1789/monuments.js       tours, dômes, clochers et grands ensembles posés sur les emprises et les enclos de l'atlas
 src/p1789/figures.js         visages et costumes de 1789, choix du costume de chaque passant
 src/p1789/places.js          repères de 1789 et leurs notices
 src/p1789/app.js, ui.js      application et interface des pages Paris 1789, Lutèce et Paris 1889 : la ville leur est fournie comme un « monde » ; étiquettes sans chevauchement, mini-plan, visite guidée, calque facultatif
 src/p1789/monde.js           le monde de Paris 1789 : cadre, terrain et quais, sol peint, construction, habitants
-src/p1789/outils.js          outils communs aux deux villes : tracé sur le plan du sol, emprises infranchissables, arbres
+src/p1789/outils.js          outils communs aux villes : tracé sur le plan du sol, emprises infranchissables, index de polygones et de lignes, arbres
 src/relief.js                décodage de la grille de relief
 src/bodylutece.html          page Lutèce (mêmes styles que les deux autres)
 src/lutece/data.js           accès aux données de Lutèce (rues, rivages, monuments) et au relief
 src/lutece/plan.js           plan de la ville : lit du fleuve et îles, ruisseaux, voies, aménagement des monuments, ponts, maisons et jardins évoqués
 src/lutece/sol.js            sol peint : campagne, bois, prés inondables, bras morts, rues dallées, esplanades, fleuve
 src/lutece/textures.js       murs enduits à soubassement peint, tuiles romaines, petit appareil, murs à arcades
-src/lutece/ville.js          maisons, portiques du cardo, arbres, trame des passants
+src/lutece/ville.js          maisons, portiques du cardo, arbres, trame des passants (la ville, et les voies de la campagne)
 src/lutece/monuments.js      forum (temple, basilique, portiques), thermes voûtés, théâtre, arènes, ponts de bois, pilier des Nautes, tombeaux
 src/lutece/figures.js        visages et costumes gallo-romains
 src/lutece/places.js         repères de Lutèce et leurs notices
 src/lutece/monde.js          le monde de Lutèce
 src/body1889.html            page Paris 1889 (mêmes styles, plus le curseur du chantier)
 src/p1889/data.js            accès aux données de Paris 1889 ; repère de l'Exposition
-src/p1889/sol.js             sol peint : banlieue, zone et talus de l'enceinte, îlots, jardins, canaux ; carte de distance de la voirie
+src/p1889/sol.js             sol peint : banlieue, zone et talus de l'enceinte, îlots, jardins, canaux ; carte de distance de la voirie, et sa lecture en un point
 src/p1889/bati.js            bâtiments légers : un mur par côté, comble brisé ou toit à croupes
-src/p1889/ville.js           bâti de toute la ville, enceinte, murs de quai et ponts de la Seine, arbres, trame des passants
+src/p1889/ville.js           bâti de toute la ville, enceinte, murs de quai et ponts de la Seine, arbres, trame des passants (fine autour de l'Exposition ; rues, ponts et jardins du reste de la ville)
 src/p1889/fer.js             voies ferrées : rubans de ballast, de traverses et de rails, viaducs et ponts du chemin de fer, ballast peint au sol
 src/p1889/gares.js           les neuf gares de 1889 : halles vitrées, bâtiments des voyageurs, pavillons
 src/p1889/corps.js           corps de bâtiment communs aux gares et aux édifices : repère local, murs, combles, pavillons, frontons
@@ -527,9 +533,9 @@ src/p1937/main.js            page Paris 1937 : le moteur de Paris 1889 sur data/
 src/p1937/expo.js            remplace src/p1889/expo.js à l'assemblage : la tour en jaune brun, le jardin du Champ-de-Mars, les palais de 1900, les disparus
 src/p1937/expo37.js          l'Exposition internationale de 1937 : pavillons du Trocadéro, des quais, du Champ-de-Mars, Centre régional, colonies, rive droite, Esplanade des Invalides, passerelle de l'Alma ; terrains, bandes bâties et grands partis recalés sur le plan directeur de 1935, Centre régional sur son plan de 1937
 src/p1937/figures.js         remplace src/p1889/figures.js à l'assemblage : les passants de l'été 1937, en tenues des années 1930 (plus d'attelages parmi eux)
-src/p1937/circulation.js     remplace src/p1889/circulation.js à l'assemblage : le réseau des rues où l'on roule (axes recentrés sur la chaussée, sens uniques, files, stationnement, carrefours), la conduite des véhicules, les passants sur les trottoirs, la carte des largeurs de voie repeinte rue par rue
+src/p1937/circulation.js     remplace src/p1889/circulation.js à l'assemblage : le réseau des rues où l'on roule (axes recentrés sur la chaussée, sens uniques, files, stationnement, carrefours), la conduite des véhicules, les passants sur les trottoirs (trame fine autour de l'Exposition, règle du reste de la ville), la carte des largeurs de voie repeinte rue par rue
 src/p1937/autos.js           les véhicules de 1937 : conduite intérieure, taxi, camionnette, camion bâché, autobus à plate-forme, voiture à cheval ; phares
-src/p1889/circulation.js     point d'accroche de la circulation, vide en 1889 et en 1900 (cavaliers et attelages y vont parmi les passants)
+src/p1889/circulation.js     point d'accroche de la circulation, vide en 1889 et en 1900 (cavaliers et attelages y vont parmi les passants, dans toute la ville)
 src/p1937/disparus.js        grands ensembles disparus depuis 1937 : gazomètres de La Villette, Petite Roquette, Vélodrome d'Hiver, et les notices des autres
 src/p1937/places.js          repères de Paris 1937 et leurs notices
 src/p1937/parcours.js        visite guidée de Paris 1937
@@ -548,6 +554,7 @@ npm run extract:epochs   # facultatif : régénère data/epoques.json (résultat
 npm run extract:1789     # facultatif : régénère data/paris1789.json (idem)
 npm run build     # produit dist/index.html (page d'accueil), dist/1380.html, dist/1789.html, dist/lutece.html, dist/1889.html, dist/1900.html et dist/1937.html
 npm test          # toits, puis Paris 1380, Paris 1789, Lutèce, Paris 1889, Paris 1900, Paris 1937 et la page d'accueil, dans Chromium (Playwright requis) ; une demi-heure en rendu logiciel
+npm run passants  # facultatif : contrôle des passants de chaque maquette, sur toute sa carte (deux minutes)
 node tools/og.mjs # facultatif : refait les images de partage de dist/og/ (SITE_URL=… npm run build pour un autre domaine)
 ```
 

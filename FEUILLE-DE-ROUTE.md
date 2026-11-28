@@ -15,7 +15,27 @@ ouverts (porte de l'Alma, Halles, noms des rues, licences, plan officiel), puis,
 **l'Exposition recalée sur ses plans** (plan directeur de 1935, plan du Centre régional de 1937). C'est fait, et
 fusionné dans `main` le 27 novembre 2026 (pull request n° 25) : le site en ligne le reçoit.
 
-## Où on en est (27 novembre 2026)
+**Repris le 28 novembre 2026**, sur une remarque d'usage — « certaines périodes n'ont pas de piétons, il faut que ça
+vive » : les six maquettes ont été contrôlées une à une, et les passants étendus à **toute la carte** là où ils
+manquaient (1889, 1900, 1789, Lutèce). Voir le point 6.
+
+## Où on en est et la suite (28 novembre 2026)
+
+**Le lot du 28 novembre** (branche `claude/quirky-cannon-dyrmo7`, pull request n° 26, en brouillon) — les passants
+dans toutes les maquettes :
+- **le contrôle** : une grille de points sur toute la carte de chaque maquette, la vue rapprochée à chacun, et le compte
+  des passants que la foule y pose. Paris 1380 et Paris 1937 étaient peuplés partout. En **1889** et en **1900**, neuf
+  quartiers bâtis sur dix étaient vides : les passants n'existaient que dans le quartier de l'Exposition (2,6 km de
+  côté). En **1789**, ils s'arrêtaient à un rectangle de 5 × 4,2 km : le Gros-Caillou, Chaillot, le Roule, le bout du
+  faubourg Saint-Antoine étaient vides. À **Lutèce**, les voies au-delà de la ville aussi ;
+- **le remède** : hors de la trame fine, la règle « on marche ici » est lue point par point, à la demande, par le
+  module des passants — ce que Paris 1937 faisait seul. Chaque maquette donne sa règle : en 1889 et en 1900, la rue
+  entière, les ponts de la Seine et, pour les piétons seuls, les jardins et les squares ; en 1789, l'espace public
+  jusqu'au mur des Fermiers généraux et les chemins au bord des îlots au-delà ; à Lutèce, les voies qui mènent à la
+  ville ; en 1937, les jardins et les trottoirs des ponts s'ajoutent aux trottoirs ;
+- **la mesure** : là où les rues sont rares (faubourgs, campagne), la foule suit la surface des voies au lieu de s'y
+  entasser, et un chemin ne porte que quelques voyageurs ;
+- rien ne reste à faire sur ce lot ; ce qui pourrait le prolonger est dans « Ce qui reste ouvert » (toutes).
 
 **Le lot du 26 novembre, fusionné dans `main` le 27 (pull request n° 25)** — Paris 1937 :
 - **la circulation** : conduites intérieures, taxis rouge et noir, camionnettes, camions bâchés, autobus vert et crème
@@ -266,8 +286,60 @@ jusqu'au 24 novembre). Tout cela est fusionné dans `main` (pull requests n° 24
      de 1937) ; la page `dist/1975.html` par surcouche (`src/p1975/`), frise, accueil, visite, calque, test, image ;
      les passants et les voitures de 1975.
 5. **Jeu « mode classe »** : non engagé (`CADRAGE-JEU.md`, gardé pour mémoire).
+6. **Les passants dans toutes les maquettes** — *fait le 28 novembre* :
+   - *le constat* (mesuré, pas supposé) : sur une grille de 250 à 300 m, vue rapprochée à chaque point — Lutèce :
+     passants dans la ville seulement ; 1380 : partout ; 1789 : 22 cases bâties sur 201 sans personne, toutes hors du
+     rectangle central ; 1889 : 502 cases bâties sur 566 sans personne ; 1900 : 531 sur 605 ; 1937 : aucune ;
+   - *la cause* : la trame des passants est une image fine (1,5 m par point) qui ne couvre que `app.navRect` — le
+     centre en 1789 et à Lutèce, le quartier de l'Exposition en 1889 et en 1900 ; la couvrir toute coûterait des
+     dizaines de mégaoctets. Paris 1937 lisait déjà la règle à la demande au-delà (`etendrePassants`) ;
+   - *le mécanisme, commun* (`src/people.js`, `etendre`) : la trame reçoit une règle `hors(x, z)` — 0 : on ne marche
+     pas ; 1 : rue ; 2 : chemin de campagne ; 3 : jardin, aux piétons seuls (cavaliers et voitures à cheval n'y
+     entrent pas) — lue au mètre, gardée par dalles de 64 m ; la hauteur du sol, par cases de 3 m. Avec `campagne`,
+     la part du sol qui est rue et celle qui est chemin sont sondées autour du point de vue : au-dessus d'un
+     vingtième de rues, rien ne change ; en dessous, la foule suit la surface des rues (d'un passant pour 6,5 m² à un
+     pour 90 m²), et un chemin porte un voyageur pour 90 m² ;
+   - *les règles* : **1889 et 1900** (`passantsPartout`, `jardinsOuverts`, `src/p1889/ville.js`) — la rue de la carte
+     de voirie, à 70 cm des îlots et des murs ; les ponts, à deux mètres des parapets ; les parcs de la ville dans
+     l'enceinte (pas les bois) et les promenades plantées de moins de 25 ha ; **1937** (`horsTrame`,
+     `src/p1937/circulation.js`) — trottoirs et traversées comme avant, plus les jardins et les ponts de la Seine
+     (leurs trottoirs quand on y roule) ; **1789** (`passantsDesFaubourgs`, `src/p1789/city.js`) — dans le mur, tout
+     ce qui n'est ni îlot, ni fleuve, ni bâtiment, plus les places, le Champ-de-Mars, les Champs-Élysées et
+     l'Esplanade ; hors du mur et au bord des îlots ruraux, des chemins ; **Lutèce** (`src/lutece/ville.js`) — les
+     voies hors de la ville, comme chemins ;
+   - *ce que les tests ont attrapé en route* : quelques passants à cheval sur le bord d'un bâtiment ou d'un quai (la
+     règle tient maintenant les emprises à 70 cm : `app.footPres`) ; le mur des Fermiers généraux, emprise trop mince
+     pour un sondage par points, que l'on traversait (on s'en tient à 1,2 m, sauf aux barrières) ; des fiacres dans
+     le jardin des Tuileries (d'où le genre 3, aux piétons seuls) ;
+   - *vérifié* : deux vérifications de plus dans `tools/test1889.mjs` et `tools/test1900.mjs` (place de l'Opéra,
+     Belleville, Pont-Neuf, Tuileries), deux dans `tools/test1789.mjs` (Gros-Caillou, Chaillot, bout du faubourg
+     Saint-Antoine), une dans `tools/test1937.mjs` (Luxembourg), une dans `tools/test_lutece.mjs` (forum, voie du
+     nord) ; un outil de contrôle, `tools/passants.mjs` (`npm run passants`) ; résultats en tête de « Pour reprendre
+     le travail ».
 
 **Pour reprendre le travail** (notes techniques)
+- *État au 28 novembre 2026* : le lot des passants est commité et poussé sur `claude/quirky-cannon-dyrmo7` (pull
+  request n° 26, en brouillon : à fusionner dans `main` pour que le site en ligne le reçoive). Vérifié en local sur
+  la version finale : `npm test` — toits : 1, Paris 1380 : 117, Paris 1789 : 58, Lutèce : 42, Paris 1889 : 58, Paris
+  1900 : 71, Paris 1937 : 57, accueil : 21, aucun échec ; `npm run passants` — aucun point bâti sans passants, dans
+  aucune des six maquettes. Lancées toutes ensemble sur un poste de quatre cœurs, les sept suites font dépasser à la
+  suite « accueil » un délai de dix secondes : la relancer seule (l'intégration continue les lance sur des machines
+  séparées). Rien n'est en cours, rien n'attend.
+- *Les passants hors de la trame fine* : `app.nav = { data, w, h, x0, z0, cell, hors, campagne }` — `hors(x, z)` rend
+  0, 1 (rue), 2 (chemin) ou 3 (jardin, piétons seuls) ; `campagne: true` règle la foule sur la surface des voies
+  (Paris 1789 et Lutèce seulement : en 1889, 1900 et 1937, la densité est celle d'avant). Tout est dans `etendre` et
+  `update` de `src/people.js` : dalles de 64 m (`DALLE`), un passant pour 6,5 m² de rue au plus dense et un pour 90 m²
+  sur un chemin (`rare`), seuil d'un vingtième de rues (`0.05`). Pour savoir ce que la foule voit en un point :
+  `app.people.genre(x, z)` ; ses parts mesurées : `app.people.rues`, `app.people.chemins`. Les règles : 1889 et 1900,
+  `passantsPartout` et `jardinsOuverts` (`src/p1889/ville.js`) ; 1937, `horsTrame` (`src/p1937/circulation.js`, qui
+  remplace le point d'accroche `horsTrame = null` de `src/p1889/circulation.js`) ; 1789, `passantsDesFaubourgs`
+  (`src/p1789/city.js`) ; Lutèce, `hors` dans `construire` (`src/lutece/ville.js`). Outils : `indexPolys`,
+  `indexLignes` et `app.footPres` (`src/p1789/outils.js`), `distanceVoirie` (`src/p1889/sol.js`). Une maquette
+  nouvelle : donner `hors` à sa trame, rien d'autre.
+- *Refaire le contrôle des passants* : `npm run passants` (ou `node tools/passants.mjs 1889 1900` pour quelques
+  maquettes ; les pages de `dist/` doivent être à jour : `npm run build`). Pour chaque maquette, une carte : un chiffre
+  par point de la grille (centaines de passants), « . » là où il n'y a ni bâti ni passants, « ! » là où le quartier
+  est bâti et vide ; le code de sortie est 1 s'il reste un « ! ». Une quinzaine de secondes par maquette.
 - *Ville à une date* : `python3 tools/extract_1889.py 1900` (sans argument : 1889, reproduit à l'octet près). Les
   sources sont téléchargées par `tools/fetch_1889.py` dans `data/source/1889/` (non versionné). Les grands édifices
   sans année chez l'APUR reçoivent la leur dans la liste `HISTOIRE` ; les voies ferrées propres à une année sont dans
@@ -478,8 +550,9 @@ automatiques. Les collections de Paris Musées, elles, sont ouvertes depuis le 2
   gazomètres et des halles disparues restent de convention ; la teinte de la porte de l'Alma est évoquée.
 - **1937, la circulation** : une évocation — pas de feux ni d'agents, pas de dépassement (on suit la voiture à cheval
   jusqu'au carrefour), les deux chaussées d'un boulevard à terre-plein sont chacune à double sens, les passages
-  souterrains des quais de l'Exposition ne sont pas figurés, et hors du quartier de l'Exposition les passants ne
-  franchissent pas les ponts.
+  souterrains des quais de l'Exposition ne sont pas figurés.
 - **Toutes** : passants et véhicules n'existent qu'autour du point de vue (c'est voulu : quelques milliers d'acteurs,
-  renouvelés quand on se déplace) ; en 1889 et en 1900, les passants ne sont figurés que dans le quartier de
-  l'Exposition.
+  renouvelés quand on se déplace), et seulement à moins de 1 500 m d'altitude de vue : à l'ouverture d'une maquette,
+  de loin, on ne les voit pas. Dans les jardins, les promeneurs vont sur les pelouses et entre les arbres (les allées
+  ne sont pas dans les données). Hors de l'enceinte (bois de Boulogne et de Vincennes, banlieue), il n'y a personne
+  en 1889, 1900 et 1937. Paris 1380 n'a pas été touché : sa foule couvrait déjà toute la carte.

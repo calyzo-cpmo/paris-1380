@@ -114,6 +114,19 @@ const rech = await page.evaluate(() => [...document.querySelectorAll('#place-lis
 check('liste des lieux : recherche', /Petit pont/.test(rech) && /Grand pont/.test(rech) && /Tête de pont/.test(rech) && !/Forum/.test(rech), rech);
 await page.fill('#place-search', ''); await page.keyboard.press('Escape');
 
+// ---------- habitants : la ville, et les voies qui y mènent
+const hb = await page.evaluate(() => { const a = window.__app, T = a.terrain, P = a.people, R = a.navRect;
+  const voir = (x, z, dist) => { a.rig.goal = { x, z, dist, az: 0, el: 1 }; a.rig.cur = { ...a.rig.goal }; a.rig.target.x = x; a.rig.target.z = z;
+    for (let i = 0; i < 80; i++) { a.rig.update(0.1); a.time += 0.1; a.emit('frame', 0.1); }
+    const o = { n: 0, dansTrame: 0, bati: 0, eau: 0, pont: 0, horsVoie: 0, marche: 0, attelages: 0, jardin: 0, attelesAuJardin: 0, chemin: 0 };
+    for (const p of P.pools) for (let i = 0; i < Math.min(p.active, p.n); i++) { if (!p.ok[i]) continue; const px = p.x[i], pz = p.z[i], roule = p.kind === 'rider' || p.kind === 'cart', g = P.genre(px, pz); o.n++;
+      if (px > R.x && px < R.x + R.w && pz > R.z && pz < R.z + R.h) o.dansTrame++; if (a.footAt(px, pz)) o.bati++; if (!g) o.horsVoie++; if (g === 2) o.chemin++;
+      if (T.wetAt(px, pz) > 0.5) { if (a.deck.has(a.deckKey(px, pz))) o.pont++; else if (T.wetAt(px, pz) > 0.6) o.eau++; }
+      if (p.st[i] <= 0) o.marche++; if (roule) o.attelages++; if (g === 3) { o.jardin++; if (roule) o.attelesAuJardin++; } }
+    return o; };
+  return { forum: voir(a.monuments.Forum.x, a.monuments.Forum.z, 250), nord: voir(150, -1500, 250), rues: +P.rues.toFixed(3), chemins: +P.chemins.toFixed(3), etendue: !!P.etendue }; });
+check('habitants : la foule au forum ; sur la voie du nord, au-delà de la ville, quelques voyageurs, sur la chaussée, ni dans l’eau ni dans les maisons', hb.etendue && hb.forum.n > 150 && hb.forum.bati === 0 && hb.forum.horsVoie === 0 && hb.nord.n >= 3 && hb.nord.n < 80 && hb.nord.chemin === hb.nord.n && hb.nord.bati === 0 && hb.nord.eau === 0 && hb.rues === 0 && hb.chemins > 0.005, JSON.stringify(hb));
+
 // ---------- marche à pied : devant le forum, puis sur le pont
 await page.evaluate(() => { const a = window.__app; a.ui.startWalk(a.ui.byId.get('forum')); });
 await frames(4);

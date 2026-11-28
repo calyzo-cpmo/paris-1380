@@ -9,7 +9,7 @@ import { makeMaterials89 } from './textures.js';
 import { hash, hex, ENDUITS, ARDOISE, PIERRE, ardoise, tuile, building } from './blocks.js';
 import { Builder, ccw } from '../builder.js';
 import { polyArea, centroid, mulberry32, offsetEx, difference, pointInPoly, clamp } from '../geom.js';
-import { ring, fill, stroke, pleins, indexFoot, buildTrees } from './outils.js';
+import { ring, fill, stroke, pleins, indexFoot, indexPolys, indexLignes, buildTrees } from './outils.js';
 
 export const CENTRE = { x: -250, z: -500 };              // cœur dense de la ville (entre les Halles et le Châtelet)
 export const TUILE = 1600;                               // côté du motif de campagne (m)
@@ -97,6 +97,33 @@ const partBrises = (r) => (r < 1300 ? 0.4 : r < 2300 ? 0.28 : 0.06);
 const EGLISE = /^(eglise|église|temple protestant|saint denis du)|eglise saint paul/i;
 // églises encore gothiques en 1789 parmi celles que l'atlas nomme ; paroisses rebâties à la moderne
 const GOTHIQUE = /Saint Germain (l'Auxerrois|des Prés)|Saint Gervais|Saint Séverin|Saint Méry/, CLASSIQUE = /Roch|Louis|Philippe/;
+
+// Les passants hors de la ville dense. La trame fine ne couvre que le centre (app.navRect) ; au-delà, jusqu'au bord du
+// plan, la même règle que le sol peint est lue point par point (src/people.js, etendre) : dans le mur des Fermiers
+// généraux, tout ce qui n'est ni un îlot, ni le fleuve, ni un bâtiment est de l'espace public ; hors du mur, on ne
+// marche que sur les chemins tracés au bord des îlots. Les places, le Champ-de-Mars, les Champs-Élysées et l'Esplanade
+// restent ouverts ; le bord des îlots ruraux porte un chemin, comme sur le plan. La règle rend 1 pour une rue, 2 pour
+// un chemin, bien moins fréquenté.
+const OUVERTS = /^(Place|Champ de Mars|Marché|Jardin des Tuileries|Les Champs Elys|Esplanade)/;
+function passantsDesFaubourgs(app) {
+  const T = app.terrain, C = CADRE, cls = app.ilotCls, I = indexPolys(ilots()), bords = indexLignes(ilots().map((r) => r[0]), 6, true);
+  const ouverts = indexPolys(enclos().filter((e) => OUVERTS.test(e.nom)).map((e) => e.rings)), contour = contourVille(), vus = new Map();
+  // le mur lui-même est une emprise mince, qu'un sondage par points laisserait franchir : on s'en tient à 1,2 m (il
+  // s'ouvre aux barrières, où les données l'interrompent)
+  const murs = indexLignes(mur().map((r) => r[0]), 3, true);
+  // dans le mur ? La réponse est gardée par cases de 16 m.
+  const intra = (x, z) => { const i = Math.floor(x / 16), k = Math.floor(z / 16), key = (i + 2048) * 4096 + k + 2048; let v = vus.get(key); if (v === undefined) vus.set(key, (v = pointInPoly(i * 16 + 8, k * 16 + 8, contour))); return v; };
+  const genre = (x, z) => {
+    if (ouverts.dans(x, z) >= 0) return 1;
+    const n = I.dans(x, z);
+    if (n >= 0) return cls[n] === 'r' && bords.pres(x, z, 3.5) ? 2 : 0;
+    return intra(x, z) ? 1 : bords.pres(x, z, 4.2) ? 2 : 0;
+  };
+  return (x, z) => {
+    if (x < C.x0 + 45 || x > C.x1 - 45 || z < C.z0 + 45 || z > C.z1 - 45 || T.wetAt(x, z) > 0.05) return 0;
+    const g = genre(x, z); return g && !murs.pres(x, z, 1.2) && !app.footPres(x, z) ? g : 0;            // ni contre un mur
+  };
+}
 
 export async function buildCity89(app, step) {
   const T = app.terrain, B = new Builder(), mats = (app.materials = makeMaterials89(app.mobile ? 0.5 : 1));
@@ -225,10 +252,10 @@ export async function buildCity89(app, step) {
     const x = cv.getContext('2d', { willReadFrequently: true }), TT = { s: 1 / cell, x: (v) => (v - R.x) / cell, y: (v) => (v - R.z) / cell };
     x.fillStyle = '#fff'; x.fillRect(0, 0, w, h);
     fill(x, TT, ilots(), '#000');
-    fill(x, TT, enclos().filter((e) => ENC_SABLE.test(e.nom) || /^(Jardin des Tuileries|Les Champs Elys|Esplanade)/.test(e.nom)).map((e) => e.rings), '#fff');
+    fill(x, TT, enclos().filter((e) => OUVERTS.test(e.nom)).map((e) => e.rings), '#fff');
     fill(x, TT, eau(), '#000');
     fill(x, TT, app.quaiPans.map((q) => [q.outer.map((p) => p.a), ...q.holes.map((h) => h.map((p) => p.a))]), '#000');      // becs de pile, devant les murs
     x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; pleins(x, TT, app.foot);
     const im = x.getImageData(0, 0, w, h).data, data = new Uint8Array(w * h); for (let i = 0; i < data.length; i++) data[i] = im[i * 4] > 200 ? 1 : 0;
-    app.nav = { data, w, h, x0: R.x, z0: R.z, cell }; }
+    app.nav = { data, w, h, x0: R.x, z0: R.z, cell, hors: passantsDesFaubourgs(app), campagne: true }; }
 }
