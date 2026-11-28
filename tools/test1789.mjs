@@ -109,6 +109,21 @@ const c2 = await page.evaluate(() => window.__app.people.count);
 check('habitants : moins nombreux la nuit', c2 < c1.n * 0.6, c2 + ' contre ' + c1.n);
 await page.evaluate(() => { const a = window.__app; a.ui.setHour(10.5); a.ui.goHome(); }); await frames(70);
 check('habitants : la foule se retire quand on prend de la hauteur', await page.evaluate(() => window.__app.people.group.visible === false));
+const fb = await page.evaluate(() => { const a = window.__app, T = a.terrain, P = a.people, R = a.navRect;
+  const voir = (x, z, dist) => { a.rig.goal = { x, z, dist, az: 0, el: 1 }; a.rig.cur = { ...a.rig.goal }; a.rig.target.x = x; a.rig.target.z = z;
+    for (let i = 0; i < 80; i++) { a.rig.update(0.1); a.time += 0.1; a.emit('frame', 0.1); }
+    const o = { n: 0, dansTrame: 0, bati: 0, eau: 0, pont: 0, horsVoie: 0, marche: 0, attelages: 0, jardin: 0, attelesAuJardin: 0, chemin: 0 };
+    for (const p of P.pools) for (let i = 0; i < Math.min(p.active, p.n); i++) { if (!p.ok[i]) continue; const px = p.x[i], pz = p.z[i], roule = p.kind === 'rider' || p.kind === 'cart', g = P.genre(px, pz); o.n++;
+      if (px > R.x && px < R.x + R.w && pz > R.z && pz < R.z + R.h) o.dansTrame++; if (a.footAt(px, pz)) o.bati++; if (!g) o.horsVoie++; if (g === 2) o.chemin++;
+      if (T.wetAt(px, pz) > 0.5) { if (a.deck.has(a.deckKey(px, pz))) o.pont++; else if (T.wetAt(px, pz) > 0.6) o.eau++; }
+      if (p.st[i] <= 0) o.marche++; if (roule) o.attelages++; if (g === 3) { o.jardin++; if (roule) o.attelesAuJardin++; } }
+    return o; };
+  const o = { invalides: voir(-3000, -600, 330), chaillot: voir(-4300, -1500, 280), trone: voir(2900, -150, 200), rues: +P.rues.toFixed(3), chemins: +P.chemins.toFixed(3) };
+  a.ui.goHome(); return o; });
+await frames(70);
+check('habitants, hors de la ville dense (Gros-Caillou, Chaillot) : la foule est là aussi, jusqu’au mur des Fermiers généraux, dans la rue ; ni dans les bâtiments, ni dans l’eau',
+  [fb.invalides, fb.chaillot].every((o) => o.n > 250 && o.dansTrame === 0 && o.bati === 0 && o.eau === 0 && o.horsVoie === 0 && o.marche > 0.6 * o.n), JSON.stringify([fb.invalides, fb.chaillot]));
+check('habitants, au bout du faubourg Saint-Antoine : là où les rues se font rares, des passants, pas une cohue (la foule suit la surface des voies)', fb.trone.n > 15 && fb.trone.n < 250 && fb.trone.bati === 0 && fb.trone.horsVoie === 0 && fb.rues < 0.05 && fb.trone.chemin > 0, JSON.stringify([fb.trone, fb.rues, fb.chemins]));
 
 // ---------- repères : recalage, fiches, édifices pas encore modelés
 const rp = await page.evaluate(() => { const a = window.__app, P = (id) => a.ui.byId.get(id), nd = P('notre-dame'), f = a.footAt(nd.x, nd.z); return { nd: [Math.round(nd.x), Math.round(nd.z)], surEmprise: !!(f && f.reel), haut: f ? Math.round(f.top) : 0, absents: a.places.filter((p) => p.absent).map((p) => p.id), hv: !!P('hotel-de-ville') && !P('hotel-de-ville').absent, louvre: !P('louvre').absent, cats: [...new Set(a.places.map((p) => p.cat))].length }; });

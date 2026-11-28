@@ -1,11 +1,11 @@
 // Construction de Paris en 1889 : le bâti de toute la ville, les ponts de la Seine, les jardins, la trame des passants
-// autour de l'Exposition. La tour et les palais viennent de src/p1889/tour.js et src/p1889/expo.js ; les gares et les
-// voies ferrées, de src/p1889/gares.js et src/p1889/fer.js.
+// (fine autour de l'Exposition, lue à la demande dans le reste de la ville). La tour et les palais viennent de
+// src/p1889/tour.js et src/p1889/expo.js ; les gares et les voies ferrées, de src/p1889/gares.js et src/p1889/fer.js.
 import { Builder, box, walls, cap, ccw, rgb } from '../builder.js';
 import { makeMaterials89 } from '../p1789/textures.js';
-import { ring, fill, lines, indexFoot, buildTrees } from '../p1789/outils.js';
+import { ring, fill, lines, indexFoot, indexPolys, buildTrees } from '../p1789/outils.js';
 import { hex, hash } from '../p1789/blocks.js';
-import { pointInPoly, polylineLength, pointAt } from '../geom.js';
+import { pointInPoly, polylineLength, pointAt, polyArea, centroid } from '../geom.js';
 import { bati, rues, ilots, parcs, dansExpo, FER, ANNEE } from './data.js';
 import { maison } from './bati.js';
 import { planter } from './arbres.js';
@@ -15,7 +15,8 @@ import { Statuts } from './statuts.js';
 import { Souches } from './souches.js';
 import { trains } from './trains.js';
 import { bateaux } from './bateaux.js';
-import { preparerCirculation, trottoirs, lancerCirculation, MAILLE } from './circulation.js';
+import { preparerCirculation, trottoirs, horsTrame, lancerCirculation, MAILLE } from './circulation.js';
+import { distanceVoirie } from './sol.js';
 
 const PIERRE_PONT = hex(0xd9cfb6), CHAUSSEE = hex(0xb7b0a2), PIERRE_QUAI = hex(0xd3c9b0), DALLE_QUAI = hex(0xcbc5b7), DALLE_PORT = hex(0xb8b1a1), REMPART = hex(0xc9bfa6), TALUS = rgb(128, 148, 96);
 
@@ -141,6 +142,31 @@ function quais(app, B) {
   return { n, ports: np, km: lp / 1000 };
 }
 
+// Les passants dans toute la ville. La trame fine ne couvre que le quartier de l'Exposition (app.navRect) ; au-delà,
+// la règle est lue point par point (src/people.js, etendre). En 1889 et en 1900, la rue entière est aux passants, aux
+// cavaliers et aux voitures à cheval : on marche partout où le sol dessine une rue ou une place (carte de voirie), dans
+// les jardins et les squares (où n'entrent ni cavaliers ni voitures), et sur les ponts ; ni dans l'eau, ni dans un
+// bâtiment.
+// Jardins où l'on se promène : les parcs de la ville (pas les bois, dont on ne garde que les allées, qui sont des
+// rues) et les promenades plantées de moins de vingt-cinq hectares.
+function jardinsOuverts(app) {
+  const env = app.v89.enveloppe.ring, T = app.terrain, L = [];
+  for (const p of parcs()) { if (/^Bois De/i.test(p.nom)) continue; const c = centroid(p.rings[0]); if (pointInPoly(c[0], c[1], env)) L.push(p.rings); }
+  for (const i of ilots()) if (i.c === 'p' && Math.abs(polyArea(i.rings[0])) < 250000) L.push(i.rings);
+  const J = indexPolys(L);
+  return (x, z) => J.dans(x, z) >= 0 && T.wetAt(x, z) < 0.05;
+}
+function passantsPartout(app, jardin) {
+  const dist = distanceVoirie(app), T = app.terrain, D = app.deck, cle = (x, z) => app.deckKey(x, z);
+  // sur un pont : à deux mètres au moins des parapets
+  const pont = (x, z) => D.has(cle(x, z)) && D.has(cle(x + 2.2, z)) && D.has(cle(x - 2.2, z)) && D.has(cle(x, z + 2.2)) && D.has(cle(x, z - 2.2));
+  return (x, z) => {
+    if (pont(x, z)) return app.footAt(x, z) ? 0 : 1;
+    const g = dist(x, z) > 0.7 ? 1 : jardin(x, z) ? 3 : 0;                     // 3 : aux piétons seulement
+    return g && T.wetAt(x, z) < 0.45 && !app.footPres(x, z) ? g : 0;           // ni au-delà du mur de quai, ni contre un mur
+  };
+}
+
 export async function construire(app, step) {
   const V = app.v89, B = new Builder(1100), mats = (app.materials = makeMaterials89(app.mobile ? 0.5 : 1));
   mats.voie = materiauVoie();
@@ -216,6 +242,7 @@ export async function construire(app, step) {
       return best; }; }
 
   // trame des passants, autour de l'Exposition : rues, promenades, jardins, ponts ; ni l'eau ni les bâtiments
+  // (le reste de la ville : passantsPartout, plus haut)
   await step(`Les Parisiens de ${ANNEE}…`, 0.93);
   { const cell = MAILLE ? MAILLE[app.mobile ? 1 : 0] : app.mobile ? 2.5 : 1.5, w = Math.round(R.w / cell), h = Math.round(R.h / cell), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const x = cv.getContext('2d', { willReadFrequently: true }), TT = { s: 1 / cell, x: (v) => (v - R.x) / cell, y: (v) => (v - R.z) / cell };
@@ -228,7 +255,7 @@ export async function construire(app, step) {
     // une emprise absente (pas encore bâtie, ou déjà démolie, à la date du curseur de 1900) laisse passer les passants
     x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; for (const f of app.foot) { if (f.absent || !pres(f.ring[0][0], f.ring[0][1])) continue; x.beginPath(); ring(x, TT, f.ring); x.fill(); x.stroke(); }
     const im = x.getImageData(0, 0, w, h).data, data = new Uint8Array(w * h); for (let i = 0; i < data.length; i++) data[i] = im[i * 4] > 200 ? 1 : 0;
-    app.nav = { data, w, h, x0: R.x, z0: R.z, cell };
+    { const jardin = jardinsOuverts(app); app.nav = { data, w, h, x0: R.x, z0: R.z, cell, hors: horsTrame ? horsTrame(app, jardin) : passantsPartout(app, jardin) }; }
     // Paris 1937 : la chaussée est aux automobiles, les passants tiennent les trottoirs (src/p1937/circulation.js) ;
     // le pavé garde la trame des rues entières
     if (trottoirs) { app.pavage = data; app.nav.data = trottoirs(app, { x, TT, w, h, cell, R, classique: data }); } }

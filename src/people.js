@@ -357,7 +357,7 @@ class Pool {
     }
   }
   spawn(i, cx, cz, R, far) {
-    const s = this.sys, r = s.r;
+    const s = (this.o.wide && this.sys.attele) || this.sys, r = s.r;
     for (let t = 0; t < 7; t++) {
       const a = r() * 6.2832, d = R * Math.sqrt(far ? 0.3 + 0.7 * r() : r()), x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
       if (!s.nav(x, z) || (this.o.wide && !(s.nav(x + 1.2, z) && s.nav(x - 1.2, z) && s.nav(x, z + 1.2) && s.nav(x, z - 1.2)))) continue;
@@ -368,7 +368,7 @@ class Pool {
     this.ok[i] = 0;
   }
   update(dt, cx, cz, R, want, first, cam, hi2) {
-    const s = this.sys, r = s.r, o = this.o, n = Math.min(this.n, want);
+    const s = (this.o.wide && this.sys.attele) || this.sys, r = s.r, o = this.o, n = Math.min(this.n, want);
     const R2 = (R + 40) * (R + 40), probe = o.probe, side = o.side;
     const lo = this.lo, hi = this.hi, lm = lo.im.instanceMatrix.array, la = lo.anim.array, lc = lo.im.instanceColor.array;
     const hm = hi && hi.im.instanceMatrix.array, ha = hi && hi.anim.array, hc = hi && hi.im.instanceColor.array, hv = hi && hi.vr.array, hcap = hi ? hi.im.instanceMatrix.count : 0;
@@ -465,7 +465,8 @@ class Statics {
 }
 
 export class People {
-  // opts (facultatif, pour une autre ville que celle de 1380) : nav { data, w, h, x0, z0, cell } trame des voies ;
+  // opts (facultatif, pour une autre ville que celle de 1380) : nav { data, w, h, x0, z0, cell } trame des voies, et,
+  // pour marcher au-delà de cette trame, nav.hors (x, z) → 0 | 1 | 2 et nav.campagne (voir etendre) ;
   // atlas : visages et costumes ; outfit : choix du costume ; noBeasts : pas de bêtes en liberté ; groundCell : maille du sol ;
   // density : part de la foule habituelle (une petite ville a moins de passants) ; attelages : part des cavaliers et des
   // voitures à cheval (1 par défaut ; moins quand l'automobile les a remplacés).
@@ -486,6 +487,7 @@ export class People {
     }
     this.gc = opts.groundCell || 2;
     this.gw = Math.ceil((this.nw * this.nc) / this.gc); this.gh = Math.ceil((this.nh * this.nc) / this.gc); this.gcache = new Float32Array(this.gw * this.gh).fill(NaN);
+    if (opts.nav && opts.nav.hors) this.etendre(opts.nav.hors, opts.nav.campagne);
     this.atlas = opts.atlas || makeFigureAtlas(app.mobile ? 0.5 : 1);
     this.mat = peopleMaterial(this.atlas.texture);
     this.blobMat = new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, color: 0x000000, opacity: 0.42, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
@@ -516,6 +518,34 @@ export class People {
     if (v !== v) { v = Math.max(0.2, app.terrain.height(this.x0 + (i + 0.5) * gc, this.z0 + (j + 0.5) * gc)); this.gcache[j * this.gw + i] = v; }
     return d !== undefined ? Math.max(d, v) : v;
   }
+  // Les passants au-delà de la trame fine, qui ne couvre que le cœur de la maquette : la règle hors(x, z) dit où l'on
+  // marche dans le reste de la ville — 0 non, 1 rue, 2 chemin de campagne, 3 jardin (aux piétons seulement : ni
+  // cavaliers ni voitures). Elle est lue au mètre, à la demande, et gardée par dalles de 64 m (0 inconnu, puis la
+  // réponse plus un) ; la hauteur du sol y est gardée par cases de 3 m.
+  // campagne : la ville a des abords où les voies sont rares ; la foule s'y règle sur ce qu'il y a de rues et de
+  // chemins autour du point de vue (voir update).
+  etendre(hors, campagne = false) {
+    const app = this.app, nav0 = this.nav.bind(this), sol0 = this.groundY.bind(this), x0 = this.x0, z0 = this.z0, x1 = x0 + this.nw * this.nc, z1 = z0 + this.nh * this.nc;
+    const DALLE = 64, dalles = new Map(), sols = new Map(), dedans = (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1;
+    const lire = (x, z) => {
+      const i = Math.floor(x), j = Math.floor(z), k = (Math.floor(i / DALLE) + 512) * 1024 + Math.floor(j / DALLE) + 512; let d = dalles.get(k);
+      if (!d) { if (dalles.size > 1200) dalles.clear(); dalles.set(k, (d = new Uint8Array(DALLE * DALLE))); }
+      const q = (((j % DALLE) + DALLE) % DALLE) * DALLE + (((i % DALLE) + DALLE) % DALLE); let v = d[q];
+      if (!v) v = d[q] = 1 + (hors(i + 0.5, j + 0.5) | 0);
+      return v - 1;
+    };
+    this.nav = (x, z) => (dedans(x, z) ? nav0(x, z) : lire(x, z) ? 1 : 0);
+    this.genre = (x, z) => (dedans(x, z) ? nav0(x, z) : lire(x, z));
+    this.attele = { r: this.r, nav: (x, z) => (dedans(x, z) ? nav0(x, z) : lire(x, z) % 3 ? 1 : 0), groundY: (x, z) => this.groundY(x, z) };      // ce que voient cavaliers et voitures
+    this.groundY = (x, z) => {
+      if (dedans(x, z)) return sol0(x, z);
+      const i = Math.floor(x / 3), j = Math.floor(z / 3), k = (i + 4096) * 8192 + j + 4096; let v = sols.get(k);
+      if (v === undefined) { if (sols.size > 250000) sols.clear(); v = Math.max(0.2, app.terrain.height(i * 3 + 1.5, j * 3 + 1.5)); sols.set(k, v); }
+      const d = app.deck && app.deck.size ? app.deck.get(app.deckKey(x, z)) : undefined;
+      return d !== undefined ? Math.max(d, v) : v;
+    };
+    this.etendue = true; this.campagne = campagne; this.rues = 0.2; this.chemins = 0;
+  }
   update(dt) {
     const app = this.app, rig = app.rig, walk = rig.mode === 'walk';
     const dist = walk ? 0 : rig.cur.dist;
@@ -524,10 +554,23 @@ export class People {
     if (!show) { this.count = 0; return; }
     const cx = walk ? rig.walk.x : rig.target.x, cz = walk ? rig.walk.z : rig.target.z;
     const R = walk ? 250 : clamp(dist * 0.8, 170, 520), cam = app.camera.position, hi2 = (walk ? 80 : 95) ** 2;
-    // densité visée : un passant pour ~26 m² de voie (les rues couvrent environ un cinquième de la ville), moins la nuit
-    const want = clamp((Math.PI * R * R * 0.2) / 26, 250, this.total) * (0.12 + 0.88 * app.sky.day) * (app.crowdScale || 1) * this.density;
     // après un saut (fiche, visite guidée, entrée à pied), la foule se reforme d'emblée autour du nouveau point
     const fresh = this.first || Math.hypot(cx - this.lastX, cz - this.lastZ) > 70; this.lastX = cx; this.lastZ = cz;
+    // densité visée : un passant pour ~26 m² de voie (les rues couvrent environ un cinquième de la ville), moins la nuit
+    let want = clamp((Math.PI * R * R * 0.2) / 26, 250, this.total);
+    if (this.campagne) {
+      // Une ville et sa campagne : la part du sol qui est rue, et celle qui est chemin, sont sondées autour du point
+      // de vue (quelques tirages par image, lissés). Là où les rues couvrent au moins un vingtième du sol, c'est la
+      // ville : rien ne change. En dessous, la foule suit la surface des rues au lieu de s'y entasser, et s'éclaircit
+      // à mesure qu'elles se font rares — d'un passant pour 6,5 m² de rue à un pour 90 m², comme sur les chemins.
+      const k = fresh ? 400 : 24, r = this.r; let rue = 0, chemin = 0;
+      for (let i = 0; i < k; i++) { const a = r() * 6.2832, d = R * Math.sqrt(r()), g = this.genre(cx + Math.cos(a) * d, cz + Math.sin(a) * d); if (g === 2) chemin++; else if (g) rue++; }
+      const f = fresh ? 1 : 0.04; this.rues += (rue / k - this.rues) * f; this.chemins += (chemin / k - this.chemins) * f;
+      const aire = Math.PI * R * R, u = this.rues / 0.05, rare = 1 / 90;
+      if (u < 1) want = Math.min(want, aire * this.rues * (rare + (0.2 / 26 / 0.05 - rare) * u * u));
+      want = Math.min(this.total, want + aire * this.chemins * rare);
+    }
+    want *= (0.12 + 0.88 * app.sky.day) * (app.crowdScale || 1) * this.density;
     let n = 0, near = 0;
     for (const p of this.pools) { p.update(dt, cx, cz, R, Math.round(want * p.o.share), fresh, cam, hi2); n += p.active; near += p.near || 0; }
     if (this.frame++ % 4 === 0 || this.first) for (const s of this.statics) s.update(cam, hi2);

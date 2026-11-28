@@ -4,4 +4,5 @@
 export function preparerCirculation() {}           // (app) : avant les arbres d'alignement, qui lisent la largeur des trottoirs
 export const MAILLE = null;                          // maille de la trame des passants, si elle doit être plus fine que 1,5 m
 export const trottoirs = null;                       // (app, trame) → trame des passants, quand la chaussée est aux voitures
+export const horsTrame = null;                       // (app, jardins) → règle des passants hors du quartier de l'Exposition, quand ce n'est pas la rue entière
 export function lancerCirculation() {}

@@ -179,11 +179,22 @@ const pv = await page.evaluate(() => { const a = window.__app, T = a.terrain, P 
   const proche = (x, z) => { let best = null, bd = 1e9; for (const e of G.E) { if (Math.abs(e.cx - x) > 150 || Math.abs(e.cz - z) > 150) continue; for (let i = 0; i < e.P.length; i++) { const d = Math.hypot(e.P[i][0] - x, e.P[i][1] - z); if (d < bd) { bd = d; best = { e, i }; } } } return best; };
   const o = { n: 0, dansTrame: 0, bati: 0, eau: 0, ilot: 0, pleine: 0, marche: 0, autos: a.circulation.actifs };
   for (const p of P.pools) for (let i = 0; i < Math.min(p.active, p.n); i++) { if (!p.ok[i]) continue; const x = p.x[i], z = p.z[i]; o.n++;
-    if (x > R.x && x < R.x + R.w && z > R.z && z < R.z + R.h) o.dansTrame++; if (a.footAt(x, z)) o.bati++; if (T.wetAt(x, z) > 0.5) o.eau++; if (G.dist(x, z) < 0) o.ilot++; if (p.st[i] <= 0) o.marche++;
+    if (x > R.x && x < R.x + R.w && z > R.z && z < R.z + R.h) o.dansTrame++; if (a.footAt(x, z)) o.bati++; if (T.wetAt(x, z) > 0.5) o.eau++; if (G.dist(x, z) < 0 && P.genre(x, z) !== 3) o.ilot++; if (p.st[i] <= 0) o.marche++;
     if (G.chaussee(x, z)) { const q = proche(x, z); if (q && q.e.ok && Math.min(q.e.S[q.i], q.e.len - q.e.S[q.i]) > Math.max(q.e.ra, q.e.rb) + 6) o.pleine++; } }
   return o; });
-check('passants, hors du quartier de l’Exposition (place de l’Opéra) : la foule est là aussi, sur les trottoirs et aux traversées, ni dans les îlots, ni dans les bâtiments, ni en pleine chaussée, parmi les automobiles',
+check('passants, hors du quartier de l’Exposition (place de l’Opéra) : la foule est là aussi, sur les trottoirs et aux traversées, ni dans les îlots (hors les squares), ni dans les bâtiments, ni en pleine chaussée, parmi les automobiles',
   pv.n > 300 && pv.dansTrame === 0 && pv.bati === 0 && pv.eau === 0 && pv.ilot === 0 && pv.pleine < 0.03 * pv.n && pv.marche > 0.6 * pv.n && pv.autos > 60, JSON.stringify(pv));
+const pj = await page.evaluate(() => { const a = window.__app, T = a.terrain, P = a.people, R = a.navRect;
+  const voir = (x, z, dist) => { a.rig.goal = { x, z, dist, az: 0, el: 1 }; a.rig.cur = { ...a.rig.goal }; a.rig.target.x = x; a.rig.target.z = z;
+    for (let i = 0; i < 80; i++) { a.rig.update(0.1); a.time += 0.1; a.emit('frame', 0.1); }
+    const o = { n: 0, dansTrame: 0, bati: 0, eau: 0, pont: 0, horsVoie: 0, marche: 0, attelages: 0, jardin: 0, attelesAuJardin: 0, chemin: 0 };
+    for (const p of P.pools) for (let i = 0; i < Math.min(p.active, p.n); i++) { if (!p.ok[i]) continue; const px = p.x[i], pz = p.z[i], roule = p.kind === 'rider' || p.kind === 'cart', g = P.genre(px, pz); o.n++;
+      if (px > R.x && px < R.x + R.w && pz > R.z && pz < R.z + R.h) o.dansTrame++; if (a.footAt(px, pz)) o.bati++; if (!g) o.horsVoie++; if (g === 2) o.chemin++;
+      if (T.wetAt(px, pz) > 0.5) { if (a.deck.has(a.deckKey(px, pz))) o.pont++; else if (T.wetAt(px, pz) > 0.6) o.eau++; }
+      if (p.st[i] <= 0) o.marche++; if (roule) o.attelages++; if (g === 3) { o.jardin++; if (roule) o.attelesAuJardin++; } }
+    return o; };
+  return voir(-1048, 699, 330); });
+check('passants, au jardin du Luxembourg : des promeneurs dans les allées, ailleurs sur les trottoirs ; ni dans les bâtiments, ni dans l’eau', pj.n > 300 && pj.jardin > 100 && pj.bati === 0 && pj.eau === 0 && pj.horsVoie === 0 && pj.dansTrame === 0, JSON.stringify(pj));
 check('circulation, la nuit : les phares s’allument et la circulation se raréfie ; le jour, ils s’éteignent', ci.nuit.phares === 5 && ci.jour.phares === 0 && ci.nuit.veut < 0.5 * ci.jour.veut, JSON.stringify([ci.nuit, ci.jour]));
 
 // ---------- silhouettes des monuments

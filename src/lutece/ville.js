@@ -2,7 +2,7 @@
 // arbres, trame des passants.
 import { Builder, box, rgb, tint } from '../builder.js';
 import { building, hex, hash } from '../p1789/blocks.js';
-import { ring, fill, lines, indexFoot, buildTrees } from '../p1789/outils.js';
+import { ring, fill, lines, indexFoot, indexLignes, buildTrees } from '../p1789/outils.js';
 import { makeMaterialsLutece } from './textures.js';
 import { batirMonuments } from './monuments.js';
 import { dansVille } from './sol.js';
@@ -73,7 +73,11 @@ export async function construire(app, step) {
     lines(x, TT, P.ponts.map((p) => p.pts.map((q) => [q.x, q.z])), '#fff', 5 / cell);
     x.fillStyle = '#000'; x.strokeStyle = '#000'; x.lineWidth = 1.2; for (const f of app.foot) { x.beginPath(); ring(x, TT, f.ring); x.fill(); x.stroke(); }
     const data = lire();
-    app.nav = { data, w, h, x0: R.x, z0: R.z, cell };
+    // hors de la ville, la trame ne va pas : les voies qui mènent à Lutèce sont lues point par point (src/people.js,
+    // etendre), à leur largeur ; on y croise des voyageurs, bien moins nombreux que dans les rues
+    const routes = indexLignes(P.voies.filter((l) => l !== P.cardo)), grande = indexLignes([P.cardo]), m = 45;
+    const hors = (X, Z) => (X > CADRE.x0 + m && X < CADRE.x1 - m && Z > CADRE.z0 + m && Z < CADRE.z1 - m && (grande.pres(X, Z, 4) || routes.pres(X, Z, 3.2)) && (T.wetAt(X, Z) < 0.05 || app.deck.has(app.deckKey(X, Z))) && !app.footPres(X, Z) ? 2 : 0);      // 2 : un chemin
+    app.nav = { data, w, h, x0: R.x, z0: R.z, cell, hors, campagne: true };
     // dalles : seules les rues de la ville sont pavées ; les chemins de la campagne restent de terre
     x.fillStyle = '#000'; x.fillRect(0, 0, w, h); dansVille(x, TT, P, rues);
     const dal = lire(); for (let i = 0; i < dal.length; i++) dal[i] = dal[i] && data[i] ? 1 : 0;

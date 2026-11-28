@@ -26,7 +26,8 @@
     "thumbs": "python3 tools/make_thumbs.py",
     "vignettes": "python3 tools/vignettes.py",
     "test:toits": "node tools/test_toits.mjs",
-    "test:accueil": "node tools/test_accueil.mjs"
+    "test:accueil": "node tools/test_accueil.mjs",
+    "passants": "node tools/passants.mjs"
   },
   "license": "SEE LICENSE IN README.md",
   "devDependencies": {
